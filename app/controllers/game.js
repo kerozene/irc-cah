@@ -733,7 +733,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
         });
         var output = "";
         _.each(sortedPlayers, function (point) {
-            output += c.bold(point.player.nick) + ": " + c.bold(point.points) + ", ";
+            if (self.getPlayer({nick: point.player.nick})) {
+                output += c.bold(point.player.nick) + ": " + c.bold(point.points) + ", ";
+            }
         });
         if (stage === 'round') {
             self.say('Current scores: ' + output.slice(0, -2));
