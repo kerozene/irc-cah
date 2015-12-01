@@ -701,11 +701,26 @@ var Game = function Game(channel, client, config, cmdArgs) {
      */
     self.showCards = function (player) {
         if (typeof player !== 'undefined') {
-            var cards = "";
-            _.each(player.cards.getCards(), function (card, index) {
-                cards += c.bold(' [' + index + '] ') + card.value;
+            var cards = player.cards.getCards(),
+                remainingCards = [],
+                currentCard,
+                message = 'Your cards are:',
+                newMessage;
+            _.each(cards, function (card, index) {
+                 remainingCards.push(c.bold(' [' + index + '] ') + card.value);
             }, this);
-            self.notice(player.nick, 'Your cards are:' + cards);
+            // split output if longer than allowed message length
+            while (remainingCards.length) {
+                currentCard = remainingCards.shift();
+                newMessage = message + currentCard;
+                if (newMessage.length > (self.client.opt.messageSplit - 4)) {
+                    self.notice(player.nick, message + ' ...');
+                    message = currentCard;
+                } else {
+                    message = newMessage;
+                }
+            }
+            self.notice(player.nick, message);
         }
     };
 

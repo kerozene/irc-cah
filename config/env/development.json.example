@@ -45,6 +45,7 @@
         "userName": "cah",
         "debug": true,
         "channels": ["#pi-cah-dev"],
+        "messageSplit": 410,
         "floodProtection": true,
         "floodProtectionDelay": 2000
     },

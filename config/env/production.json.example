@@ -44,6 +44,7 @@
     "clientOptions": {
         "userName":             "cah",
         "channels":             ["#cah"],
+        "messageSplit":         410,
         "floodProtection":      true,
         "floodProtectionDelay": 1000
     },
