@@ -205,32 +205,19 @@ var Game = function Game(channel, client, config, cmdArgs) {
      */
     self.nextRound = function () {
         clearTimeout(self.stopTimeout);
-        // check if any player reached the point limit
-        if(self.pointLimit > 0) {
-            var winner = _.findWhere(self.players, {points: self.pointLimit});
-            if(winner) {
-                self.say(c.bold(winner.nick) + ' has reached ' + c.bold(self.pointLimit) + ' awesome points and is the winner of the game! ' + c.bold('Congratulations!'));
-                self.stop(null, true);
-
-                // Add the winner to the channel topic if message is set
-                self.setTopic(config.topic.messages.winner, {nick: winner.nick});
-                return false;
+        if (!self.endGame() && !self.needPlayers()) {
+            if (self.round === 0) {
+                self.say('Starting in ' + config.timeBetweenRounds + ' seconds. ' + _.pluck(self.players, 'nick').join(', ') + ' get ready!');
             }
+            self.showPoints((self.round === 0) ? 'start' : 'round');
+            setTimeout(self.startNextRound, config.timeBetweenRounds * 1000);
         }
+    };
 
-        // check that there's enough players in the game
-        if (self.players.length < 3) {
-            self.say('Not enough players to start a round (need at least 3). Waiting for others to join. Stopping in 3 minutes if not enough players.');
-            self.state = STATES.WAITING;
-            // stop game if not enough pleyers in 3 minutes
-            self.stopTimeout = setTimeout(self.stop, 3 * 60 * 1000);
-            return false;
-        }
-
-        if (self.round === 0) {
-            self.say('Players get ready! ' + _.pluck(self.players, 'nick').join(', '));
-        }
-        self.showPoints((self.round === 0) ? 'start' : 'round');
+    /**
+     * Start next round
+     */
+    self.startNextRound = function () {
 
         self.round++;
         console.log('Starting round ', self.round);
@@ -245,6 +232,40 @@ var Game = function Game(channel, client, config, cmdArgs) {
             }
         });
         self.state = STATES.PLAYABLE;
+    };
+
+    /**
+     * End game
+     */
+    self.endGame = function() {
+        // check if any player reached the point limit
+        if (self.pointLimit > 0) {
+            var winner = _.findWhere(self.players, {points: self.pointLimit});
+            if(winner) {
+                self.say(c.bold(winner.nick) + ' has reached ' + c.bold(self.pointLimit) + ' awesome points and is the winner of the game! ' + c.bold('Congratulations!'));
+                self.stop(null, true);
+
+                // Add the winner to the channel topic if message is set
+                self.setTopic(config.topic.messages.winner, {nick: winner.nick});
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Wait for more players
+     */
+    self.needPlayers = function() {
+        // check that there's enough players in the game
+        if (self.players.length < 3) {
+            self.say('Not enough players to start a round (need at least 3). Waiting for others to join. Stopping in 3 minutes if not enough players.');
+            self.state = STATES.WAITING;
+            // stop game if not enough pleyers in 3 minutes
+            self.stopTimeout = setTimeout(self.stop, 3 * 60 * 1000);
+            return true;
+        }
+        return false;
     };
 
     /**

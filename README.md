@@ -56,6 +56,8 @@ Main configuration files are located in `config/env`. There are two files by def
     "maxIdleRounds": 2,             // - Number of inactive game rounds causing a player to be removed.
 
     "timeLimit": 120,               // - Seconds to allow for playing cards or picking winners.
+
+    "timeBetweenRounds": 10,        // - Seconds to pause after a round finishes.
     
     "voicePlayers": false,          // - Give current players +v on join? (Bot will assume it is opped.)
     
