@@ -340,7 +340,7 @@ var Games = function Games() {
             "%%cards, %%c - see your cards",
             "%%pick, %%p [# ...] - play a card or choose a winner",
             "%%test - get a test NOTICE from the bot",
-            "other commands: %%play, %%winner %%w, %%beer [nick], %%pause, %%resume, %%stop, %%remove <nick>"
+            "other commands: %%play, %%winner %%w, %%beer [nick ...]|all, %%pause, %%resume, %%stop, %%remove <nick>"
         ];
         help = help.join('; ').split('%%').join(p);
         client.say(channel, help);
@@ -358,21 +358,25 @@ var Games = function Games() {
     };
 
     /**
-     * Send a beer
+     * Send beer
      * @param client
      * @param message
      * @param cmdArgs
      */
     self.beer = function (client, message, cmdArgs)
     {
-        // check if everyone has played and end the round
         var channel = message.args[0],
             user = message.user,
             hostname = message.host,
             game = self.findGame(channel),
-            nick = cmdArgs[0] || message.nick
+            nicks = [message.nick];
 
-        self.beerPending[channel].push(nick);
+        if (cmdArgs[0] == 'all' && game) {
+            nicks = _.pluck(game.players, 'nick');
+        } else if (cmdArgs.length) {
+            nicks = cmdArgs;
+        }
+        Array.prototype.push.apply(self.beerPending[channel], nicks);
         client.send('NAMES', channel);
     };
 
@@ -383,20 +387,66 @@ var Games = function Games() {
      */
     self.beerHandler = function(client, arguments)
     {
-        var channel = arguments[0],
-            nicks = arguments[1],
-            message =    _.template('slides a tall, cold glass of <%= randomBeer %> over to <%= nick %>');
-            botMessage = _.template('pours itself a tall, cold glass of <%= randomBeer %>. cheers!');
-        _.each(self.beerPending[channel], function (nick) {
-            if (_.indexOf(_.keys(nicks), nick) > -1) {
-                if (client.nick == nick) { message = botMessage; }
-                client.action(channel, message({
-                    randomBeer: config.beers[Math.floor(Math.random() * config.beers.length)],
-                    nick: nick
-                }));
+        var channel        = arguments[0],
+            channelNicks   = _.keys(arguments[1]),
+            beerNicks = [], beer = [], action = '', message = '', beerToBot = false,
+            maxNicks  = _.min([config.beers.length, 7]),
+            pending   = self.beerPending[channel];
+        var actions = [
+            'pours a tall, cold glass of <%= beer %> and slides it down the bar to <%= nick %>.',
+            'cracks open a bottle of <%= beer %> for <%= nick %>.',
+            'pours a refreshing pint of <%= beer %> for <%= nick %>',
+            'slams a foamy stein of <%= beer %> down on the table for <%= nick %>'
+        ];
+        var plurals = {
+            'tall, cold glasses': 'a tall, cold glass',
+            'bottles':            'a bottle',
+            'refreshing pints':   'a refreshing pint',
+            'foamy steins':       'a foamy stein',
+            'them':               'it'
+        };
+        var listToString = function(list) {
+            var last = list.pop();
+            return (list.length) ? list.join(', ') + ' and ' + last : last;
+        };
+        self.beerPending[channel] = [];
+        if (!pending.length) { return false; }
+        if (pending.length > maxNicks) {
+            client.say(channel, "There's not enough beer!");
+            return false;
+        }
+        if (_.isEqual(pending, [client.nick])) {
+            message = _.template('pours itself a tall, cold glass of <%= beer %>. cheers!');
+            client.action(channel, message({
+                beer: _.sample(config.beers, 1)[0],
+                nick: client.nick
+            }));
+            return true;            
+        }
+        _.each(_.uniq(pending), function (nick) {
+            if (client.nick == nick) {
+                beerToBot = true;
+            } else if (_.contains(channelNicks, nick)) {
+                beerNicks.push(nick);
             }
         });
-        self.beerPending[channel] = [];
+        if (beerNicks.length) {
+            action = _.sample(actions, 1)[0];
+            if (beerNicks.length > 1) {
+                _.each(plurals, function(from, to) { // value, key
+                    action = action.split(from).join(to);
+                });
+            }
+            message = _.template(action);
+            client.action(channel, message({
+                beer: listToString(_.sample(config.beers, beerNicks.length)),
+                nick: listToString(beerNicks)
+            }));
+        }
+        if (beerToBot) { // pour for self last
+            self.beerPending[channel].push(client.nick);
+            self.beerHandler(client, arguments);
+        }
     };
 
 };
