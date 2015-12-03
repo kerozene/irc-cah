@@ -23,9 +23,10 @@ var Games = function Games() {
 
     /**
      * Say there's no game running
+     * @param client
      * @param channel
      */
-    self.sayNoGame = function (channel) {
+    self.sayNoGame = function (client, channel) {
         client.say(channel, util.format('No game running. Start the game by typing %sstart.', p));
     };
 
@@ -72,7 +73,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             game.stop(game.getPlayer({user: user, hostname: hostname}));
             self.games = _.without(self.games, game);
@@ -92,7 +93,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             game.pause();
         }
@@ -111,7 +112,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             game.resume();
         }
@@ -132,7 +133,7 @@ var Games = function Games() {
 
         if (typeof game === 'undefined') {
             if (config.startOnFirstJoin === false) {
-                self.sayNoGame(channel);
+                self.sayNoGame(client, channel);
             } else {
                 self.start(client, message, cmdArgs);
             }
@@ -154,7 +155,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             game.removePlayer(game.getPlayer({user: user, hostname: hostname}));
         }
@@ -171,7 +172,7 @@ var Games = function Games() {
             game = self.findGame(channel),
             target = cmdArgs[0];
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             var player = game.getPlayer({nick: target});
             if (typeof(player) === 'undefined') {
@@ -194,7 +195,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             var player = game.getPlayer({user: user, hostname: hostname});
             game.showCards(player);
@@ -214,7 +215,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             var player = game.getPlayer({user: user, hostname: hostname});
             if (typeof(player) !== 'undefined') {
@@ -233,7 +234,7 @@ var Games = function Games() {
         var channel = message.args[0],
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             game.listPlayers();
         }
@@ -251,7 +252,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             var player = game.getPlayer({user: user, hostname: hostname});
             if (typeof(player) !== 'undefined') {
@@ -271,7 +272,7 @@ var Games = function Games() {
             hostname = message.host,
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             game.showPoints();
         }
@@ -287,7 +288,7 @@ var Games = function Games() {
         var channel = message.args[0],
             game = self.findGame(channel);
         if (typeof game === 'undefined') {
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             game.showStatus();
         }
@@ -308,7 +309,7 @@ var Games = function Games() {
             game = self.findGame(channel);
 
         if (typeof game === 'undefined'){
-            self.sayNoGame(channel);
+            self.sayNoGame(client, channel);
         } else {
             var player = game.getPlayer({user: user, hostname: hostname});
 
