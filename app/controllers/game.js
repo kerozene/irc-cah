@@ -11,7 +11,6 @@ var util = require('util'),
  */
 var STATES = {
     STOPPED:   'Stopped',
-    STARTED:   'Started',
     PLAYABLE:  'Playable',
     PLAYED:    'Played',
     ROUND_END: 'RoundEnd',
@@ -44,7 +43,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.channel = channel; // the channel this game is running on
     self.client = client; // reference to the irc client
     self.config = config; // configuration data
-    self.state = STATES.STARTED; // game state storage
+    self.state = STATES.WAITING; // game state storage
     self.pauseState = []; // pause state storage
     self.points = [];
     self.notifyUsersPending = false;
@@ -119,7 +118,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
             }
         }
         // clear all timers
-        clearTimeout(self.startTimeout);
         clearTimeout(self.stopTimeout);
         clearTimeout(self.turnTimer);
         clearTimeout(self.winnerTimer);
@@ -259,8 +257,12 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.needPlayers = function() {
         // check that there's enough players in the game
         if (self.players.length < 3) {
-            self.say('Not enough players to start a round (need at least 3). Waiting for others to join. Stopping in 3 minutes if not enough players.');
-            self.state = STATES.WAITING;
+            var needed = 3 - self.players.length;
+            if (self.round > 0) {
+                self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's') + ' to continue. Waiting 3 minutes.');
+                self.showPoints('round');
+                self.state = STATES.WAITING;
+            }
             // stop game if not enough pleyers in 3 minutes
             self.stopTimeout = setTimeout(self.stop, 3 * 60 * 1000);
             return true;
@@ -329,7 +331,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
             self.say('Removed inactive players: ' + removedNicks.join(', '));
         }
         // reset state
-        self.state = STATES.STARTED;
+        self.state = STATES.WAITING;
     };
 
     /**
@@ -773,7 +775,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
      */
     self.showStatus = function () {
         var playersNeeded = Math.max(0, 3 - self.players.length), // amount of player needed to start the game
-            timeLeft = 30 - Math.round((new Date().getTime() - self.startTime.getTime()) / 1000), // time left until first round
             activePlayers = _.filter(self.players, function (player) {
                 // only players with cards in hand are active
                 return player.cards.numCards() > 0;
@@ -790,14 +791,11 @@ var Game = function Game(channel, client, config, cmdArgs) {
             case STATES.ROUND_END:
                 self.say(c.bold('Status: ') + 'Round has ended and next one is starting.');
                 break;
-            case STATES.STARTED:
-                self.say(c.bold('Status: ') + 'Game starts in ' + timeLeft + ' seconds. Need ' + playersNeeded + ' more players to start.');
-                break;
             case STATES.STOPPED:
                 self.say(c.bold('Status: ') + 'Game has been stopped.');
                 break;
             case STATES.WAITING:
-                self.say(c.bold('Status: ') + 'Not enough players to start. Need ' + playersNeeded + ' more players to start.');
+                self.say(c.bold('Status: ') + 'Waiting for ' + playersNeeded + ' players to join.');
                 break;
             case STATES.PAUSED:
                 self.say(c.bold('Status: ') + 'Game is paused.');
@@ -1011,7 +1009,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.setTopic(config.topic.messages.on);
 
     // announce the game on the channel
-    self.say(util.format('A new game of ' + c.rainbow('Cards Against Humanity') + '. The game starts in 30 seconds. Type %sjoin to join the game any time.', p));
+    self.say(util.format(c.rainbow('Cards Against Humanity') + ' is starting! Type %sjoin to join the game any time. (3 players needed)', p));
 
     // notify users
     if (typeof config.notifyUsers !== 'undefined' && config.notifyUsers) {
@@ -1020,7 +1018,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
 
     // wait for players to join
     self.startTime = new Date();
-    self.startTimeout = setTimeout(self.nextRound, 30000);
+    self.nextRound();
 
     // client listeners
     client.addListener('part', self.playerPartHandler);
