@@ -93,23 +93,30 @@ exports.init = function () {
     client.addListener('message', function (from, to, text, message) {
         console.log('message from ' + from + ' to ' + to + ': ' + text);
         // parse command
-        var escape = ['-', '^'];
-        var prefix = _.map(config.commandPrefixChars.split(''), function(char) {
-            return (_.contains(escape, char)) ? "\\" + char : char;
-        }).join('');
-        var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)\\s?(.*)$', 'i');
-        var cmdArr = text.trim().match(cmdPattern);
-        if (!cmdArr || cmdArr.length <= 1) {
-            // command not found
-            return false;
-        }
-        var cmd = cmdArr[1].toLowerCase();
-        // parse arguments
-        var cmdArgs = [];
-        if (cmdArr.length > 2) {
-            cmdArgs = _.map(cmdArr[2].match(/([^\s]+)\s?/gi), function (str) {
-                return str.trim();
-            });
+        var cmd, cmdArgs = [],
+            pickArr = text.trim().split(/[^\d\s]/)[0].match(/(\d+)/g); // get the numbers
+        if (config.enableFastPick && !_.isNull(pickArr)) {
+            cmd      = 'pick';
+            cmdArgs  = [pickArr, true]; // fastPick=true
+        } else {
+            var escape = ['-', '^'];
+            var prefix = _.map(config.commandPrefixChars.split(''), function(char) {
+                return (_.contains(escape, char)) ? "\\" + char : char;
+            }).join('');
+            var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)\\s?(.*)$', 'i');
+            var cmdArr = text.trim().match(cmdPattern);
+            if (!cmdArr || cmdArr.length <= 1) {
+                // command not found
+                return false;
+            }
+            cmd = cmdArr[1].toLowerCase();
+            // parse arguments
+            cmdArgs = [];
+            if (cmdArr.length > 2) {
+                cmdArgs = _.map(cmdArr[2].match(/([^\s]+)\s?/gi), function (str) {
+                    return str.trim();
+                });
+            }
         }
         // build callback options
 

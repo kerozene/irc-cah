@@ -306,20 +306,24 @@ var Games = function Games() {
         var channel = message.args[0],
             user = message.user,
             hostname = message.host,
-            game = self.findGame(channel);
-
-        if (typeof game === 'undefined'){
-            self.sayNoGame(client, channel);
+            game = self.findGame(channel),
+            fastPick = false;
+        if (config.enableFastPick) {
+            fastPick = cmdArgs[1];
+            if (fastPick === true) { cmdArgs = cmdArgs[0]; }
+        }
+        if (typeof game === 'undefined') {
+            fastPick || self.sayNoGame(client, channel);
         } else {
             var player = game.getPlayer({user: user, hostname: hostname});
 
             if (typeof(player) !== 'undefined') {
                 if (game.state === Game.STATES.PLAYED) {
-                    game.selectWinner(cmdArgs[0], player);
+                    game.selectWinner(cmdArgs[0], player, fastPick);
                 } else if (game.state === Game.STATES.PLAYABLE) {
-                    game.playCard(cmdArgs, player);
+                    game.playCard(cmdArgs, player, fastPick);
                 } else {
-                    client.say(channel, util.format('%spick command not available in current state.', p));
+                    fastPick || client.say(channel, util.format('%spick command not available in current state.', p));
                 }
             }
         }
@@ -337,10 +341,9 @@ var Games = function Games() {
             "Commands: %%start [#] - start a game of # rounds",
             "%%join, %%j - join/start a game",
             "%%quit, %%q - leave the game",
-            "%%cards, %%c - see your cards",
-            "%%pick, %%p [# ...] - play a card or choose a winner",
+            "# [#...] - pick number # (card or winning entry)",
             "%%test - get a test NOTICE from the bot",
-            "other commands: %%play, %%winner %%w, %%beer [nick ...]|all, %%pause, %%resume, %%stop, %%remove <nick>"
+            "other commands: %%cards, %%pick %p, %%play, %%winner %%w, %%beer [nick ...]|all, %%pause, %%resume, %%stop, %%remove <nick>"
         ];
         help = help.join('; ').split('%%').join(p);
         client.say(channel, help);

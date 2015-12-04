@@ -11,6 +11,7 @@
     "exitOnError": false,
     "stopOnLastPlayerLeave": false,
     "commandPrefixChars": ".!",
+    "enableFastPick": true,
     "topic": {
         "position": "right",
         "separator": "::",
