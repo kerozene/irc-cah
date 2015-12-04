@@ -208,6 +208,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 self.say('Starting in ' + config.timeBetweenRounds + ' seconds. ' + _.pluck(self.players, 'nick').join(', ') + ' get ready!');
             }
             self.showPoints((self.round === 0) ? 'start' : 'round');
+            self.state = STATES.PAUSED;
             setTimeout(self.startNextRound, config.timeBetweenRounds * 1000);
         }
     };
@@ -223,13 +224,13 @@ var Game = function Game(channel, client, config, cmdArgs) {
         self.deal();
         self.say('Round ' + self.round + '! ' + self.czar.nick + ' is the card czar.');
         self.playQuestion();
+        self.state = STATES.PLAYABLE;
         // show cards for all players (except czar)
         _.each(self.players, function (player) {
             if (player.isCzar !== true) {
                 self.showCards(player);
             }
         });
-        self.state = STATES.PLAYABLE;
     };
 
     /**
