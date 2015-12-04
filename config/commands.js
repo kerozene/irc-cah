@@ -1,7 +1,6 @@
-var Games = require('../app/controllers/games.js');
 
 module.exports = function(app) {
-    var games = new Games();
+    var games = app.cah;
     app.cmd('start', '', games.start);
     app.cmd('stop', 'o', games.stop);
     app.cmd('join', '', games.join);

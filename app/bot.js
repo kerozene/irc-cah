@@ -1,6 +1,7 @@
 var _ = require('underscore'),
     irc = require('irc'),
     config = require('../config/config'),
+    Games = require('../app/controllers/games.js'),
     client,
     commands = [],
     msgs = [],
@@ -15,7 +16,7 @@ exports.init = function () {
     console.log('Initializing...');
     // init irc client
     console.log('Connecting to ' + config.server + ' as ' + config.nick + '...');
-    client = new irc.Client(config.server, config.nick, config.clientOptions);
+    exports.client = client = new irc.Client(config.server, config.nick, config.clientOptions);
 
     // handle connection to server for logging
     client.addListener('registered', function (message) {
@@ -211,3 +212,10 @@ exports.listen = function (event, cb) {
         cb(client, arguments);
     });
 };
+
+exports.config = config;
+exports.commands = commands;
+exports.msgs = msgs;
+
+exports.cah = new Games();
+
