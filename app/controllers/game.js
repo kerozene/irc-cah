@@ -373,11 +373,12 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Play a answer card from players hand
      * @param cards card indexes in players hand
      * @param player Player who played the cards
+     * @param fastPick whether this was a fastpick play
      */
-    self.playCard = function (cards, player) {
+    self.playCard = function (cards, player, fastPick) {
         // don't allow if game is paused
         if (self.state === STATES.PAUSED) {
-            self.say('Game is currently paused.');
+            fastPick || self.say('Game is currently paused.');
             return false;
         }
 
@@ -385,13 +386,13 @@ var Game = function Game(channel, client, config, cmdArgs) {
         // make sure different cards are played
         cards = _.uniq(cards);
         if (self.state !== STATES.PLAYABLE || player.cards.numCards() === 0) {
-            self.say(player.nick + ': Can\'t play at the moment.');
+            fastPick || self.say(player.nick + ': Can\'t play at the moment.');
         } else if (typeof player !== 'undefined') {
             if (player.isCzar === true) {
-                self.say(player.nick + ': You are the card czar. The czar does not play. The czar makes other people do their dirty work.');
+                fastPick || self.say(player.nick + ': You are the card czar. The czar does not play. The czar makes other people do their dirty work.');
             } else {
                 if (player.hasPlayed === true) {
-                    self.say(player.nick + ': You have already played on this round.');
+                    fastPick || self.say(player.nick + ': You have already played on this round.');
                 } else if (cards.length != self.table.question.pick) {
                     // invalid card count
                     self.say(player.nick + ': You must pick ' + self.table.question.pick + ' different cards.');
@@ -523,7 +524,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @param index Index of the winning card in table list
      * @param player Player who said the command (use null for internal calls, to ignore checking)
      */
-    self.selectWinner = function (index, player) {
+    self.selectWinner = function (index, player, fastPick) {
         // don't allow if game is paused
         if (self.state === STATES.PAUSED) {
             self.say('Game is currently paused.');
@@ -536,7 +537,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         var winner = self.table.answer[index];
         if (self.state === STATES.PLAYED) {
             if (typeof player !== 'undefined' && player !== self.czar) {
-                client.say(player.nick + ': You are not the card czar. Only the card czar can select the winner');
+                fastPick || client.say(player.nick + ': You are not the card czar. Only the card czar can select the winner');
             } else if (typeof winner === 'undefined') {
                 self.say('Invalid winner');
             } else {

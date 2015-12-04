@@ -20,6 +20,7 @@ Commands marked (ops) require +o by default - edit config/commands.js to change 
 * **!list** - List players in the current game.
 * **!status** - Show current status of the game. Output depends on the state of the game (e.g. when waiting for players to play, you can check who hasn't played yet)
 * **!pick !p # [#...]** - Alias for !play and !winner commands.
+* **# [#...] - Pick number # (card or winning entry)",
 * **!beer [nick ...]|all** - Order a beer for yourself, someone else or all current players.
 
 Some of these commands reply as notice. If you use [Irssi](http://www.irssi.org), you can use [active_notice.pl](http://scripts.irssi.org/scripts/active_notice.pl) to get notices on the active window instead of status window.
@@ -77,6 +78,10 @@ Main configuration files are located in `config/env`. There are two files by def
 
     // ^ List of characters a command can start with, e.g. !join, .join
     //   The first character is considered the default char and is used in help text.
+
+    "enableFastPick": true,
+
+    // ^ Allow picking a card or winner by just typing the number(s) without an explict command.
 
     "topic": {
 
