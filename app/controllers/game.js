@@ -217,7 +217,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Start next round
      */
     self.startNextRound = function () {
-
+        if (self.state != STATES.PAUSED) { return false; }
         self.round++;
         console.log('Starting round ', self.round);
         self.setCzar();
