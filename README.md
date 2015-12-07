@@ -166,6 +166,7 @@ For the `clientOptions` directive, refer to the [Node-IRC documentation](https:/
         "channels": ["#pi-cah-dev"],
         "messageSplit": 410,             // - Split player card output into multiple notices if message is longer than this
         "retryCount": 2,                 // - Number of reconnection attempts to make
+        "autoRejoin": false,             // - Automatically rejoin channel if kicked?
         "floodProtection": true,
         "floodProtectionDelay": 2000
     },

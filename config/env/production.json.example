@@ -49,6 +49,7 @@
         "channels":             ["#cah"],
         "messageSplit":         410,
         "retryCount":           2,
+        "autoRejoin":           false,
         "floodProtection":      true,
         "floodProtectionDelay": 1000
     },
