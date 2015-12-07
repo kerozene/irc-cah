@@ -6,6 +6,7 @@
     "maxIdleRounds": 2,
     "timeLimit": 120,
     "timeBetweenRounds": 10,
+    "timeWaitForPlayers": 180,
     "voicePlayers": false,
     "pointLimit":    10,
     "exitOnError": false,

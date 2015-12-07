@@ -271,8 +271,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 self.showPoints('round');
                 self.state = STATES.WAITING;
             }
-            // stop game if not enough pleyers in 3 minutes
-            self.timers.stop = setTimeout(self.stop, 3 * 60 * 1000);
+            // stop game if not enough players
+            self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
             return true;
         }
         return false;
@@ -510,7 +510,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         if (roundElapsed >= timeLimit) {
             console.log('the czar is inactive, selecting winner');
             self.say('Time is up. I will pick the winner on this round.');
-            // Check czar & remove player after 3 timeouts
+            // Check czar & remove player after config.maxIdleRounds timeouts
             self.czar.inactiveRounds++;
             // select winner
             self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
