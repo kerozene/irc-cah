@@ -110,10 +110,11 @@ var Game = function Game(channel, client, config, cmdArgs) {
         }
 
         if (self.config.voicePlayers === true) {
-            var i, j,
+            var i, j, m = client.supported.modes, // number of modes allowed per line
+                modes = '-' + new Array(m+1).join('v'),
                 devoiceNicks = _.pluck(self.players, 'nick');
-            for (i=0, j=devoiceNicks.length; i<j; i+=4) {
-                var args = ['MODE', channel, '-vvvv'].concat(devoiceNicks.slice(i, i+4))
+            for (i=0, j=devoiceNicks.length; i<j; i+=m) {
+                var args = ['MODE', channel, modes].concat(devoiceNicks.slice(i, i+m))
                 client.send.apply(this, args)
             }
         }

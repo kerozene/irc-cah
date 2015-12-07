@@ -52,6 +52,10 @@
         "floodProtection": true,
         "floodProtectionDelay": 2000
     },
+    "supported": {
+        "modes": 4,
+        "nicklength": 16
+    },
     "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois", 
                "Modelo", "Fat Tire Amber Ale", "Magic Hat", "Samuel Adams",
                "Sierra Nevada", "Leffe Blonde", "Duvel", "Warsteiner", "Erdinger Weiss"
