@@ -268,7 +268,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         if (self.players.length < 3) {
             var needed = 3 - self.players.length;
             if (self.round > 0) {
-                self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's') + ' to continue. Waiting 3 minutes.');
+                self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's') + '.');
                 self.showPoints('round');
                 self.state = STATES.WAITING;
             }

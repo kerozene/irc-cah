@@ -23,7 +23,12 @@ Commands marked (ops) require +o by default - edit config/commands.js to change 
 * **# [#...] - Pick number # (card or winning entry)",
 * **!beer [nick ...]|all** - Order a beer for yourself, someone else or all current players.
 
-Some of these commands reply as notice. If you use [Irssi](http://www.irssi.org), you can use [active_notice.pl](http://scripts.irssi.org/scripts/active_notice.pl) to get notices on the active window instead of status window.
+The bot will also act on invites to channels it knows about.
+
+Some of these commands reply as NOTICE.
+To get notices in the active window:
+* [WeeChat](https://weechat.org/) - (assuming server 'freenode'): `/set irc.msgbuffer.freenode.notice current`
+* [Irssi](http://www.irssi.org) - use [active_notice.pl](http://scripts.irssi.org/scripts/active_notice.pl)
 
 ##Install
 1. Clone the repository.
