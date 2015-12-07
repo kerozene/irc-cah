@@ -1,4 +1,5 @@
-var _ = require('underscore'),
+var util = require('util'),
+    _ = require('underscore'),
     irc = require('irc'),
     config = require('../config/config'),
     Games = require('../app/controllers/games.js'),
@@ -13,6 +14,10 @@ var _ = require('underscore'),
 exports.init = function () {
     var self = this;
 
+    var self.maxServerSilence = 240        // reconnect if nothing received for this long (s)
+    var self.lastServerRawReceived = 0;
+    var self.timers = [];
+
     console.log('Initializing...');
     // init irc client
     console.log('Connecting to ' + config.server + ' as ' + config.nick + '...');
@@ -22,6 +27,8 @@ exports.init = function () {
     // handle connection to server for logging
     client.addListener('registered', function (message) {
         console.log('Connected to server ' + message.server);
+        // start server monitor
+        self.timers.checkServer = setInterval(self.checkServer, self.maxServerSilence * 1000);
         // Send connect commands after joining a server
         if (typeof config.connectCommands !== 'undefined' && config.connectCommands.length > 0) {
             _.each(config.connectCommands, function (cmd) {
@@ -52,12 +59,18 @@ exports.init = function () {
         }
     });
 
-    // handle joins to channels for logging
+    // handle joins to channels
     client.addListener('join', function (channel, nick, message) {
         client.send('NAMES', channel);
-        // Send join command after joining a channel
-        if (client.nick === nick) {
+        if (client.nick === nick) { // it's meee
             console.log('Joined ' + channel + ' as ' + nick);
+            var game = _.findWhere(self.cah.games, {channel: channel});
+            if (game) {
+                if (game.state == game.STATES.PAUSED) {
+                    console.log('Rejoined ' + channel + ' where game is paused.');
+                    client.say(channel, util.format('Card bot is back! Type %sresume to continue the current game.', p));
+                }
+            }
             if (typeof config.joinCommands !== 'undefined' &&config.joinCommands.hasOwnProperty(channel) && config.joinCommands[channel].length > 0) {
                 _.each(config.joinCommands[channel], function (cmd) {
                     if(cmd.target && cmd.message) {
@@ -90,6 +103,18 @@ exports.init = function () {
     // output errors
     client.addListener('error', function (message) {
         console.warn('IRC client error: ', message);
+    });
+
+    // try to reconnect on network errors
+    client.addListener('netError', function(message) {
+        console.warn('IRC network error: ', message);
+        clearInterval(self.timers.checkServer);
+        self.reconnect();
+    });
+
+    // update server monitor for checkServer()
+    client.addListener('raw', function(message) {
+        self.lastServerRawReceived = _.now();
     });
 
     client.addListener('message', function (from, to, text, message) {
@@ -168,6 +193,28 @@ exports.init = function () {
         };
         client.addListener('names', callbackWrapper);
         client.send('NAMES', channel);
+    }
+
+    self.reconnect = function(retryCount) {
+        retryCount = retryCount || config.clientOptions.retryCount;
+        clearInterval(self.timers.checkServer);
+        console.warn('Trying to reconnect...');
+        _.each(self.cah.games, function(game) {
+            if (game.channel && game.state !== game.STATES.PAUSED) { game.pause(); }
+        });
+        client.disconnect('Reconnecting...', function() {
+            console.warn('Disconnected. Connecting...');
+            client.connect(retryCount);
+        });
+    }
+
+    // try to reconnect if server goes silent
+    self.checkServer = function() {
+        if (_.now() - self.lastServerRawReceived > self.maxServerSilence * 1000) {
+            console.warn('Server has gone away since ' + self.lastServerRawReceived);
+            clearInterval(self.timers.checkServer);
+            self.reconnect();
+        }
     }
 
     // don't die on uncaught errors

@@ -42,6 +42,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.channel = channel; // the channel this game is running on
     self.client = client; // reference to the irc client
     self.config = config; // configuration data
+    self.STATES = STATES;
     self.state = STATES.WAITING; // game state storage
     self.timers = {} // game timers
     self.pauseState = []; // pause state storage

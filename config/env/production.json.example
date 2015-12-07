@@ -48,6 +48,7 @@
         "userName":             "cah",
         "channels":             ["#cah"],
         "messageSplit":         410,
+        "retryCount":           2,
         "floodProtection":      true,
         "floodProtectionDelay": 1000
     },

@@ -164,7 +164,8 @@ For the `clientOptions` directive, refer to the [Node-IRC documentation](https:/
         "userName": "cah",
         "debug": true,
         "channels": ["#pi-cah-dev"],
-        "messageSplit": 410,             // Split player card output into multiple notices if message is longer than this
+        "messageSplit": 410,             // - Split player card output into multiple notices if message is longer than this
+        "retryCount": 2,                 // - Number of reconnection attempts to make
         "floodProtection": true,
         "floodProtectionDelay": 2000
     },
