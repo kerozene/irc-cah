@@ -37,13 +37,13 @@ var Game = function Game(channel, client, config, cmdArgs) {
     var self = this;
 
     // properties
-    self.waitCount = 0; // number of times waited until enough players
     self.round = 0; // round number
     self.players = []; // list of players
     self.channel = channel; // the channel this game is running on
     self.client = client; // reference to the irc client
     self.config = config; // configuration data
     self.state = STATES.WAITING; // game state storage
+    self.timers = {} // game timers
     self.pauseState = []; // pause state storage
     self.points = [];
     self.notifyUsersPending = false;
@@ -118,9 +118,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
             }
         }
         // clear all timers
-        clearTimeout(self.stopTimeout);
-        clearTimeout(self.turnTimer);
-        clearTimeout(self.winnerTimer);
+        _.each(self.timers, function(timer) {
+            clearTimeout(timer);
+        });
 
         client.removeListener('part', self.playerPartHandler);
         client.removeListener('quit', self.playerQuitHandler);
@@ -166,8 +166,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
         self.say(util.format('Game is now paused. Type %sresume to begin playing again.', p));
 
         // clear turn timers
-        clearTimeout(self.turnTimer);
-        clearTimeout(self.winnerTimer);
+        clearTimeout(self.timers.turn);
+        clearTimeout(self.timers.winner);
     };
 
     /**
@@ -198,10 +198,10 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 // select winner
                 self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
             } else {
-                self.winnerTimer = setInterval(self.winnerTimerCheck, 10 * 1000);
+                self.timers.winner = setInterval(self.winnerTimerCheck, 10 * 1000);
             }
         } else if (self.state === STATES.PLAYABLE) {
-            self.turnTimer = setInterval(self.turnTimerCheck, 10 * 1000);
+            self.timers.turn = setInterval(self.turnTimerCheck, 10 * 1000);
         }
     };
 
@@ -209,14 +209,14 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Start next round
      */
     self.nextRound = function () {
-        clearTimeout(self.stopTimeout);
+        clearTimeout(self.timers.stop);
         if (!self.endGame() && !self.needPlayers()) {
             if (self.round === 0) {
                 self.say('Starting in ' + config.timeBetweenRounds + ' seconds. ' + _.pluck(self.players, 'nick').join(', ') + ' get ready!');
             }
             self.showPoints((self.round === 0) ? 'start' : 'round');
             self.state = STATES.PAUSED;
-            setTimeout(self.startNextRound, config.timeBetweenRounds * 1000);
+            self.timers.next = setTimeout(self.startNextRound, config.timeBetweenRounds * 1000);
         }
     };
 
@@ -272,7 +272,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 self.state = STATES.WAITING;
             }
             // stop game if not enough pleyers in 3 minutes
-            self.stopTimeout = setTimeout(self.stop, 3 * 60 * 1000);
+            self.timers.stop = setTimeout(self.stop, 3 * 60 * 1000);
             return true;
         }
         return false;
@@ -371,9 +371,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
             });
         }
         // start turn timer, check every 10 secs
-        clearInterval(self.turnTimer);
+        clearInterval(self.timers.turn);
         self.roundStarted = new Date();
-        self.turnTimer = setInterval(self.turnTimerCheck, 10 * 1000);
+        self.timers.turn = setInterval(self.turnTimerCheck, 10 * 1000);
     };
 
     /**
@@ -461,7 +461,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      */
     self.showEntries = function () {
         // clear round timer
-        clearInterval(self.turnTimer);
+        clearInterval(self.timers.turn);
 
         self.state = STATES.PLAYED;
         // Check if 2 or more entries...
@@ -489,9 +489,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
             } else {
                 self.say(util.format(self.czar.nick + ': Select the winner (%swinner <entry number>)', p));
                 // start turn timer, check every 10 secs
-                clearInterval(self.winnerTimer);
+                clearInterval(self.timers.winner);
                 self.roundStarted = new Date();
-                self.winnerTimer = setInterval(self.winnerTimerCheck, 10 * 1000);
+                self.timers.winner = setInterval(self.winnerTimerCheck, 10 * 1000);
             }
 
         }
@@ -539,7 +539,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         }
 
         // clear winner timer
-        clearInterval(self.winnerTimer);
+        clearInterval(self.timers.winner);
 
         var winner = self.table.answer[index];
         if (self.state === STATES.PLAYED) {
