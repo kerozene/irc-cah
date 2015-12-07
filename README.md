@@ -168,6 +168,13 @@ For the `clientOptions` directive, refer to the [Node-IRC documentation](https:/
         "floodProtection": true,
         "floodProtectionDelay": 2000
     },
+    "supported": {
+
+    // Server-specific settings
+
+        "modes": 4,                 // - Number of channel modes allowed per line
+        "nicklength": 16            // - Maximum nickname length
+    },
 
     // When the !beer command is issued, a random beer is selected from this list.
     "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois", 
