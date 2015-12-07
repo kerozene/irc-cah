@@ -69,6 +69,10 @@ exports.init = function () {
                 if (game.state == game.STATES.PAUSED) {
                     console.log('Rejoined ' + channel + ' where game is paused.');
                     client.say(channel, util.format('Card bot is back! Type %sresume to continue the current game.', p));
+                } else {
+                    console.warn('Error: Joined ' + channel + ' while game in progress');
+                    client.say(channel, 'Error: Joined while game in progress. Pausing...');
+                    game.pause();
                 }
             }
             if (typeof config.joinCommands !== 'undefined' &&config.joinCommands.hasOwnProperty(channel) && config.joinCommands[channel].length > 0) {
@@ -116,6 +120,9 @@ exports.init = function () {
     client.addListener('raw', function(message) {
         self.lastServerRawReceived = _.now();
     });
+
+    client.addListener('part', self.channelLeaveHandler);
+    client.addListener('kick', self.channelLeaveHandler);
 
     client.addListener('message', function (from, to, text, message) {
         console.log('message from ' + from + ' to ' + to + ': ' + text);
@@ -214,6 +221,15 @@ exports.init = function () {
             console.warn('Server has gone away since ' + self.lastServerRawReceived);
             clearInterval(self.timers.checkServer);
             self.reconnect();
+        }
+    }
+
+    // pause game if leaving a channel
+    self.channelLeaveHandler = function(channel, nick) {
+        var game = _.findWhere(self.cah.games, {channel: channel});
+        if (client.nick == nick && game) {
+            console.warn('Left channel ' + channel + ' while game in progress. Pausing...');
+            game.pause();
         }
     }
 

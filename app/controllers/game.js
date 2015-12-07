@@ -1034,6 +1034,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     // client listeners
     client.addListener('part', self.playerPartHandler);
     client.addListener('quit', self.playerQuitHandler);
+    client.addListener('kill', self.playerQuitHandler);
     client.addListener('kick', self.playerKickHandler);
     client.addListener('nick', self.playerNickChangeHandler);
     client.addListener('names'+channel, self.notifyUsersHandler);
