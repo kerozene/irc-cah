@@ -385,8 +385,8 @@ var Games = function Games() {
 
     /**
      * Handle names response to send beer
-     * @param channel
-     * @param nicks
+     * @param client
+     * @param arguments
      */
     self.beerHandler = function(client, arguments)
     {

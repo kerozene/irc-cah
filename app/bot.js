@@ -62,7 +62,9 @@ var Bot = function Bot() {
      * @param callback
      */
     self.listen = function (event, callback) {
-        client.addListener(event, callback);
+        client.addListener(event, function() {
+            callback(client, arguments)
+        });
     };
 
     /**
