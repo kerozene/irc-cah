@@ -413,7 +413,7 @@ var Games = function Games() {
             return (list.length) ? list.join(', ') + ' and ' + last : last;
         };
         self.beerPending[channel] = [];
-        if (!pending.length) { return false; }
+        if (typeof pending === 'undefined') { return false; }
         if (pending.length > maxNicks) {
             client.say(channel, "There's not enough beer!");
             return false;
