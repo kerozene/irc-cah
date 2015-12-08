@@ -144,17 +144,31 @@ var Game = function Game(channel, client, config, cmdArgs) {
     };
 
     /**
+     * Is the game paused?
+     */
+    self.isPaused = function() {
+        return ( game.STATES.PAUSED === game.state );
+    };
+
+    /**
+     * Can the game be paused?
+     */
+    self.isRunning = function() {
+        return _.contains([game.STATES.PLAYABLE, game.STATES.PLAYED], game.state);
+    };
+
+    /**
      * Pause game
      */
     self.pause = function () {
         // check if game is already paused
-        if (self.state === STATES.PAUSED) {
+        if (self.isPaused()) {
             self.say(util.format('Game is already paused. Type %sresume to begin playing again.', p));
             return false;
         }
 
         // only allow pause if game is in PLAYABLE or PLAYED state
-        if (self.state !== STATES.PLAYABLE && self.state !== STATES.PLAYED) {
+        if (!self.isRunning) {
             self.say('The game cannot be paused right now.');
             return false;
         }
@@ -176,8 +190,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Resume game
      */
     self.resume = function () {
-        // make sure game is paused
-        if (self.state !== STATES.PAUSED) {
+        if (!self.isPaused()) {
             self.say('The game is not paused.');
             return false;
         }
@@ -226,7 +239,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Start next round
      */
     self.startNextRound = function () {
-        if (self.state != STATES.PAUSED) { return false; }
+        if (!self.isPaused()) { return false; }
         self.round++;
         console.log('Starting round ', self.round);
         self.setCzar();
@@ -385,8 +398,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @param fastPick whether this was a fastpick play
      */
     self.playCard = function (cards, player, fastPick) {
-        // don't allow if game is paused
-        if (self.state === STATES.PAUSED) {
+        if (self.isPaused()) {
             fastPick || self.say('Game is currently paused.');
             return false;
         }
@@ -534,8 +546,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @param player Player who said the command (use null for internal calls, to ignore checking)
      */
     self.selectWinner = function (index, player, fastPick) {
-        // don't allow if game is paused
-        if (self.state === STATES.PAUSED) {
+        if (self.isPaused()) {
             self.say('Game is currently paused.');
             return false;
         }

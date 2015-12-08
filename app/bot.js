@@ -1,28 +1,226 @@
 var util = require('util'),
-    _ = require('underscore'),
-    irc = require('irc'),
-    config = require('../config/config'),
-    Games = require('../app/controllers/games.js'),
-    client,
-    commands = [],
-    msgs = [],
-    p = config.commandPrefixChars[0];
+       _ = require('underscore'),
+     irc = require('irc'),
+  config = require('../config/config'),
+   Games = require('../app/controllers/games.js'),
+       p = config.commandPrefixChars[0],
+  client = {};
 
 /**
  * Initialize the bot
  */
-exports.init = function () {
+var Bot = function Bot() {
     var self = this;
 
-    var self.maxServerSilence = 240        // reconnect if nothing received for this long (s)
-    var self.lastServerRawReceived = 0;
-    var self.timers = [];
+    self.config = config;
+    self.commands = [];
+    self.msgs = [];
+    self.timers = [];
 
-    console.log('Initializing...');
-    // init irc client
-    console.log('Connecting to ' + config.server + ' as ' + config.nick + '...');
-    exports.client = client = new irc.Client(config.server, config.nick, config.clientOptions);
-    _.extend(client.supported, config.supported);
+    self.maxServerSilence = 240;        // reconnect if nothing received for this long (s)
+    self.lastServerRawReceived = 0;
+
+    config.clientOptions['autoConnect'] = false;
+    client = self.client = new irc.Client(config.server, config.nick, config.clientOptions);
+    client.supported = _.extend(client.supported, config.supported);
+    console.log('Configuration loaded.');
+
+    self.cah = new Games();
+
+    /**
+     * Add a public command to the bot
+     * @param cmd Command keyword
+     * @param mode User mode that is allowed
+     * @param callback
+     */
+    self.cmd = function (cmd, mode, callback) {
+        self.commands.push({
+            cmd: cmd,
+            mode: mode,
+            callback: callback
+        });
+    };
+
+    /**
+     * Add a msg command to the bot
+     * @param cmd Command keyword
+     * @param mode User mode that is allowed
+     * @param callback
+     */
+    self.msg = function (cmd, mode, callback) {
+        msgs.push({
+            cmd: cmd,
+            mode: mode,
+            callback: callback
+        });
+    };
+
+    /**
+     * Add an irc event listener to the bot
+     * @param event Client event
+     * @param callback
+     */
+    self.listen = function (event, callback) {
+        client.addListener(event, callback);
+    };
+
+    /**
+     * Don't die on uncaught errors
+     */
+    self.persevere = function() {
+        process.on('uncaughtException', function (err) {
+            console.log('Caught exception: ' + err);
+            console.log(err.stack);
+            _.each(config.clientOptions.channels, function(channel) {
+                client.say(channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.")
+            });
+        });
+    };
+
+    /**
+     * Connect to server
+     */
+    self.connect = function() {
+        console.log('Connecting to ' + config.server + ' as ' + config.nick + '...');
+        client.connect(function() {
+            console.log('Connected.');
+            if (typeof config.exitOnError !== "undefined" && config.exitOnError === false) {
+                self.persevere();
+            }
+        });
+    };
+
+    /**
+     * Reconnect to the server
+     * @param retryCount
+     */
+    self.reconnect = function(retryCount) {
+        retryCount = retryCount || config.clientOptions.retryCount;
+        clearInterval(self.timers.checkServer);
+        console.warn('Trying to reconnect...');
+        _.each(self.cah.games, function(game) {
+            if (game.channel && game.isRunning()) {
+                game.pause();
+        }
+        });
+        client.disconnect('Reconnecting...');
+        setTimeout(function() { // Waiting for disconnect to call back doesn't work
+            console.warn('Connecting...');
+            client.connect(retryCount);
+        }, 5000);
+    };
+
+    /**
+     * Try to reconnect if server goes silent
+     */
+    self.checkServer = function() {
+        if (_.now() - self.lastServerRawReceived > self.maxServerSilence * 1000) {
+            console.warn('Server has gone away since ' + self.lastServerRawReceived);
+            clearInterval(self.timers.checkServer);
+            self.reconnect();
+        }
+    };
+
+    /**
+     * On joining a channel
+     * @param channel
+     */
+    self.afterJoin = function(channel) {
+        console.log('Joined ' + channel + ' as ' + client.nick);
+        var game = self.cah.findGame(channel);
+        if (game) {
+            self.afterRejoin(channel, game);
+        }
+        client.send('NAMES', channel);
+    };
+
+    /**
+     * On rejoining a channel with an active game
+     * @param channel
+     * @param game
+     */
+    self.afterRejoin = function(channel, game) {
+        if (game.isPaused()) {
+            console.log('Rejoined ' + channel + ' where game is paused.');
+            client.say(channel, util.format('Card bot is back! Type %sresume to continue the current game.', p));
+            return true;
+        }
+        if (game.isRunning()) {
+            console.warn('Error: Joined ' + channel + ' while game in progress');
+            client.say(channel, 'Error: Joined while game in progress. Pausing...');
+            game.pause();
+            return false;
+        }
+        console.warn('Error: Joined ' + channel + ' while game in state: ' + game.state);
+        return false;
+    };
+
+    /**
+     * Devoice on join (NAMES)
+     * @param channel
+     * @param nicks
+     */
+    self.devoiceOnJoin = function(channel, nicks) {
+        if (config.voicePlayers !== true) { return false; }
+        var nicks = _.keys( _.pick(nicks, function(nick) { return ( nick === '+' ) }) );
+        var game = self.cah.findGame(channel);
+        if (game) {
+            var players = _.pluck(game.players, 'nick');
+            nicks = _.difference(nicks, players);
+        }
+        var timeout = setTimeout(function() { // allow time to get ops
+            var i, j, m = client.supported.modes, // number of modes allowed per line
+                modes = '-' + new Array(m).join('v');
+            for (i=0, j=nicks.length; i<j; i+=m) {
+                var args = ['MODE', channel, modes].concat(nicks.slice(i, i+m));
+                client.send.apply(this, args);
+            }
+            clearTimeout(timeout);
+        }, 2000);
+    };
+
+    /**
+     * Pause game if leaving a channel
+     */
+    self.channelLeaveHandler = function(channel, nick) {
+        var game = self.cah.findGame(channel);
+        if (client.nick == nick && game && game.isRunning()) {
+            console.warn('Left channel ' + channel + ' while game in progress. Pausing...');
+            game.pause();
+        }
+    };
+
+    /**
+     * Execute callback if user has the required mode-level
+     * @param nick
+     * @param channel
+     * @param mode
+     * @param callback
+     */
+    self.withUserModeLevel = function(nick, channel, mode, callback) {
+        // node-irc lists user modes as hierarchical, so treat ops as voiced ops
+        var allowedModes = {
+            'o': ['@'],
+            'v': ['+', '@'],
+            '':  ['', '+', '@']
+        };
+        var checkMode = allowedModes[mode];
+        if (typeof checkMode === 'undefined') {
+            console.log('Invalid mode to check: ' + mode);
+            return false;
+        }
+        var callbackWrapper = function(channel, nicks) {
+            client.removeListener('names', callbackWrapper);
+            // check if the found mode is one of the ones we're checking ('@' matches '@' or '+')
+            var hasModeLevel = ( _.has(nicks, nick) && _.contains(checkMode, nicks[nick]) );
+            if (hasModeLevel) {
+                console.log('User ' + nick + ' has mode "' + mode + '" : executing callback ');
+                callback.apply(this, arguments);
+            }
+        };
+        client.addListener('names', callbackWrapper);
+        client.send('NAMES', channel);
+    };
 
     // handle connection to server for logging
     client.addListener('registered', function (message) {
@@ -37,52 +235,20 @@ exports.init = function () {
                 }
             });
         }
-        if (config.voicePlayers === true) {
-            // create an event handler for each channel to devoice nicks when the bot joins
-            _.each(config.clientOptions.channels, function(joinedChannel) {
-                var devoiceOnJoin = function(nicks) {
-                    client.removeListener('names' + joinedChannel, devoiceOnJoin);
-                    // get voiced nicks
-                    nicks = _.keys( _.pick(nicks, function(nick) { return ( nick === '+' ) }) );
-                    var timeout = setInterval(function() {
-                        var i, j, m = client.supported.modes, // number of modes allowed per line
-                            modes = '-' + new Array(m).join('v');
-                        for (i=0, j=nicks.length; i<j; i+=m) {
-                            var args = ['MODE', joinedChannel, modes].concat(nicks.slice(i, i+m));
-                            client.send.apply(this, args);
-                        }
-                        clearInterval(timeout);
-                    }, 2000);
-                };
-                client.addListener('names' + joinedChannel, devoiceOnJoin);
-            });
-        }
     });
 
     // handle joins to channels
     client.addListener('join', function (channel, nick, message) {
-        client.send('NAMES', channel);
         if (client.nick === nick) { // it's meee
-            console.log('Joined ' + channel + ' as ' + nick);
-            var game = _.findWhere(self.cah.games, {channel: channel});
-            if (game) {
-                if (game.state == game.STATES.PAUSED) {
-                    console.log('Rejoined ' + channel + ' where game is paused.');
-                    client.say(channel, util.format('Card bot is back! Type %sresume to continue the current game.', p));
-                } else {
-                    console.warn('Error: Joined ' + channel + ' while game in progress');
-                    client.say(channel, 'Error: Joined while game in progress. Pausing...');
-                    game.pause();
+            self.afterJoin(channel);
+        }
+        if (typeof config.joinCommands !== 'undefined' &&config.joinCommands.hasOwnProperty(channel) && config.joinCommands[channel].length > 0) {
+            _.each(config.joinCommands[channel], function (cmd) {
+                if(cmd.target && cmd.message) {
+                    message = _.template(cmd.message)
+                    client.say(cmd.target, message({nick: nick, channel: channel}).split('%%').join(p));
                 }
-            }
-            if (typeof config.joinCommands !== 'undefined' &&config.joinCommands.hasOwnProperty(channel) && config.joinCommands[channel].length > 0) {
-                _.each(config.joinCommands[channel], function (cmd) {
-                    if(cmd.target && cmd.message) {
-                        message = _.template(cmd.message)
-                        client.say(cmd.target, message({nick: nick, channel: channel}).split('%%').join(p));
-                    }
-                });
-            }
+            });
         }
         else if (typeof config.userJoinCommands !== 'undefined' && config.userJoinCommands.hasOwnProperty(channel) && config.userJoinCommands[channel].length > 0) {
             console.log("User '" + nick + "' joined " + channel);
@@ -94,6 +260,8 @@ exports.init = function () {
             });
         }
     });
+
+    client.addListener('names', self.devoiceOnJoin);
 
     // accept invites for known channels
     client.addListener('invite', function(channel, from, message) {
@@ -156,7 +324,7 @@ exports.init = function () {
 
         if (config.clientOptions.channels.indexOf(to) >= 0) {
             // public commands
-            _.each(commands, function (c) {
+            _.each(self.commands, function (c) {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
                     console.log('command: ' + c.cmd);
@@ -166,7 +334,7 @@ exports.init = function () {
             }, this);
         } else if (client.nick === to) {
             // private message commands
-            _.each(msgs, function (c) {
+            _.each(self.msgs, function (c) {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
                     console.log('command: ' + c.cmd);
@@ -177,117 +345,6 @@ exports.init = function () {
         }
     });
 
-    self.withUserModeLevel = function(nick, channel, mode, callback) {
-        // node-irc lists user modes as hierarchical, so treat ops as voiced ops
-        var allowedModes = {
-            'o': ['@'],
-            'v': ['+', '@'],
-            '':  ['', '+', '@']
-        };
-        var checkMode = allowedModes[mode];
-        if (typeof checkMode === 'undefined') {
-            console.log('Invalid mode to check: ' + mode);
-            return false;
-        }
-        var callbackWrapper = function(channel, nicks) {
-            client.removeListener('names', callbackWrapper);
-            // check if the found mode is one of the ones we're checking ('@' matches '@' or '+')
-            var hasModeLevel = ( _.has(nicks, nick) && _.contains(checkMode, nicks[nick]) );
-            if (hasModeLevel) {
-                console.log('User ' + nick + ' has mode "' + mode + '" : executing callback ');
-                callback.apply(this, arguments);
-            }
-        };
-        client.addListener('names', callbackWrapper);
-        client.send('NAMES', channel);
-    }
-
-    self.reconnect = function(retryCount) {
-        retryCount = retryCount || config.clientOptions.retryCount;
-        clearInterval(self.timers.checkServer);
-        console.warn('Trying to reconnect...');
-        _.each(self.cah.games, function(game) {
-            if (game.channel && game.state !== game.STATES.PAUSED) { game.pause(); }
-        });
-        client.disconnect('Reconnecting...', function() {
-            console.warn('Disconnected. Connecting...');
-            client.connect(retryCount);
-        });
-    }
-
-    // try to reconnect if server goes silent
-    self.checkServer = function() {
-        if (_.now() - self.lastServerRawReceived > self.maxServerSilence * 1000) {
-            console.warn('Server has gone away since ' + self.lastServerRawReceived);
-            clearInterval(self.timers.checkServer);
-            self.reconnect();
-        }
-    }
-
-    // pause game if leaving a channel
-    self.channelLeaveHandler = function(channel, nick) {
-        var game = _.findWhere(self.cah.games, {channel: channel});
-        if (client.nick == nick && game) {
-            console.warn('Left channel ' + channel + ' while game in progress. Pausing...');
-            game.pause();
-        }
-    }
-
-    // don't die on uncaught errors
-    if (typeof config.exitOnError !== "undefined" && config.exitOnError === false) {
-        process.on('uncaughtException', function (err) {
-            console.log('Caught exception: ' + err);
-            console.log(err.stack);
-            _.each(config.clientOptions.channels, function(channel) {
-                client.say(channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.")
-            });
-        });
-    }
-
 };
 
-/**
- * Add a public command to the bot
- * @param cmd Command keyword
- * @param mode User mode that is allowed
- * @param cb Callback function
- */
-exports.cmd = function (cmd, mode, cb) {
-    commands.push({
-        cmd: cmd,
-        mode: mode,
-        callback: cb
-    });
-};
-
-/**
- * Add a msg command to the bot
- * @param cmd Command keyword
- * @param mode User mode that is allowed
- * @param cb Callback function
- */
-exports.msg = function (cmd, mode, cb) {
-    msgs.push({
-        cmd: cmd,
-        mode: mode,
-        callback: cb
-    });
-};
-
-/**
- * Add an irc event listener to the bot
- * @param event Client event
- * @param cb Callback function
- */
-exports.listen = function (event, cb) {
-    client.addListener(event, function() {
-        cb(client, arguments);
-    });
-};
-
-exports.config = config;
-exports.commands = commands;
-exports.msgs = msgs;
-
-exports.cah = new Games();
-
+exports = module.exports = Bot;
