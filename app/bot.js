@@ -19,6 +19,7 @@ var Bot = function Bot() {
 
     self.maxServerSilence = 240;        // reconnect if nothing received for this long (s)
     self.lastServerRawReceived = 0;
+    self.lastDevoiceOnJoin = {};
 
     config.clientOptions['autoConnect'] = false;
     client = self.client = new irc.Client(config.server, config.nick, config.clientOptions);
@@ -130,6 +131,13 @@ var Bot = function Bot() {
         var game = self.cah.findGame(channel);
         if (game) {
             self.afterRejoin(channel, game);
+        } else if (typeof config.joinCommands !== 'undefined' &&config.joinCommands.hasOwnProperty(channel) && config.joinCommands[channel].length > 0) {
+            _.each(config.joinCommands[channel], function (cmd) {
+                if(cmd.target && cmd.message) {
+                    message = _.template(cmd.message)
+                    client.say(cmd.target, message({nick: client.nick, channel: channel}).split('%%').join(p));
+                }
+            });
         }
         client.send('NAMES', channel);
     };
@@ -162,6 +170,10 @@ var Bot = function Bot() {
      */
     self.devoiceOnJoin = function(channel, nicks) {
         if (config.voicePlayers !== true) { return false; }
+        var newTimestamp = _.now(),
+            oldTimestamp = self.lastDevoiceOnJoin[channel];
+        self.lastDevoiceOnJoin[channel] = newTimestamp;
+        if (oldTimestamp && newTimestamp - oldTimestamp < 5000) { return false; }
         var nicks = _.keys( _.pick(nicks, function(nick) { return ( nick === '+' ) }) );
         var game = self.cah.findGame(channel);
         if (game) {
@@ -241,14 +253,6 @@ var Bot = function Bot() {
     client.addListener('join', function (channel, nick, message) {
         if (client.nick === nick) { // it's meee
             self.afterJoin(channel);
-        }
-        if (typeof config.joinCommands !== 'undefined' &&config.joinCommands.hasOwnProperty(channel) && config.joinCommands[channel].length > 0) {
-            _.each(config.joinCommands[channel], function (cmd) {
-                if(cmd.target && cmd.message) {
-                    message = _.template(cmd.message)
-                    client.say(cmd.target, message({nick: nick, channel: channel}).split('%%').join(p));
-                }
-            });
         }
         else if (typeof config.userJoinCommands !== 'undefined' && config.userJoinCommands.hasOwnProperty(channel) && config.userJoinCommands[channel].length > 0) {
             console.log("User '" + nick + "' joined " + channel);

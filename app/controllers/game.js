@@ -147,14 +147,14 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Is the game paused?
      */
     self.isPaused = function() {
-        return ( game.STATES.PAUSED === game.state );
+        return ( self.STATES.PAUSED === self.state );
     };
 
     /**
      * Can the game be paused?
      */
     self.isRunning = function() {
-        return _.contains([game.STATES.PLAYABLE, game.STATES.PLAYED], game.state);
+        return _.contains([self.STATES.PLAYABLE, self.STATES.PLAYED], self.state);
     };
 
     /**
