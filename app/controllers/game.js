@@ -129,7 +129,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
         client.removeListener('kick', self.playerKickHandler);
         client.removeListener('nick', self.playerNickChangeHandler);
         client.removeListener('names'+channel, self.notifyUsersHandler);
-        client.removeListener('topic', self.topicHandler);
+
+        // leave in place long enough for post-game
+        setTimeout(function() { client.removeListener('topic', self.topicHandler) }, 10 * 1000);
 
         // Destroy game properties
         delete self.players;
