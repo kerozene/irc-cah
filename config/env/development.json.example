@@ -115,15 +115,17 @@
         "userName": "cah",
         "debug": true,
         "channels": ["#pi-cah-dev"],
-        "messageSplit": 410,             // Split player card output into multiple notices if message is longer than this
+        "messageSplit": 410,             // Split player card output into multiple notices if message is longer than this.
+        "retryCount": 2,                 // Number of connection retries to attempt.
+        "autoRejoin": false,             // Rejoin the channel if kicked?
         "floodProtection": true,
         "floodProtectionDelay": 2000
     },
 
     // Server-specific settings
 
-        "modes": 3,                 // - Number of channel modes allowed per line
-        "nicklength": 9             // - Maximum nickname length
+        "modes": 3,                 // - Number of channel modes allowed per line.
+        "nicklength": 9             // - Maximum nickname length.
     },
 
     // When the !beer command is issued, a random beer is selected from this list.
