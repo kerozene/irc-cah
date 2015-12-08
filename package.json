@@ -18,7 +18,8 @@
     "irc-colors": "~1.0.3",
     "grunt-nodemon": "~0.2.1",
     "nodemon": "~1.0.17",
-    "jayschema": "~0.2.7"
+    "jayschema": "~0.2.7",
+    "shush": "latest"
   },
   "devDependencies": {
     "grunt-contrib-watch": "latest",

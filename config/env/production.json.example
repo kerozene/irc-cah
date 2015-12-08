@@ -1,60 +1,132 @@
 {
-    "server":        "openirc.snt.utwente.nl",
-    "nick":          "cah",
-    "notifyUsers":   false,
-    "startOnFirstJoin": true,
-    "maxIdleRounds": 2,
-    "timeLimit": 120,
-    "timeBetweenRounds": 10,
-    "timeWaitForPlayers": 180,
-    "voicePlayers": false,
-    "pointLimit":    10,
+    "server": "openirc.snt.utwente.nl",  // - Server to connect to.
+    "nick": "cah",                       // - The bot's nickname.
+
+    "notifyUsers": false,
+
+    // ^ Send a notice to everyone in the channel when a game is starting?
+    //   Users with ~ and & modes are not notified.
+
+    "startOnFirstJoin": true,       // - When no game is running, treat the first !join as !start?
+
+    "maxIdleRounds": 2,             // - Number of inactive game rounds causing a player to be removed.
+
+    "timeLimit": 120,               // - Seconds to allow for playing cards or picking winners.
+
+    "timeBetweenRounds": 10,        // - Seconds to pause after a round finishes.
+    
+    "timeWaitForPlayers": 180,      // - Seconds to wait for enough players before stopping the game.
+
+    "voicePlayers": false,          // - Give current players +v on join? (Bot will assume it is opped.)
+    
+    "pointLimit": 10,
+
+    // ^ Default number of points needed to win the game. (!start # to override.)
+    //   0 or a negative number means the game continues until `!stop` command is issued.
+    
     "exitOnError": false,
-    "stopOnLastPlayerLeave": false,
+
+    // ^ Allow the bot process to crash when there is an uncaught exception?
+    //   Otherwise, notify channel and log the stack trace.
+
+    "stopOnLastPlayerLeave": false,   // - Stop the game if there are no more players (playing or waiting).
+
     "commandPrefixChars": ".!",
+
+    // ^ List of characters a command can start with, e.g. !join, .join
+    //   The first character is considered the default char and is used in help text.
+
     "enableFastPick": true,
+
+    // ^ Allow picking a card or winner by just typing the number(s) without an explict command.
+
     "topic": {
-        "position": "right",
-        "separator": "::",
-        "messages": {
-            "on":  ["A game is running. Type %%join to get in on it!", "bold.yellow"],
+
+    // The bot can add/update a segment of the channel topic when games start and end.
+
+        "position": "right",        // - Where to place the new segment relative to the main topic.
+
+        "separator": "::",          // - String separating the topic segments.
+
+        "messages": {               // - Set any of these to an empty string to disable.
+
+            "on":  ["A game is running. Type !join to get in on it!", "bold.yellow"],
+
+            // ^ Set when a game starts.
+            //   A message can be a list containing a string, and an optional formatting instruction.
+            //   For formatting options, see https://www.npmjs.com/package/irc-colors
             "off": "",
-            "winner": ["reigning champion: <%= nick %>", "bold.yellow"]
+
+            // ^ Set when a game ends. If 'winner' is set, this should probably be empty.
+
+            "winner": "reigning champion: <%= nick %>"
+
+            // ^ When the game ends, glorify the winner.
+            //   A message can be just a string.
+            //  'nick' is a valid template tag inside the "winner" message.
         }
     },
+
     "connectCommands": [
+
+    // ^ Sent after connecting to server: for example, to identify with nickserv, as below.
+
         {
-            "target": "",
-            "message": ""
+            "target": "nickserv",
+            "message": "identify cah-dev mypassword"
         }
     ],
+
     "joinCommands": {
         "#cah": [
+
+        // ^ Sent after joining this channel.
+
             {
-                "target": "",
-                "message": ""
+                "target": "#cah",
+                "message": "Hello guys"
+            },
+            {
+                "target": "yournick",
+                "message": "I just joined #cah"
             }
         ]
     },
+
     "userJoinCommands": {
         "#cah": [
+
+        // ^ Sent after someone else joins this channel.
+        //   'nick' and 'channel' are valid template tags in userJoinCommands messages.
+        //   '%%' is the command prefix placeholder.
+
             {
                 "target": "#cah",
                 "message": "Hi <%= nick %>! Type %%join to play"
             }
         ]
     },
+
     "clientOptions": {
-        "userName":             "cah",
-        "channels":             ["#cah"],
-        "messageSplit":         410,
-        "floodProtection":      true,
-        "floodProtectionDelay": 1000
+
+    // General IRC-related settings.
+    // See: https://node-irc.readthedocs.org/en/latest/API.html#client
+
+        "userName": "cah",
+        "debug": true,
+        "channels": ["#cah"],
+        "messageSplit": 410,             // Split player card output into multiple notices if message is longer than this
+        "floodProtection": true,
+        "floodProtectionDelay": 2000
     },
-    "supported": {
-        "modes": 4,
-        "nicklength": 16
+
+    // Server-specific settings
+
+        "modes": 3,                 // - Number of channel modes allowed per line
+        "nicklength": 9             // - Maximum nickname length
     },
+
+    // When the !beer command is issued, a random beer is selected from this list.
     "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois", 
                "Modelo", "Fat Tire Amber Ale", "Magic Hat", "Samuel Adams",
                "Sierra Nevada", "Leffe Blonde", "Duvel", "Warsteiner", "Erdinger Weiss"

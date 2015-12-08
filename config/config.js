@@ -1,5 +1,6 @@
 var fs = require('fs'),
     JaySchema = require('jayschema'),
+    shush = require('shush'),
     _ = require('underscore');
 
 /**
@@ -10,7 +11,7 @@ var fs = require('fs'),
 function loadCardFile(identifier, filename) {
     console.log('Loading ' + identifier + ': ' + filename);
     if (fs.existsSync(filename)) {
-        var data = require(filename);
+        var data = shush(filename);
         validator.validate(data, schema, function (errors) {
             if (errors) {
                 console.error(identifier + ': Validation error');
@@ -28,7 +29,7 @@ function loadCardFile(identifier, filename) {
 // Initialize base configuration and ENV
 var config = _.extend(
     require(__dirname + '/../config/env/all.js'),
-    require(__dirname + '/../config/env/' + process.env.NODE_ENV + '.json') || {},
+    shush(__dirname + '/../config/env/' + process.env.NODE_ENV + '.json') || {},
     { cards: [] }
 );
 
