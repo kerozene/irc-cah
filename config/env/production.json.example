@@ -17,6 +17,8 @@
     
     "timeWaitForPlayers": 180,      // - Seconds to wait for enough players before stopping the game.
 
+    "waitFromLastJoin": true,       // - Restart the wait timer when a player joins.
+
     "voicePlayers": false,          // - Give current players +v on join? (Bot will assume it is opped.)
     
     "pointLimit": 10,

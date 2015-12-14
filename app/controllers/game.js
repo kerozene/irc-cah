@@ -655,6 +655,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
             if (self.state === STATES.WAITING && self.players.length >= 3) {
                 // enough players, start the game
                 self.nextRound();
+            } else if (config.waitFromLastJoin) {
+                clearTimeout(self.timers.stop);
+                self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
             }
             if (self.config.voicePlayers === true) {
                 self.client.send('MODE', channel, '+v', player.nick)
