@@ -1036,7 +1036,33 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.setTopic(config.topic.messages.on);
 
     // announce the game on the channel
-    self.say(util.format(c.rainbow('Cards Against Humanity') + ' is starting! Type %sjoin to join the game any time. (3 players needed)', p));
+    self.announce = function() {
+        var title = 'Cards Against Humanity';
+        title = (self.isChristmas()) ? c.christmas(title)
+                                     : c.rainbow(title);
+        self.say(util.format(title + ' is starting! Type %sjoin to join the game any time. (3 players needed)', p));
+    };
+
+    self.isChristmas = function() {
+        var now = new Date();
+        return (now.getMonth() == 11 && now.getDate() > 19);        
+    };
+
+    c.christmas = function(str) {
+        var j, s = 0, 
+        str = _.map(str, function(char, i) {
+            if (char == ' ') s++;
+            else {
+                j = i + s;
+                char = (j % 2) ? c.green(char)
+                               : c.red(char);
+            }
+            return char;
+        });
+        str = (c.yellow('*') + str.join('') + c.yellow('*'));
+    };
+
+    self.announce();
 
     // notify users
     if (typeof config.notifyUsers !== 'undefined' && config.notifyUsers) {
