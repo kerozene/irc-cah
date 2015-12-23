@@ -130,6 +130,7 @@ var Bot = function Bot() {
      */
     self.channelJoinHandler = function(channel) {
         console.log('Joined ' + channel + ' as ' + client.nick);
+        self.devoiceOnJoin();
         var game = self.cah.findGame(channel);
         if (game) {
             self.afterRejoin(channel, game);
@@ -141,7 +142,6 @@ var Bot = function Bot() {
                 }
             });
         }
-        client.send('NAMES', channel);
     };
 
     /**
@@ -166,21 +166,20 @@ var Bot = function Bot() {
     };
 
     /**
-     * Devoice on join (NAMES)
+     * Devoice on join
      * @param channel
-     * @param nicks
      */
-    self.devoiceOnJoin = function(channel, nicks) {
-        if (config.voicePlayers !== true) { return false; }
+    self.devoiceOnJoin = function(channel) {
+        if (config.voicePlayers !== true)
+            return;
         var newTimestamp = _.now(),
             oldTimestamp = self.lastDevoiceOnJoin[channel];
         self.lastDevoiceOnJoin[channel] = newTimestamp;
         if (oldTimestamp && newTimestamp - oldTimestamp < 5000) { return false; }
-        var nicks = _.keys( _.pick(nicks, function(nick) { return ( nick === '+' ) }) );
         var game = self.cah.findGame(channel);
         if (game) {
             var players = _.pluck(game.players, 'nick');
-            nicks = _.difference(nicks, players);
+            var nicks   = _.difference(client.nicksWithVoice(channel), players);
         }
         var timeout = setTimeout(function() { // allow time to get ops
             var i, j, m = client.supported.modes, // number of modes allowed per line
@@ -263,8 +262,6 @@ var Bot = function Bot() {
             });
         }
     });
-
-    client.addListener('names', self.devoiceOnJoin);
 
     // accept invites for known channels
     client.addListener('invite', function(channel, from, message) {
