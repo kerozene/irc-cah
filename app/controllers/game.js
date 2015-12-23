@@ -754,18 +754,16 @@ var Game = function Game(channel, client, config, cmdArgs) {
         });
         var output = "";
         _.each(sortedPlayers, function (point) {
-            if (self.getPlayer({nick: point.player.nick})) {
+            if (self.getPlayer({nick: point.player.nick}))
                 output += c.bold(point.player.nick) + ": " + c.bold(point.points) + ", ";
-            }
         });
         if (stage === 'round') {
             self.say('Current scores: ' + output.slice(0, -2));
             self.say('Needed to win: ' + c.bold(self.pointLimit));
-        } else if (stage === 'start') {
+        } else if (stage === 'start')
             self.say('Needed to win: ' + c.bold(self.pointLimit));
-        } else {
+        else if (self.players.length)
             self.say('The most horrible people: ' + output.slice(0, -2));
-        }
     };
 
     /**
