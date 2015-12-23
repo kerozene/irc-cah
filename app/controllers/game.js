@@ -39,6 +39,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     // properties
     self.round = 0; // round number
     self.players = []; // list of players
+    self.removed = [];    // people who are not allowed to join
     self.channel = channel; // the channel this game is running on
     self.client = client; // reference to the irc client
     self.config = config; // configuration data
@@ -607,6 +608,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @returns The new player or false if invalid player
      */
     self.addPlayer = function (player) {
+        if (_.contains(self.removed, player.hostname))
+            return false;
         if (typeof self.getPlayer({user: player.user, hostname: player.hostname}) === 'undefined') {
             self.players.push(player);
             self.say(player.nick + ' has joined the game');
