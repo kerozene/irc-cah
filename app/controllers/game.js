@@ -672,9 +672,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
             if (options.silent !== true) {
                 self.say(player.nick + ' has left the game');
             }
-            if (self.config.voicePlayers === true) {
-                self.client.send('MODE', channel, '-v', player.nick)
-            }
+            if (self.config.voicePlayers === true)
+                self.client.setChanMode(channel, '-v', player.nick);
 
             // check if remaining players have all player
             if (self.state === STATES.PLAYABLE && self.checkAllPlayed()) {
