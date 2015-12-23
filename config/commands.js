@@ -24,5 +24,4 @@ module.exports = function(app) {
     app.cmd('help', '', games.help);
     app.cmd('test', '', games.test);
     app.cmd('beer', '', games.beer);
-    app.listen('names', games.beerHandler);
 };

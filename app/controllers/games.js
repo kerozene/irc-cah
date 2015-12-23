@@ -9,8 +9,6 @@ var _ = require('underscore'),
 var Games = function Games() {
     var self = this;
     self.games = [];
-    self.beerPending = {};
-    _.each(config.clientOptions.channels, function(channel) { self.beerPending[channel] = []});
 
     /**
      * Find a game by channel it is running on
@@ -368,33 +366,14 @@ var Games = function Games() {
      */
     self.beer = function (client, message, cmdArgs)
     {
-        var channel = message.args[0],
-            user = message.user,
+        var channel  = message.args[0],
+            user     = message.user,
             hostname = message.host,
-            game = self.findGame(channel),
-            nicks = [message.nick];
+            game     = self.findGame(channel),
+            nicks    = [ message.nick ];
 
-        if (cmdArgs[0] == 'all' && game) {
-            nicks = _.pluck(game.players, 'nick');
-        } else if (cmdArgs.length) {
-            nicks = cmdArgs;
-        }
-        Array.prototype.push.apply(self.beerPending[channel], nicks);
-        client.send('NAMES', channel);
-    };
-
-    /**
-     * Handle names response to send beer
-     * @param client
-     * @param arguments
-     */
-    self.beerHandler = function(client, arguments)
-    {
-        var channel        = arguments[0],
-            channelNicks   = _.keys(arguments[1]),
-            beerNicks = [], beer = [], action = '', message = '', beerToBot = false,
-            maxNicks  = _.min([config.beers.length, 7]),
-            pending   = self.beerPending[channel];
+        var beerNicks = [], beer = [], action = '', message = '', beerToBot = false,
+            maxNicks  = _.min([config.beers.length, 7]);
         var actions = [
             'pours a tall, cold glass of <%= beer %> and slides it down the bar to <%= nick %>.',
             'cracks open a bottle of <%= beer %> for <%= nick %>.',
@@ -412,27 +391,31 @@ var Games = function Games() {
             var last = list.pop();
             return (list.length) ? list.join(', ') + ' and ' + last : last;
         };
-        self.beerPending[channel] = [];
-        if (typeof pending === 'undefined') { return false; }
-        if (pending.length > maxNicks) {
-            client.say(channel, "There's not enough beer!");
-            return false;
-        }
-        if (_.isEqual(pending, [client.nick])) {
-            message = _.template('pours itself a tall, cold glass of <%= beer %>. cheers!');
+
+        if (cmdArgs[0] == 'all' && game)
+            nicks = game.getPlayerNicks();
+        else if (cmdArgs.length)
+            nicks = cmdArgs;
+
+        if (_.isEqual(nicks, [ client.nick ])) {
+            message = _.template('pours itself a tall, cold glass of <%= beer %>. cheers, <%= from %>!');
             client.action(channel, message({
                 beer: _.sample(config.beers, 1)[0],
+                from: message.nick,
                 nick: client.nick
             }));
             return true;            
         }
-        _.each(_.uniq(pending), function (nick) {
-            if (client.nick == nick) {
+        _.chain(nicks).uniq().each(function (nick) {
+            if (client.nick == nick)
                 beerToBot = true;
-            } else if (_.contains(channelNicks, nick)) {
+            else if (client.nickIsInChannel(channel, nick))
                 beerNicks.push(nick);
-            }
         });
+        if (beerNicks.length > maxNicks) {
+            client.say(channel, "There's not enough beer!");
+            return false;
+        }
         if (beerNicks.length) {
             action = _.sample(actions, 1)[0];
             if (beerNicks.length > 1) {
@@ -446,10 +429,8 @@ var Games = function Games() {
                 nick: listToString(beerNicks)
             }));
         }
-        if (beerToBot) { // pour for self last
-            self.beerPending[channel].push(client.nick);
-            self.beerHandler(client, arguments);
-        }
+        if (beerToBot) // pour for self last
+            self.beer(client, message, [ client.nick ]);
     };
 
 };
