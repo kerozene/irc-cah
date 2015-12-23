@@ -130,7 +130,7 @@ var Bot = function Bot() {
      */
     self.channelJoinHandler = function(channel) {
         console.log('Joined ' + channel + ' as ' + client.nick);
-        self.devoiceOnJoin();
+        self.devoiceOnJoin(channel);
         var game = self.cah.findGame(channel);
         if (game)
             self.afterRejoin(channel, game);
@@ -180,11 +180,10 @@ var Bot = function Bot() {
         if (oldTimestamp && newTimestamp - oldTimestamp < 5000)
             return;
         var game = self.cah.findGame(channel);
-        if (game) {
-            var players = _.pluck(game.players, 'nick');
-            var nicks   = _.difference(client.nicksWithVoice(channel), players);
-            client.setChanMode(channel, '-v', nicks);
-        }
+        var players = (game) ? game.getPlayerNicks()
+                             : [];
+        var nicks   = _.difference(client.nicksWithVoice(channel), players);
+        client.setChanMode(channel, '-v', nicks);
     };
 
     /**
@@ -296,9 +295,10 @@ var Bot = function Bot() {
             _.each(self.commands, function (c) {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
-                    console.log('command: ' + c.cmd);
-                    if (c.mode && client.nickHasChanMode(message.nick, c.mode, to))
-                        callback.apply(this, [nick, channel]);
+                    if (!c.mode || client.nickHasChanMode(message.nick, c.mode, to)) {
+                        console.log('command: ' + c.cmd);
+                        callback.call();
+                    }
                 }
             }, this);
         } else if (client.nick === to) {
@@ -307,7 +307,7 @@ var Bot = function Bot() {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
                     console.log('command: ' + c.cmd);
-                    callback.apply(this, [nick, channel]);
+                    callback.call();
                 }
             }, this);
         }

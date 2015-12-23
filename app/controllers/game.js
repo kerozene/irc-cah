@@ -922,8 +922,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
         var format, i, newTopic, keep;
 
         if (typeof addTopic !== "string") {
-            format = template[1];
-            addTopic = template[0];
+            format = addTopic[1];
+            addTopic = addTopic[0];
         }
         if (addTopic == "")
             return false;
@@ -944,7 +944,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
             var topic = client.chanData(channel).topic,
                 keep  = topic;
             switch (config.topic.position) {
-                'left': // prepend the new topic item
+                case 'left': // prepend the new topic item
                     i = topic.indexOf(sep);
                     if (i > -1)
                         keep = topic.slice(i + 1);
@@ -952,7 +952,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
                         sep += ' ';
                     newTopic = [addTopic, keep].join(' ' + sep);
                     break;
-                'right': // append the new topic item
+                case 'right': // append the new topic item
                     i = topic.lastIndexOf(sep);
                     if (i > -1)
                         keep = topic.slice(0, i);
@@ -1000,17 +1000,18 @@ var Game = function Game(channel, client, config, cmdArgs) {
     };
 
     c.christmas = function(str) {
-        var j, s = 0, 
+        var j, s = 0;
         str = _.map(str, function(char, i) {
             if (char == ' ') s++;
             else {
-                j = i + s;
+                j = (i + s);
                 char = (j % 2) ? c.green(char)
                                : c.red(char);
             }
             return char;
         });
         str = (c.yellow('*') + str.join('') + c.yellow('*'));
+        return str;
     };
 
     self.announce();
