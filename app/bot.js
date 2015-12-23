@@ -195,38 +195,6 @@ var Bot = function Bot() {
         }
     };
 
-    /**
-     * Execute callback if user has the required mode-level
-     * @param nick
-     * @param channel
-     * @param mode
-     * @param callback
-     */
-    self.withUserModeLevel = function(nick, channel, mode, callback) {
-        // node-irc lists user modes as hierarchical, so treat ops as voiced ops
-        var allowedModes = {
-            'o': ['@'],
-            'v': ['+', '@'],
-            '':  ['', '+', '@']
-        };
-        var checkMode = allowedModes[mode];
-        if (typeof checkMode === 'undefined') {
-            console.log('Invalid mode to check: ' + mode);
-            return false;
-        }
-        var callbackWrapper = function(channel, nicks) {
-            client.removeListener('names', callbackWrapper);
-            // check if the found mode is one of the ones we're checking ('@' matches '@' or '+')
-            var hasModeLevel = ( _.has(nicks, nick) && _.contains(checkMode, nicks[nick]) );
-            if (hasModeLevel) {
-                console.log('User ' + nick + ' has mode "' + mode + '" : executing callback ');
-                callback.apply(this, arguments);
-            }
-        };
-        client.addListener('names', callbackWrapper);
-        client.send('NAMES', channel);
-    };
-
     // handle connection to server for logging
     client.addListener('registered', function (message) {
         console.log('Connected to server ' + message.server);
@@ -321,8 +289,8 @@ var Bot = function Bot() {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
                     console.log('command: ' + c.cmd);
-                    // check user mode and execute callback
-                    self.withUserModeLevel(message.nick, to, c.mode, callback);
+                    if (c.mode && client.nickHasChanMode(message.nick, c.mode, to))
+                        callback.apply(this, [nick, channel]);
                 }
             }, this);
         } else if (client.nick === to) {
@@ -331,8 +299,7 @@ var Bot = function Bot() {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
                     console.log('command: ' + c.cmd);
-                    // check user mode and execute callback
-                    //self.withUserModeLevel(message.nick, c.mode, callback);
+                    callback.apply(this, [nick, channel]);
                 }
             }, this);
         }
