@@ -132,13 +132,15 @@ var Bot = function Bot() {
         console.log('Joined ' + channel + ' as ' + client.nick);
         self.devoiceOnJoin();
         var game = self.cah.findGame(channel);
-        if (game) {
+        if (game)
             self.afterRejoin(channel, game);
-        } else if (typeof config.joinCommands !== 'undefined' &&config.joinCommands.hasOwnProperty(channel) && config.joinCommands[channel].length > 0) {
+        else if (  typeof config.joinCommands !== 'undefined' &&
+                   config.joinCommands[channel]
+                ) {
             _.each(config.joinCommands[channel], function (cmd) {
                 if(cmd.target && cmd.message) {
-                    message = _.template(cmd.message)
-                    client.say(cmd.target, message({nick: client.nick, channel: channel}).split('%%').join(p));
+                    message = _.template(cmd.message)({nick: client.nick, channel: channel}).split('%%').join(p);
+                    client.say(cmd.target, message);
                 }
             });
         }
@@ -175,7 +177,8 @@ var Bot = function Bot() {
         var newTimestamp = _.now(),
             oldTimestamp = self.lastDevoiceOnJoin[channel];
         self.lastDevoiceOnJoin[channel] = newTimestamp;
-        if (oldTimestamp && newTimestamp - oldTimestamp < 5000) { return false; }
+        if (oldTimestamp && newTimestamp - oldTimestamp < 5000)
+            return;
         var game = self.cah.findGame(channel);
         if (game) {
             var players = _.pluck(game.players, 'nick');
@@ -212,14 +215,16 @@ var Bot = function Bot() {
 
     // handle joins to channels
     client.addListener('join', function (channel, nick, message) {
-        else if (typeof config.userJoinCommands !== 'undefined' && config.userJoinCommands.hasOwnProperty(channel) && config.userJoinCommands[channel].length > 0) {
-            console.log("User '" + nick + "' joined " + channel);
         if (client.nick === nick)
             return false;
+        console.log("User '" + nick + "' joined " + channel);
+        if (  typeof config.userJoinCommands !== 'undefined' &&
+              config.userJoinCommands[channel]
+           ) {
             _.each(config.userJoinCommands[channel], function (cmd) {
                 if(cmd.target && cmd.message) {
-                    message = _.template(cmd.message)
-                    client.say(cmd.target, message({nick: nick, channel: channel}).split('%%').join(p));
+                    message = _.template(cmd.message)({nick: nick, channel: channel}).split('%%').join(p);
+                    client.say(cmd.target, message);
                 }
             });
         }
@@ -227,7 +232,8 @@ var Bot = function Bot() {
 
     // accept invites for known channels
     client.addListener('invite', function(channel, from, message) {
-        if (_.contains(config.clientOptions.channels, channel) && ! _.contains(_.keys(client.chans, channel))) {
+        if (  _.contains(config.clientOptions.channels, channel) &&
+            ! _.contains(_.keys(client.chans, channel)) ) {
             client.send('JOIN', channel);
             client.say(from, 'Attempting to join ' + channel);
             console.log('Attempting to join ' + channel + ' : invited by ' + from);

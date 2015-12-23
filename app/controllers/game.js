@@ -915,25 +915,25 @@ var Game = function Game(channel, client, config, cmdArgs) {
 
     /**
      * Set the channel topic
-     * @param topic
+     * @param addTopic
      * @param data
      */
-    self.setTopic = function (topic, data) {
-        var message, format;
+    self.setTopic = function (addTopic, data) {
+        var format, i, newTopic, keep;
 
-        if (typeof topic === "string") {
-            message = topic;
-        } else {
-            message = topic[0];
-            format = topic[1];
+        if (typeof addTopic !== "string") {
+            format = template[1];
+            addTopic = template[0];
         }
-        if (data) {
-            message = _.template(message)(data);
-        }
+        if (addTopic == "")
+            return false;
+        if (data)
+            addTopic = _.template(addTopic)(data); // render template
+        addTopic = addTopic.split('%%').join(p); // replace command prefix
         if (format) {
             try {
-                // apply string formatting to message
-                message = eval("c." + format)(message);
+                // apply string formatting to addTopic
+                addTopic = eval("c." + format)(addTopic);
             } catch (error) {
                 self.log("format: " + error);
                 return false;
