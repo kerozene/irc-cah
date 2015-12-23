@@ -116,6 +116,7 @@
 
         "userName": "cah",
         "debug": true,
+        "capabilities": ["account-notify", "extended-join"],
         "channels": ["#pi-cah-dev"],
         "messageSplit": 410,             // Split player card output into multiple notices if message is longer than this.
         "retryCount": 2,                 // Number of connection retries to attempt.
