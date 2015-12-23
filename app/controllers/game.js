@@ -50,25 +50,23 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.pointLimit = 0; // point limit for the game, defaults to 0 (== no limit)
     p = config.commandPrefixChars[0]; // default prefix char
 
-    console.log('Loaded', config.cards.length, 'cards:');
     var questions = _.filter(config.cards, function(card) {
         return card.type.toLowerCase() === 'question';
     });
-    console.log(questions.length, 'questions');
     var answers = _.filter(config.cards, function(card) {
         return card.type.toLowerCase() === 'answer';
     });
-    console.log(answers.length, 'answers');
+    console.log('Loaded', config.cards.length, 'cards:' + questions.length, 'questions,', answers.length, 'answers');
 
     // init decks
     self.decks = {
         question: new Cards(questions),
-        answer: new Cards(answers)
+        answer:   new Cards(answers)
     };
     // init discard piles
     self.discards = {
         question: new Cards(),
-        answer: new Cards()
+        answer:   new Cards()
     };
     // init table slots
     self.table = {
@@ -80,15 +78,12 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.decks.answer.shuffle();
 
     // parse point limit from configuration file
-    if(typeof config.pointLimit !== 'undefined' && !isNaN(config.pointLimit)) {
-        console.log('Set game point limit to ' + config.pointLimit + ' from config');
+    if(typeof config.pointLimit !== 'undefined' && !isNaN(config.pointLimit))
         self.pointLimit = parseInt(config.pointLimit);
-    }
+
     // parse point limit from command arguments
-    if(typeof cmdArgs[0] !==  'undefined' && !isNaN(cmdArgs[0])) {
-        console.log('Set game point limit to ' + cmdArgs[0] + ' from arguments');
+    if(typeof cmdArgs[0] !==  'undefined' && !isNaN(cmdArgs[0]))
         self.pointLimit = parseInt(cmdArgs[0]);
-    }
 
     /**
      * Stop game
@@ -231,7 +226,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.startNextRound = function () {
         if (!self.isPaused()) { return false; }
         self.round++;
-        console.log('Starting round ', self.round);
         self.setCzar();
         self.deal();
         self.say('Round ' + self.round + '! ' + self.czar.nick + ' is the card czar.');
@@ -288,11 +282,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @returns Player The player object who is the new czar
      */
     self.setCzar = function () {
-        if (self.czar) {
-            console.log('Old czar:', self.czar.nick);
-        }
         self.czar = self.players[self.players.indexOf(self.czar) + 1] || self.players[0];
-        console.log('New czar:', self.czar.nick);
         self.czar.isCzar = true;
         return self.czar;
     };
@@ -302,7 +292,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
      */
     self.deal = function () {
         _.each(self.players, function (player) {
-            console.log(player.nick + '(' + player.hostname + ') has ' + player.cards.numCards() + ' cards. Dealing ' + (10 - player.cards.numCards()) + ' cards');
             for (var i = player.cards.numCards(); i < 10; i++) {
                 self.checkDecks();
                 var card = self.decks.answer.pickCards();
@@ -393,7 +382,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
             return false;
         }
 
-        console.log(player.nick + ' played cards', cards.join(', '));
         // make sure different cards are played
         cards = _.uniq(cards);
         if (self.state !== STATES.PLAYABLE || player.cards.numCards() === 0) {
@@ -440,9 +428,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
         var now = new Date();
         var timeLimit = config.timeLimit * 1000;
         var roundElapsed = (now.getTime() - self.roundStarted.getTime());
-        console.log('Round elapsed:', roundElapsed, now.getTime(), self.roundStarted.getTime());
         if (roundElapsed >= timeLimit) {
-            console.log('The round timed out');
+            console.log('The round timed out: ' + (roundElapsed/1000) + 's since ' + self.roundStarted.getTime());
             self.say('Time is up!');
             self.markInactivePlayers();
             // show end of turn
@@ -512,7 +499,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
         var roundElapsed = (now.getTime() - self.roundStarted.getTime());
         console.log('Winner selection elapsed:', roundElapsed, now.getTime(), self.roundStarted.getTime());
         if (roundElapsed >= timeLimit) {
-            console.log('the czar is inactive, selecting winner');
             self.say('Time is up. I will pick the winner on this round.');
             // Check czar & remove player after config.maxIdleRounds timeouts
             self.czar.inactiveRounds++;
@@ -675,14 +661,12 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.removePlayer = function (player, options) {
         options = _.extend({}, options);
         if (typeof player !== 'undefined') {
-            console.log('removing ' + player.nick + ' from the game');
             // get cards in hand
             var cards = player.cards.reset();
             // remove player
             self.players = _.without(self.players, player);
             // put player's cards to discard
             _.each(cards, function (card) {
-                console.log('Add card ', card.text, 'to discard');
                 self.discards.answer.addCard(card);
             });
             if (options.silent !== true) {
@@ -875,10 +859,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
      */
     self.playerLeaveHandler = function (nick) {
         var player = self.getPlayer({nick: nick});
-        if (typeof player !== 'undefined') {
-            console.log('Player ' + nick + ' left');
+        if (typeof player !== 'undefined')
             self.removePlayer(player);
-        }
     };
 
     /**
@@ -889,11 +871,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @param message
      */
     self.playerNickChangeHandler = function (oldnick, newnick, channels, message) {
-        console.log('Player changed nick from ' + oldnick + ' to ' + newnick);
         var player = self.getPlayer({nick: oldnick});
-        if (typeof player !== 'undefined') {
+        if (typeof player !== 'undefined')
             player.nick = newnick;
-        }
     };
 
     /**

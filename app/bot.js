@@ -216,7 +216,6 @@ var Bot = function Bot() {
     client.addListener('join', function (channel, nick, message) {
         if (client.nick === nick)
             return false;
-        console.log("User '" + nick + "' joined " + channel);
         if (  typeof config.userJoinCommands !== 'undefined' &&
               config.userJoinCommands[channel]
            ) {
@@ -261,7 +260,6 @@ var Bot = function Bot() {
     client.addListener('selfkick', self.channelLeaveHandler);
 
     client.addListener('message', function (from, to, text, message) {
-        console.log('message from ' + from + ' to ' + to + ': ' + text);
         // parse command
         var cmd, cmdArgs = [],
             pickArr = text.trim().split(/[^\d\s]/)[0].match(/(\d+)/g); // get the numbers
@@ -296,7 +294,6 @@ var Bot = function Bot() {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
                     if (!c.mode || client.nickHasChanMode(message.nick, c.mode, to)) {
-                        console.log('command: ' + c.cmd);
                         callback.call();
                     }
                 }
@@ -306,7 +303,6 @@ var Bot = function Bot() {
             _.each(self.msgs, function (c) {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
-                    console.log('command: ' + c.cmd);
                     callback.call();
                 }
             }, this);
