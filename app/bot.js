@@ -180,16 +180,8 @@ var Bot = function Bot() {
         if (game) {
             var players = _.pluck(game.players, 'nick');
             var nicks   = _.difference(client.nicksWithVoice(channel), players);
+            client.setChanMode(channel, '-v', nicks);
         }
-        var timeout = setTimeout(function() { // allow time to get ops
-            var i, j, m = client.supported.modes, // number of modes allowed per line
-                modes = '-' + new Array(m+1).join('v');
-            for (i=0, j=nicks.length; i<j; i+=m) {
-                var args = ['MODE', channel, modes].concat(nicks.slice(i, i+m));
-                client.send.apply(this, args);
-            }
-            clearTimeout(timeout);
-        }, 2000);
     };
 
     /**

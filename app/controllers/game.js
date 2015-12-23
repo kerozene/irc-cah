@@ -111,13 +111,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         }
 
         if (self.config.voicePlayers === true) {
-            var i, j, m = client.supported.modes, // number of modes allowed per line
-                modes = '-' + new Array(m+1).join('v'),
-                devoiceNicks = _.pluck(self.players, 'nick');
-            for (i=0, j=devoiceNicks.length; i<j; i+=m) {
-                var args = ['MODE', channel, modes].concat(devoiceNicks.slice(i, i+m))
-                client.send.apply(this, args)
-            }
+            client.setChanMode(channel, '-v', self.getPlayerNicks());
         }
         // clear all timers
         _.each(self.timers, function(timer) {
@@ -660,7 +654,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
             }
             if (self.config.voicePlayers === true) {
-                self.client.send('MODE', channel, '+v', player.nick)
+                self.client.setChanMode(channel, '+v', player.nick);
             }
             return player;
         } else {
