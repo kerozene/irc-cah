@@ -40,6 +40,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.round = 0; // round number
     self.players = []; // list of players
     self.removed = [];    // people who are not allowed to join
+    self.waitToJoin = []; // people who are not allowed to join until the next round
     self.channel = channel; // the channel this game is running on
     self.client = client; // reference to the irc client
     self.config = config; // configuration data
@@ -229,6 +230,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         self.round++;
         self.setCzar();
         self.deal();
+        self.waitToJoin = [];
         self.say('Round ' + self.round + '! ' + self.czar.nick + ' is the card czar.');
         self.playQuestion();
         self.state = STATES.PLAYABLE;
@@ -610,6 +612,10 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.addPlayer = function (player) {
         if (_.contains(self.removed, player.hostname))
             return false;
+        if (_.contains(self.waitToJoin, player.hostname)) {
+            self.say(player.nick + ': you can\'t rejoin until the next round :(')
+            return false;
+        }
         if (typeof self.getPlayer({user: player.user, hostname: player.hostname}) === 'undefined') {
             self.players.push(player);
             self.say(player.nick + ' has joined the game');
@@ -668,6 +674,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
             var cards = player.cards.reset();
             // remove player
             self.players = _.without(self.players, player);
+            if ( !_.contains(self.removed, player.hostname) && self.round > 0 )
+                self.waitToJoin.push(player.hostname);
             // put player's cards to discard
             _.each(cards, function (card) {
                 self.discards.answer.addCard(card);
@@ -692,7 +700,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
             if (self.players.length === 0 && config.stopOnLastPlayerLeave === true) {
                 self.stop();
             }
-
             return player;
         }
         return false;
