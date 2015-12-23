@@ -125,10 +125,10 @@ var Bot = function Bot() {
     };
 
     /**
-     * On joining a channel
+     * On joining a channel (syncchan event)
      * @param channel
      */
-    self.afterJoin = function(channel) {
+    self.channelJoinHandler = function(channel) {
         console.log('Joined ' + channel + ' as ' + client.nick);
         var game = self.cah.findGame(channel);
         if (game) {
@@ -253,9 +253,6 @@ var Bot = function Bot() {
 
     // handle joins to channels
     client.addListener('join', function (channel, nick, message) {
-        if (client.nick === nick) { // it's meee
-            self.afterJoin(channel);
-        }
         else if (typeof config.userJoinCommands !== 'undefined' && config.userJoinCommands.hasOwnProperty(channel) && config.userJoinCommands[channel].length > 0) {
             console.log("User '" + nick + "' joined " + channel);
             _.each(config.userJoinCommands[channel], function (cmd) {
@@ -297,6 +294,7 @@ var Bot = function Bot() {
 
     client.addListener('part', self.channelLeaveHandler);
     client.addListener('kick', self.channelLeaveHandler);
+    client.addListener('syncchan', self.channelJoinHandler);
 
     client.addListener('message', function (from, to, text, message) {
         console.log('message from ' + from + ' to ' + to + ': ' + text);
