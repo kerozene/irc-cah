@@ -20,6 +20,7 @@ var Bot = function Bot() {
     self.maxServerSilence = 240;        // reconnect if nothing received for this long (s)
     self.lastServerRawReceived = 0;
     self.lastDevoiceOnJoin = {};
+    self.lastCommandFromHost = {};
 
     config.clientOptions['autoConnect'] = false;
     client = self.client = new irc.Client(config.server, config.nick, config.clientOptions);
@@ -197,6 +198,24 @@ var Bot = function Bot() {
         }
     };
 
+    self.throttleCommand = function(host) {
+        var now      = _.now(),
+            last     = self.lastCommandFromHost[host],
+            throttle = config.commandThrottle;
+
+        if ( last === undefined || last[0] < (now - throttle[1] * 1000) ) {
+            self.lastCommandFromHost[host] = [now, 1];
+            return false;
+        }
+        else {
+            last[0] = now;
+            last[1]++;
+            self.lastCommandFromHost[host] = last;
+        }
+        if (last[1] > throttle[0])
+            return true;
+    }
+
     self.messageHandler = function (from, to, text, message) {
         // parse command
         var cmd, cmdArgs = [],
@@ -224,15 +243,16 @@ var Bot = function Bot() {
                 });
             }
         }
-        // build callback options
 
+        // build callback options
         if (config.clientOptions.channels.indexOf(to) >= 0) {
             // public commands
             _.each(self.commands, function (c) {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
                     if (!c.mode || client.nickHasChanMode(message.nick, c.mode, to)) {
-                        callback.call();
+                        if (!self.throttleCommand(message.host))
+                            callback.call();
                     }
                 }
             }, this);
@@ -241,7 +261,8 @@ var Bot = function Bot() {
             _.each(self.msgs, function (c) {
                 callback = function() { c.callback(client, message, cmdArgs); };
                 if (cmd === c.cmd) {
-                    callback.call();
+                    if (!self.throttleCommand(message.host))
+                        callback.call();
                 }
             }, this);
         }

@@ -14,18 +14,20 @@
     "timeLimit": 120,               // - Seconds to allow for playing cards or picking winners.
 
     "timeBetweenRounds": 10,        // - Seconds to pause after a round finishes.
-    
+
     "timeWaitForPlayers": 180,      // - Seconds to wait for enough players before stopping the game.
 
     "waitFromLastJoin": true,       // - Restart the wait timer when a player joins.
 
+    "commandThrottle": [3, 30],     // - Number of commands to accept from a user per interval (seconds).
+
     "voicePlayers": false,          // - Give current players +v on join? (Bot will assume it is opped.)
-    
+
     "pointLimit": 10,
 
     // ^ Default number of points needed to win the game. (!start # to override.)
     //   0 or a negative number means the game continues until `!stop` command is issued.
-    
+
     "exitOnError": false,
 
     // ^ Allow the bot process to crash when there is an uncaught exception?
