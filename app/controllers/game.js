@@ -50,6 +50,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.pauseState = []; // pause state storage
     self.points = [];
     self.pointLimit = 0; // point limit for the game, defaults to 0 (== no limit)
+    self.lastWinner = {}; // store the streak count of the last winner
     p = config.commandPrefixChars[0]; // default prefix char
 
     var questions = _.filter(config.cards, function(card) {
@@ -554,11 +555,41 @@ var Game = function Game(channel, client, config, cmdArgs) {
                     points: c.bold(owner.points),
                     s: (owner.points > 1) ? 's' : ''
                 }));
+                self.updateLastWinner(owner);
                 self.clean();
                 self.nextRound();
             }
         }
     };
+
+    /**
+     * Store streak info for last round winner.
+     * @param player
+     */
+    self.updateLastWinner = function(player) {
+        var message, uhost = self.getPlayerUhost(player);
+        if ( _.isEmpty(self.lastWinner) || self.lastWinner.uhost !== uhost ) {
+            self.lastWinner = {uhost: uhost, count: 1};
+            return;
+        }
+        self.lastWinner.count++;
+        switch (self.lastWinner.count) {
+            case 2:
+                message = _.template('Two in a row!');
+                break;
+            case 3:
+                message = _.template('That\'s three! <%= nick %>\'s on a roll.');
+                break;
+            case 4:
+                message = _.template('Four??? Who can stop this mad person?');
+                break;
+            case 5:
+                message = _.template('<%= nick %>, I\'m speaking as a friend. It\'s not healthy to be this good at CAH.');
+                break;
+        }
+        if (message)
+            self.say(c.bold(message({nick: player.nick})));
+    }
 
     /**
      * Get formatted entry
