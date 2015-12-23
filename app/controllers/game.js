@@ -47,7 +47,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.timers = {} // game timers
     self.pauseState = []; // pause state storage
     self.points = [];
-    self.topicPending = "";
     self.pointLimit = 0; // point limit for the game, defaults to 0 (== no limit)
     p = config.commandPrefixChars[0]; // default prefix char
 
@@ -121,9 +120,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
         client.removeListener('quit', self.playerQuitHandler);
         client.removeListener('kick', self.playerKickHandler);
         client.removeListener('nick', self.playerNickChangeHandler);
-
-        // leave in place long enough for post-game
-        setTimeout(function() { client.removeListener('topic', self.topicHandler) }, 10 * 1000);
 
         // Destroy game properties
         delete self.players;
@@ -925,8 +921,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.setTopic = function (topic, data) {
         var message, format;
 
-        console.log('Called setTopic: ', topic, data);
-
         if (typeof topic === "string") {
             message = topic;
         } else {
@@ -945,53 +939,32 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 return false;
             }
         }
-
-        if (message == "") { return false; }
-
-        // set up handler
-        self.topicPending = message.split('%%').join(p); // replace command prefix
-
-        // trigger handler
-        client.send('TOPIC', channel);
-    };
-
-    /**
-     * Handle TOPIC response and set topic
-     * @param channel
-     * @param topic
-     * @param nick
-     * @param message
-     */
-    self.topicHandler = function (channel, topic, nick, message) {
-        var i, newTopic,
-            keep = topic,
-            addTopic = self.topicPending,
-            sep = config.topic.separator;
-
-        if (addTopic === "") { return false; }
-
-        console.log('Called topicHandler');
-
-        if (config.topic.separator) {
-            if (config.topic.position === "left") {
-                // prepend the new topic item
-                i = topic.indexOf(sep);
-                (i > -1)    ?    keep = topic.slice(i + 1)    :    sep += ' ';
-                newTopic = [addTopic, keep].join(" " + sep);
-            } else if (config.topic.position === "right") {
-                // append the new topic item
-                i = topic.lastIndexOf(sep);
-                (i > -1)    ?    keep = topic.slice(0, i)    :    sep = ' ' + sep;
-                newTopic = [keep, addTopic].join(sep + " ");
+        var sep = config.topic.separator;
+        if (sep) {
+            var topic = client.chanData(channel).topic,
+                keep  = topic;
+            switch (config.topic.position) {
+                'left': // prepend the new topic item
+                    i = topic.indexOf(sep);
+                    if (i > -1)
+                        keep = topic.slice(i + 1);
+                    else
+                        sep += ' ';
+                    newTopic = [addTopic, keep].join(' ' + sep);
+                    break;
+                'right': // append the new topic item
+                    i = topic.lastIndexOf(sep);
+                    if (i > -1)
+                        keep = topic.slice(0, i);
+                    else
+                        sep = ' ' + sep;
+                    newTopic = [keep, addTopic].join(sep + ' ');
+                    break;
             }
-        } else {
+        } else
             newTopic = addTopic;
-        }
-
-        self.topicPending = "";
-        if (newTopic !== topic) {
+        if (newTopic !== topic)
             client.send('TOPIC', channel, newTopic);
-        }
     };
 
     /**
@@ -1057,7 +1030,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
     client.addListener('kill', self.playerQuitHandler);
     client.addListener('kick', self.playerKickHandler);
     client.addListener('nick', self.playerNickChangeHandler);
-    client.addListener('topic', self.topicHandler);
 };
 
 // export static state constant
