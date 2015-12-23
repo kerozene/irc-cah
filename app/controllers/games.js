@@ -176,7 +176,7 @@ var Games = function Games() {
             if (typeof(player) === 'undefined') {
                 client.say(channel, target + ' is not currently playing.');
             } else {
-                game.removed.push(player.hostname);
+                game.removed.push(game.getPlayerUhost(player));
                 game.removePlayer(player);
             }
         }

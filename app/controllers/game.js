@@ -610,9 +610,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @returns The new player or false if invalid player
      */
     self.addPlayer = function (player) {
-        if (_.contains(self.removed, player.hostname))
+        if (_.contains(self.removed, self.getPlayerUhost(player)))
             return false;
-        if (_.contains(self.waitToJoin, player.hostname)) {
+        if (_.contains( self.waitToJoin, self.getPlayerUhost(player))) {
             self.say(player.nick + ': you can\'t rejoin until the next round :(')
             return false;
         }
@@ -662,6 +662,15 @@ var Game = function Game(channel, client, config, cmdArgs) {
     };
 
     /**
+     * Format player user,hostname identifier
+     * @param player
+     * @returns user@hostname
+     */
+    self.getPlayerUhost = function(player) {
+        return [player.user, player.hostname].join('@')
+    };
+
+    /**
      * Remove player from game
      * @param player
      * @param options Extra options
@@ -674,8 +683,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
             var cards = player.cards.reset();
             // remove player
             self.players = _.without(self.players, player);
-            if ( !_.contains(self.removed, player.hostname) && self.round > 0 )
-                self.waitToJoin.push(player.hostname);
+            if ( !_.contains(self.removed, self.getPlayerUhost(player)) && self.round > 0 )
+                self.waitToJoin.push(self.getPlayerUhost(player));
             // put player's cards to discard
             _.each(cards, function (card) {
                 self.discards.answer.addCard(card);
@@ -814,7 +823,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      */
     self.getPlayerNicks = function () {
         return _.pluck(self.players, 'nick');
-    }
+    };
 
     /**
      * List all players in the current game
