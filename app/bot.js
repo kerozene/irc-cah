@@ -214,6 +214,8 @@ var Bot = function Bot() {
     client.addListener('join', function (channel, nick, message) {
         else if (typeof config.userJoinCommands !== 'undefined' && config.userJoinCommands.hasOwnProperty(channel) && config.userJoinCommands[channel].length > 0) {
             console.log("User '" + nick + "' joined " + channel);
+        if (client.nick === nick)
+            return false;
             _.each(config.userJoinCommands[channel], function (cmd) {
                 if(cmd.target && cmd.message) {
                     message = _.template(cmd.message)
