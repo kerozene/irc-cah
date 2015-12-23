@@ -249,9 +249,9 @@ var Bot = function Bot() {
         self.lastServerRawReceived = _.now();
     });
 
-    client.addListener('part', self.channelLeaveHandler);
-    client.addListener('kick', self.channelLeaveHandler);
     client.addListener('syncchan', self.channelJoinHandler);
+    client.addListener('selfpart', self.channelLeaveHandler);
+    client.addListener('selfkick', self.channelLeaveHandler);
 
     client.addListener('message', function (from, to, text, message) {
         console.log('message from ' + from + ' to ' + to + ': ' + text);
