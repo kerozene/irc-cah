@@ -223,7 +223,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         clearTimeout(self.timers.stop);
         if (!self.endGame() && !self.needPlayers()) {
             if (self.round === 0) {
-                self.say('Starting in ' + config.timeBetweenRounds + ' seconds. ' + _.pluck(self.players, 'nick').join(', ') + ' get ready!');
+                self.say('Starting in ' + config.timeBetweenRounds + ' seconds. ' + self.getPlayerNicks().join(', ') + ' get ready!');
             }
             self.showPoints((self.round === 0) ? 'start' : 'round');
             self.state = STATES.PAUSED;
@@ -825,10 +825,17 @@ var Game = function Game(channel, client, config, cmdArgs) {
     };
 
     /**
+     * Get all player nicks in the current game
+     */
+    self.getPlayerNicks = function () {
+        return _.pluck(self.players, 'nick');
+    }
+
+    /**
      * List all players in the current game
      */
     self.listPlayers = function () {
-        self.say('Players currently in the game: ' + _.pluck(self.players, 'nick').join(', '));
+        self.say('Players currently in the game: ' + self.getPlayerNicks().join(', '));
     };
 
     /**
@@ -915,17 +922,15 @@ var Game = function Game(channel, client, config, cmdArgs) {
         if (self.notifyUsersPending === false) {
             return false;
         }
-
-        // don't message nicks with these modes
-        var exemptModes = ['~', '&'];
-
-        // don't message nicks that are already joined
-        nicks = _.omit(nicks, _.pluck(self.players, 'nick'));
-
-        // loop through and send messages
-        _.each(nicks, function(mode, nick) {
-            if (_.indexOf(exemptModes, mode) < 0 && nick !== client.nick) {
-                self.notice(nick, util.format(nick + ': A new game of Cards Against Humanity just began in ' + channel + '. Head over and %sjoin if you\'d like to get in on the fun!', p));
+        var withoutModes = ['o', 'v'];
+        _.chain(client.nicksInChannel(channel, withoutModes))
+            .without(self.getPlayerNicks())
+            .without(client.nick)
+            .each(function(nick) {
+                self.notice(nick, util.format(
+                    nick + ': A new game of Cards Against Humanity just began in ' + channel + 
+                    '. Head over and %sjoin if you\'d like to get in on the fun!', p
+                ));
             }
         });
 
