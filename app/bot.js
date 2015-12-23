@@ -197,6 +197,56 @@ var Bot = function Bot() {
         }
     };
 
+    self.messageHandler = function (from, to, text, message) {
+        // parse command
+        var cmd, cmdArgs = [],
+            pickArr = text.trim().split(/[^\d\s]/)[0].match(/(\d+)/g); // get the numbers
+        if (config.enableFastPick && !_.isNull(pickArr)) {
+            cmd      = 'pick';
+            cmdArgs  = [pickArr, true]; // fastPick=true
+        } else {
+            var escape = ['-', '^'];
+            var prefix = _.map(config.commandPrefixChars.split(''), function(char) {
+                return (_.contains(escape, char)) ? "\\" + char : char;
+            }).join('');
+            var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)\\s?(.*)$', 'i');
+            var cmdArr = text.trim().match(cmdPattern);
+            if (!cmdArr || cmdArr.length <= 1) {
+                // command not found
+                return false;
+            }
+            cmd = cmdArr[1].toLowerCase();
+            // parse arguments
+            cmdArgs = [];
+            if (cmdArr.length > 2) {
+                cmdArgs = _.map(cmdArr[2].match(/([^\s]+)\s?/gi), function (str) {
+                    return str.trim();
+                });
+            }
+        }
+        // build callback options
+
+        if (config.clientOptions.channels.indexOf(to) >= 0) {
+            // public commands
+            _.each(self.commands, function (c) {
+                callback = function() { c.callback(client, message, cmdArgs); };
+                if (cmd === c.cmd) {
+                    if (!c.mode || client.nickHasChanMode(message.nick, c.mode, to)) {
+                        callback.call();
+                    }
+                }
+            }, this);
+        } else if (client.nick === to) {
+            // private message commands
+            _.each(self.msgs, function (c) {
+                callback = function() { c.callback(client, message, cmdArgs); };
+                if (cmd === c.cmd) {
+                    callback.call();
+                }
+            }, this);
+        }
+    };
+
     // handle connection to server for logging
     client.addListener('registered', function (message) {
         console.log('Connected to server ' + message.server);
@@ -259,55 +309,7 @@ var Bot = function Bot() {
     client.addListener('selfpart', self.channelLeaveHandler);
     client.addListener('selfkick', self.channelLeaveHandler);
 
-    client.addListener('message', function (from, to, text, message) {
-        // parse command
-        var cmd, cmdArgs = [],
-            pickArr = text.trim().split(/[^\d\s]/)[0].match(/(\d+)/g); // get the numbers
-        if (config.enableFastPick && !_.isNull(pickArr)) {
-            cmd      = 'pick';
-            cmdArgs  = [pickArr, true]; // fastPick=true
-        } else {
-            var escape = ['-', '^'];
-            var prefix = _.map(config.commandPrefixChars.split(''), function(char) {
-                return (_.contains(escape, char)) ? "\\" + char : char;
-            }).join('');
-            var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)\\s?(.*)$', 'i');
-            var cmdArr = text.trim().match(cmdPattern);
-            if (!cmdArr || cmdArr.length <= 1) {
-                // command not found
-                return false;
-            }
-            cmd = cmdArr[1].toLowerCase();
-            // parse arguments
-            cmdArgs = [];
-            if (cmdArr.length > 2) {
-                cmdArgs = _.map(cmdArr[2].match(/([^\s]+)\s?/gi), function (str) {
-                    return str.trim();
-                });
-            }
-        }
-        // build callback options
-
-        if (config.clientOptions.channels.indexOf(to) >= 0) {
-            // public commands
-            _.each(self.commands, function (c) {
-                callback = function() { c.callback(client, message, cmdArgs); };
-                if (cmd === c.cmd) {
-                    if (!c.mode || client.nickHasChanMode(message.nick, c.mode, to)) {
-                        callback.call();
-                    }
-                }
-            }, this);
-        } else if (client.nick === to) {
-            // private message commands
-            _.each(self.msgs, function (c) {
-                callback = function() { c.callback(client, message, cmdArgs); };
-                if (cmd === c.cmd) {
-                    callback.call();
-                }
-            }, this);
-        }
-    });
+    client.addListener('message',  self.messageHandler);
 
 };
 
