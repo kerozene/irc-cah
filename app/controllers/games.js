@@ -409,7 +409,7 @@ var Games = function Games() {
         _.chain(nicks).uniq().each(function (nick) {
             if (client.nick == nick)
                 beerToBot = true;
-            else if (client.nickIsInChannel(channel, nick))
+            else if (client.nickIsInChannel(nick, channel))
                 beerNicks.push(nick);
         });
         if (beerNicks.length > maxNicks) {

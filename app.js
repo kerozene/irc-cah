@@ -6,13 +6,11 @@
  */
 console.log('Cards Against Humanity IRC bot');
 
-// Set node env
 process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 
-var Bot = require('./app/bot');
-var bot = new Bot();
+var Bot = require('./app/bot'),
+    bot = new Bot();
 
-// load channel command definitions
 require('./config/commands.js')(bot);
 
 bot.connect();
