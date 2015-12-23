@@ -47,7 +47,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.timers = {} // game timers
     self.pauseState = []; // pause state storage
     self.points = [];
-    self.notifyUsersPending = false;
     self.topicPending = "";
     self.pointLimit = 0; // point limit for the game, defaults to 0 (== no limit)
     p = config.commandPrefixChars[0]; // default prefix char
@@ -122,7 +121,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
         client.removeListener('quit', self.playerQuitHandler);
         client.removeListener('kick', self.playerKickHandler);
         client.removeListener('nick', self.playerNickChangeHandler);
-        client.removeListener('names'+channel, self.notifyUsersHandler);
 
         // leave in place long enough for post-game
         setTimeout(function() { client.removeListener('topic', self.topicHandler) }, 10 * 1000);
@@ -906,22 +904,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Notify users in channel that game has started
      */
     self.notifyUsers = function() {
-        // request names
-        client.send('NAMES', channel);
-
-        // signal handler to send notifications
-        self.notifyUsersPending = true;
-    };
-
-    /**
-     * Handle names response to notify users
-     * @param nicks
-     */
-    self.notifyUsersHandler = function(nicks) {
-        // ignore if we haven't requested this
-        if (self.notifyUsersPending === false) {
-            return false;
-        }
         var withoutModes = ['o', 'v'];
         _.chain(client.nicksInChannel(channel, withoutModes))
             .without(self.getPlayerNicks())
@@ -932,10 +914,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
                     '. Head over and %sjoin if you\'d like to get in on the fun!', p
                 ));
             }
-        });
-
-        // reset
-        self.notifyUsersPending = false;
+        );
     };
 
     /**
@@ -1078,7 +1057,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
     client.addListener('kill', self.playerQuitHandler);
     client.addListener('kick', self.playerKickHandler);
     client.addListener('nick', self.playerNickChangeHandler);
-    client.addListener('names'+channel, self.notifyUsersHandler);
     client.addListener('topic', self.topicHandler);
 };
 
