@@ -124,12 +124,6 @@
         "floodProtectionDelay": 2000
     },
 
-    // Server-specific settings
-
-        "modes": 3,                 // - Number of channel modes allowed per line.
-        "nicklength": 9             // - Maximum nickname length.
-    },
-
     // When the !beer command is issued, a random beer is selected from this list.
     "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois", 
                "Modelo", "Fat Tire Amber Ale", "Magic Hat", "Samuel Adams",
