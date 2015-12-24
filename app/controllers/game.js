@@ -116,6 +116,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
 
         client.removeListener('part', self.playerPartHandler);
         client.removeListener('quit', self.playerQuitHandler);
+        client.removeListener('kill', self.playerQuitHandler);
         client.removeListener('kick', self.playerKickHandler);
         client.removeListener('nick', self.playerNickChangeHandler);
 
