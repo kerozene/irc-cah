@@ -274,6 +274,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's') + '.');
                 self.showPoints('round');
                 self.state = STATES.WAITING;
+                self.waitToJoin = []; // allow recently removed players to rejoin
             }
             // stop game if not enough players
             self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
