@@ -47,6 +47,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.STATES = STATES;
     self.state = STATES.WAITING; // game state storage
     self.timers = {}; // game timers
+    self.listeners = []; // irc client event listeners
     self.pauseState = []; // pause state storage
     self.points = [];
     self.pointLimit = 0; // point limit for the game, defaults to 0 (== no limit)
@@ -114,11 +115,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
             clearTimeout(timer);
         });
 
-        client.removeListener('part', self.playerPartHandler);
-        client.removeListener('quit', self.playerQuitHandler);
-        client.removeListener('kill', self.playerQuitHandler);
-        client.removeListener('kick', self.playerKickHandler);
-        client.removeListener('nick', self.playerNickChangeHandler);
+        // Remove irc client listeners
+        self.toggleListeners();
 
         // Destroy game properties
         delete self.players;
@@ -866,45 +864,32 @@ var Game = function Game(channel, client, config, cmdArgs) {
     };
 
     /**
-     * Handle player parts
-     * @param channel
+     * Handle player quits
      * @param nick
-     * @param reason
-     * @param message
      */
-    self.playerPartHandler = function (channel, nick, reason, message) {
+    self.playerQuitHandler = function (nick) {
         self.playerLeaveHandler(nick);
     };
 
     /**
-     * Handle player quits
+     * Handle player parts
      * @param nick
-     * @param reason
-     * @param channels
-     * @param message
      */
-    self.playerQuitHandler = function (nick, reason, channels, message) {
+    self.playerPartHandler = function (nick) {
         self.playerLeaveHandler(nick);
     };
 
     /**
      * Handle player kicks
-     * @param channel
      * @param nick
-     * @param by
-     * @param reason
-     * @param message
      */
-    self.playerKickHandler = function (channel, nick, by, reason, message) {
+    self.playerKickHandler = function (nick) {
         self.playerLeaveHandler(nick);
     };
 
     /**
      * Handle player quits and parts
-     * @param channel
      * @param nick
-     * @param reason
-     * @param message
      */
     self.playerLeaveHandler = function (nick) {
         var player = self.getPlayer({nick: nick});
@@ -916,13 +901,54 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * Handle player nick changes
      * @param oldnick
      * @param newnick
-     * @param channels
-     * @param message
      */
-    self.playerNickChangeHandler = function (oldnick, newnick, channels, message) {
+    self.playerNickChangeHandler = function (oldnick, newnick) {
         var player = self.getPlayer({nick: oldnick});
         if (typeof player !== 'undefined')
             player.nick = newnick;
+    };
+
+    /**
+     * Pause game if leaving a channel
+     */
+    self.channelLeaveHandler = function() {
+        if (self.isRunning()) {
+            console.warn('Left channel ' + channel + ' while game in progress. Pausing...');
+            self.pause();
+        }
+    };
+
+    /**
+     * On rejoining a channel with an active game
+     */
+    self.channelRejoinHandler = function() {
+        if (self.isPaused()) {
+            console.log('Rejoined ' + channel + ' where game is paused.');
+            self.say(util.format('Card bot is back! Type %sresume to continue the current game.', p));
+            return true;
+        }
+        if (self.isRunning()) {
+            console.warn('Error: Joined ' + channel + ' while game in progress');
+            self.say('Error: Joined while game in progress. Pausing...');
+            self.pause();
+            return false;
+        }
+        console.warn('Error: Joined ' + channel + ' while game in state: ' + self.state);
+        return false;
+    };
+
+    /**
+     * Manage IRC client event listeners
+     */
+    self.toggleListeners = function(listeners) {
+        var onoff    = (listeners) ? true : false;
+        var func     = (listeners) ? client.addListener : client.removeListener;
+        listeners    = (listeners) ? listeners : self.listeners;
+
+        _.each(listeners, function(listener) {
+            func.apply(this, listener);
+        });
+        self.listeners = (onoff) ? listeners : [];
     };
 
     /**
@@ -1012,9 +1038,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
         self.client.notice(nick, string);
     };
 
-    // set topic
-    self.setTopic(config.topic.messages.on);
-
     // announce the game on the channel
     self.announce = function() {
         var title = 'Cards Against Humanity';
@@ -1043,23 +1066,27 @@ var Game = function Game(channel, client, config, cmdArgs) {
         return str;
     };
 
+    self.setTopic(config.topic.messages.on);
+
     self.announce();
 
-    // notify users
-    if (typeof config.notifyUsers !== 'undefined' && config.notifyUsers) {
+    self.toggleListeners([
+        ['joinsync' + channel, self.channelRejoinHandler   ],
+        ['selfpart' + channel, self.channelLeaveHandler    ],
+        ['selfkick' + channel, self.channelLeaveHandler    ],
+        [    'quit' + channel, self.playerQuitHandler      ],
+        [    'kill' + channel, self.playerQuitHandler      ],
+        [    'part' + channel, self.playerPartHandler      ],
+        [    'kick' + channel, self.playerKickHandler      ],
+        [    'nick' + channel, self.playerNickChangeHandler]
+    ]);
+
+    if (typeof config.notifyUsers !== 'undefined' && config.notifyUsers)
         self.notifyUsers();
-    }
 
     // wait for players to join
     self.startTime = new Date();
     self.nextRound();
-
-    // client listeners
-    client.addListener('part', self.playerPartHandler);
-    client.addListener('quit', self.playerQuitHandler);
-    client.addListener('kill', self.playerQuitHandler);
-    client.addListener('kick', self.playerKickHandler);
-    client.addListener('nick', self.playerNickChangeHandler);
 };
 
 // export static state constant

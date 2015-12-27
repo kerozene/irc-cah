@@ -131,12 +131,10 @@ var Bot = function Bot() {
     self.channelJoinHandler = function(channel) {
         console.log('Joined ' + channel + ' as ' + client.nick);
         self.devoiceOnJoin(channel);
-        var game = self.cah.findGame(channel);
-        if (game)
-            self.afterRejoin(channel, game);
-        else if (  typeof config.joinCommands !== 'undefined' &&
-                   config.joinCommands[channel]
-                ) {
+        if (  !self.cah.findGame(channel) &&
+               typeof config.joinCommands !== 'undefined' &&
+               config.joinCommands[channel]
+        ) {
             _.each(config.joinCommands[channel], function (cmd) {
                 if(cmd.target && cmd.message) {
                     message = _.template(cmd.message)({nick: client.nick, channel: channel}).split('%%').join(p);
@@ -144,27 +142,6 @@ var Bot = function Bot() {
                 }
             });
         }
-    };
-
-    /**
-     * On rejoining a channel with an active game
-     * @param channel
-     * @param game
-     */
-    self.afterRejoin = function(channel, game) {
-        if (game.isPaused()) {
-            console.log('Rejoined ' + channel + ' where game is paused.');
-            client.say(channel, util.format('Card bot is back! Type %sresume to continue the current game.', p));
-            return true;
-        }
-        if (game.isRunning()) {
-            console.warn('Error: Joined ' + channel + ' while game in progress');
-            client.say(channel, 'Error: Joined while game in progress. Pausing...');
-            game.pause();
-            return false;
-        }
-        console.warn('Error: Joined ' + channel + ' while game in state: ' + game.state);
-        return false;
     };
 
     /**
@@ -186,17 +163,6 @@ var Bot = function Bot() {
         client.setChanMode(channel, '-v', nicks);
     };
 
-    /**
-     * Pause game if leaving a channel
-     */
-    self.channelLeaveHandler = function(channel, nick) {
-        var game = self.cah.findGame(channel);
-        if (client.nick == nick && game && game.isRunning()) {
-            console.warn('Left channel ' + channel + ' while game in progress. Pausing...');
-            game.pause();
-        }
-    };
-
     self.throttleCommand = function(host) {
         var now      = _.now(),
             last     = self.lastCommandFromHost[host],
@@ -211,9 +177,8 @@ var Bot = function Bot() {
             last[1]++;
             self.lastCommandFromHost[host] = last;
         }
-        if (last[1] > throttle[0])
-            return true;
-    }
+        return (last[1] > throttle[0]);
+    };
 
     self.messageHandler = function (from, to, text, message) {
         // parse command
@@ -325,10 +290,7 @@ var Bot = function Bot() {
         self.lastServerRawReceived = _.now();
     });
 
-    client.addListener('syncchan', self.channelJoinHandler);
-    client.addListener('selfpart', self.channelLeaveHandler);
-    client.addListener('selfkick', self.channelLeaveHandler);
-
+    client.addListener('joinsync', self.channelJoinHandler);
     client.addListener('message',  self.messageHandler);
 
 };
