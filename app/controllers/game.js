@@ -46,7 +46,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.config = config; // configuration data
     self.STATES = STATES;
     self.state = STATES.WAITING; // game state storage
-    self.timers = {} // game timers
+    self.timers = {}; // game timers
     self.pauseState = []; // pause state storage
     self.points = [];
     self.pointLimit = 0; // point limit for the game, defaults to 0 (== no limit)
@@ -591,7 +591,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         }
         if (message)
             self.say(c.bold(message({nick: player.nick})));
-    }
+    };
 
     /**
      * Get formatted entry
@@ -646,7 +646,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         if (_.contains(self.removed, self.getPlayerUhost(player)))
             return false;
         if (_.contains( self.waitToJoin, self.getPlayerUhost(player))) {
-            self.say(player.nick + ': you can\'t rejoin until the next round :(')
+            self.say(player.nick + ': you can\'t rejoin until the next round :(');
             return false;
         }
         if (typeof self.getPlayer({user: player.user, hostname: player.hostname}) === 'undefined') {
@@ -700,7 +700,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @returns user@hostname
      */
     self.getPlayerUhost = function(player) {
-        return [player.user, player.hostname].join('@')
+        return [player.user, player.hostname].join('@');
     };
 
     /**
@@ -948,13 +948,13 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @param data
      */
     self.setTopic = function (addTopic, data) {
-        var format, i, newTopic, keep;
+        var format, i, newTopic;
 
         if (typeof addTopic !== "string") {
             format = addTopic[1];
             addTopic = addTopic[0];
         }
-        if (addTopic == "")
+        if (addTopic === "")
             return false;
         if (data)
             addTopic = _.template(addTopic)(data); // render template
@@ -969,9 +969,9 @@ var Game = function Game(channel, client, config, cmdArgs) {
             }
         }
         var sep = config.topic.separator;
+        var topic = client.chanData(channel).topic || '';
         if (sep) {
-            var topic = client.chanData(channel).topic || '',
-                keep  = topic;
+            keep  = topic;
             switch (config.topic.position) {
                 case 'left': // prepend the new topic item
                     i = topic.indexOf(sep);

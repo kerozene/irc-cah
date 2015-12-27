@@ -54,7 +54,7 @@ var Games = function Games() {
             // init game
             game = new Game(channel, client, config, cmdArgs);
             self.games.push(game);
-            self.join(client, message, cmdArgs)
+            self.join(client, message, cmdArgs);
         }
 
     };
@@ -373,8 +373,9 @@ var Games = function Games() {
             game     = self.findGame(channel),
             nicks    = [ message.nick ];
 
-        var beerNicks = [], beer = [], action = '', message = '', beerToBot = false,
+        var beerNicks = [], beer = [], action = '', beerToBot = false,
             maxNicks  = _.min([config.beers.length, 7]);
+            message = '';
         var actions = [
             'pours a tall, cold glass of <%= beer %> and slides it down the bar to <%= nick %>.',
             'cracks open a bottle of <%= beer %> for <%= nick %>.',

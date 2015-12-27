@@ -22,7 +22,7 @@ var Bot = function Bot() {
     self.lastDevoiceOnJoin = {};
     self.lastCommandFromHost = {};
 
-    config.clientOptions['autoConnect'] = false;
+    config.clientOptions.autoConnect = false;
     client = self.client = new irc.Client(config.server, config.nick, config.clientOptions);
     client.supported = _.extend(client.supported, config.supported);
     console.log('Configuration loaded.');
@@ -64,7 +64,7 @@ var Bot = function Bot() {
      */
     self.listen = function (event, callback) {
         client.addListener(event, function() {
-            callback(client, arguments)
+            callback(client, arguments);
         });
     };
 
@@ -76,7 +76,7 @@ var Bot = function Bot() {
             console.log('Caught exception: ' + err);
             console.log(err.stack);
             _.each(config.clientOptions.channels, function(channel) {
-                client.say(channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.")
+                client.say(channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.");
             });
         });
     };
@@ -103,9 +103,8 @@ var Bot = function Bot() {
         clearInterval(self.timers.checkServer);
         console.warn('Trying to reconnect...');
         _.each(self.cah.games, function(game) {
-            if (game.channel && game.isRunning()) {
+            if (game.channel && game.isRunning())
                 game.pause();
-        }
         });
         client.disconnect('Reconnecting...');
         setTimeout(function() { // Waiting for disconnect to call back doesn't work
