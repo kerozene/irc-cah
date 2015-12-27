@@ -970,7 +970,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         }
         var sep = config.topic.separator;
         if (sep) {
-            var topic = client.chanData(channel).topic,
+            var topic = client.chanData(channel).topic || '',
                 keep  = topic;
             switch (config.topic.position) {
                 case 'left': // prepend the new topic item
