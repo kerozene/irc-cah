@@ -11,6 +11,5 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 var Bot = require('./app/bot'),
     bot = new Bot();
 
-require('./config/commands.js')(bot);
 
 bot.connect();

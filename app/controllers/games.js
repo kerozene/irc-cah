@@ -20,6 +20,14 @@ var Games = function Games() {
     };
 
     /**
+     * Get the command data associated with 'alias'
+     * @param alias
+     */
+    self.findCommand = function(alias) {
+        return _.find(config.commands, function(command) { return (_.contains(command.commands, alias)); });
+    };
+
+    /**
      * Say there's no game running
      * @param client
      * @param channel
@@ -36,11 +44,11 @@ var Games = function Games() {
      */
     self.start = function (client, message, cmdArgs) {
         // check if game running on the channel
-        var channel = message.args[0],
-            nick = message.nick,
-            user = message.user,
+        var  channel = message.args[0],
+                nick = message.nick,
+                user = message.user,
             hostname = message.host,
-            game;
+                game;
 
         game = self.findGame(channel);
         if (typeof game !== 'undefined') {
@@ -335,16 +343,50 @@ var Games = function Games() {
      * @param cmdArgs
      */
     self.help = function(client, message, cmdArgs) {
-        var channel = message.args[0],
-            help = [
-            "Commands: %%start [#] - start a game of # rounds",
-            "%%join, %%j - join/start a game",
-            "%%quit, %%q - leave the game",
-            "# [#...] - pick number # (card or winning entry)",
-            "%%test - get a test NOTICE from the bot",
-            "other commands: %%cards, %%pick %p, %%play, %%winner %%w, %%beer [nick ...]|all, %%pause, %%resume, %%stop, %%remove <nick>"
-        ];
-        help = help.join('; ').split('%%').join(p);
+        var help, channel = message.args[0];
+        if (cmdArgs[0] === undefined) {
+            // list commands and aliases
+            var commands = _.map(config.commands, function(cmd) {
+                                var result = p + cmd.commands[0];
+                                if (cmd.commands.length > 1) {
+                                    var aliases =  _.chain(cmd.commands)
+                                                    .rest()
+                                                    .map(function(a) { return p + a; })
+                                                    .join(', ');
+                                    result += util.format(' (%s)', aliases);
+                                }
+                                return result;
+                            });
+            help = 'Commands: ' + commands.join('; ') + util.format(' [%shelp <command> for details]', p);
+        } else {
+            // single command details
+            var alias = cmdArgs[0].toLowerCase();
+            var cmd = self.findCommand(alias);
+            if (!cmd) {
+                client.say(channel, util.format('No command "%s%s"', p, cmd));
+                return;
+            }
+            help = p + cmd.commands[0];
+            _.each(cmd.params, function(param) {
+                var paramHelp = param.name;
+                if (param.type === 'number')
+                    paramHelp += 'Number';
+                if (param.multiple)
+                    paramHelp += ', ...';
+                paramHelp = (param.required) ? util.format('<%s>', paramHelp)
+                                             : util.format('[%s]', paramHelp);
+                help += ' ' + paramHelp;
+            });
+            help += ' - ';
+            if (cmd.flag && cmd.flag === 'o')
+                help += '(op) ';
+            help += cmd.info;
+            if (cmd.commands.length > 1)
+                help += util.format(' (aliases: %s)', _.chain(cmd.commands)
+                                                        .rest()
+                                                        .map(function(a) { return p + a; })
+                                                        .join(', '));
+        }
         client.say(channel, help);
     };
 

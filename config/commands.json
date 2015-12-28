@@ -1,0 +1,148 @@
+[
+	{
+		"commands": ["start", "go"],
+		"handler":  "start",
+		"params":   [
+			{
+				"name":     "rounds",
+				"type":     "number",
+				"required": false,
+				"multiple": false
+			}
+		],
+		"info":     "Start a game with # rounds"
+	},
+	{
+		"commands": ["stop"],
+		"flag":     "o",
+		"handler":  "stop",
+		"info":     "Stop the current game"
+	},
+	{
+		"commands": ["join", "j"],
+		"handler":  "join",
+		"info":     "Join the current game or start a new one"
+	},
+	{
+		"commands": ["quit", "q", "leave"],
+		"handler":  "quit",
+		"info":     "(player) Leave the current game"
+	},
+	{
+		"commands": ["remove", "r"],
+		"flag":     "o",
+		"handler":  "remove",
+		"params":   [
+			{
+				"name":     "player",
+				"type":     "string",
+				"required": true,
+				"multiple": false
+			}
+		],
+		"info":     "Remove <player> from the current game"
+	},
+	{
+		"commands": ["cards", "c"],
+		"handler":  "cards",
+		"info":     "(player) Show your current cards"
+	},
+	{
+		"commands": ["play"],
+		"handler":  "play",
+		"params":   [
+			{
+				"name":     "card",
+				"type":     "number",
+				"required": true,
+				"multiple": true
+			}
+		],
+		"info":     "(player) Play your card number #"
+	},
+	{
+		"commands": ["list"],
+		"flag":     "",
+		"handler":  "list",
+		"info":     "List the current players"
+	},
+	{
+		"commands": ["winner", "w"],
+		"handler":  "winner",
+		"params":   [
+			{
+				"name":     "entry",
+				"type":     "number",
+				"required": true,
+				"multiple": false
+			}
+		],
+		"info":     "(czar) Pick the winning entry"
+	},
+	{
+		"commands": ["points", "scores"],
+		"handler":  "points",
+		"info":     "Show the current scores for all players"
+	},
+	{
+		"commands": ["status"],
+		"handler":  "status",
+		"info":     "Show the current game status"
+	},
+	{
+		"commands": ["pause"],
+		"flag":     "o",
+		"handler":  "pause",
+		"info":     "Pause the current game"
+	},
+	{
+		"commands": ["resume", "unpause"],
+		"flag":     "o",
+		"handler":  "resume",
+		"info":     "Resume the currently paused game"
+	},
+	{
+		"commands": ["pick", "p"],
+		"handler":  "pick",
+		"params":   [
+			{
+				"name":     "card",
+				"type":     "number",
+				"required": true,
+				"multiple": true
+			}
+		],
+		"info":     "(player,czar) Play a card or pick a winning entry. (If fastpick is on, you can just type the number(s))"
+	},
+	{
+		"commands": ["help"],
+		"handler":  "help",
+		"params":   [
+			{
+				"name":     "command",
+				"type":     "string",
+				"required": false,
+				"multiple": false
+			}
+		],
+		"info":     "List commands or get help for <command>"
+	},
+	{
+		"commands": ["test"],
+		"handler":  "test",
+		"info":     "Get a test NOTICE from the bot. If you can't see this, you won't be able to see your cards"
+	},
+	{
+		"commands": ["beer"],
+		"handler":  "beer",
+		"params":   [
+			{
+				"name":     "nick",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			}
+		],
+		"info":     "Order a beer, or order beers for <nick1, nick2, ...>. Use \"all\" to send beers to all current players"
+	}
+]

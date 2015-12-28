@@ -24,47 +24,29 @@ var Bot = function Bot() {
 
     config.clientOptions.autoConnect = false;
     client = self.client = new irc.Client(config.server, config.nick, config.clientOptions);
-    client.supported = _.extend(client.supported, config.supported);
     console.log('Configuration loaded.');
 
     self.cah = new Games();
 
     /**
-     * Add a public command to the bot
-     * @param cmd Command keyword
-     * @param mode User mode that is allowed
-     * @param callback
+     * Get the command data associated with 'alias'
      */
-    self.cmd = function (cmd, mode, callback) {
-        self.commands.push({
-            cmd: cmd,
-            mode: mode,
-            callback: callback
-        });
+    self.findCommand = function(alias) {
+        return _.find(self.commands, function(cmd) { return (_.contains(cmd.commands, alias)); });
     };
 
     /**
-     * Add a msg command to the bot
-     * @param cmd Command keyword
-     * @param mode User mode that is allowed
-     * @param callback
+     * Load game commands from config
      */
-    self.msg = function (cmd, mode, callback) {
-        msgs.push({
-            cmd: cmd,
-            mode: mode,
-            callback: callback
-        });
-    };
-
-    /**
-     * Add an irc event listener to the bot
-     * @param event Client event
-     * @param callback
-     */
-    self.listen = function (event, callback) {
-        client.addListener(event, function() {
-            callback(client, arguments);
+    self.loadCommands = function() {
+        _.each(config.commands, function(command) {
+            if (!self.cah[command.handler])
+                throw Error('Unknown handler: Games.' + command.handler);
+            _.each(command.commands, function(alias) {
+                if (self.findCommand(alias))
+                    throw Error('Command alias already in use: ' + alias);
+            });
+            self.commands.push(command);
         });
     };
 
@@ -192,16 +174,18 @@ var Bot = function Bot() {
             var prefix = _.map(config.commandPrefixChars.split(''), function(char) {
                 return (_.contains(escape, char)) ? "\\" + char : char;
             }).join('');
-            var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)\\s?(.*)$', 'i');
+            var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)(?:\\s(.*))?', 'i');
             var cmdArr = text.trim().match(cmdPattern);
             if (!cmdArr || cmdArr.length <= 1) {
                 // command not found
                 return false;
             }
-            cmd = cmdArr[1].toLowerCase();
+            cmd = self.findCommand(cmdArr[1].toLowerCase());
+            if (!cmd)
+                return false;
             // parse arguments
             cmdArgs = [];
-            if (cmdArr.length > 2) {
+            if (cmdArr[2]) {
                 cmdArgs = _.map(cmdArr[2].match(/([^\s]+)\s?/gi), function (str) {
                     return str.trim();
                 });
@@ -210,27 +194,17 @@ var Bot = function Bot() {
 
         // build callback options
         if (config.clientOptions.channels.indexOf(to) >= 0) {
+            var channel = to;
             // public commands
-            _.each(self.commands, function (c) {
-                callback = function() { c.callback(client, message, cmdArgs); };
-                if (cmd === c.cmd) {
-                    if (!c.mode || client.nickHasChanMode(message.nick, c.mode, to)) {
-                        if (!self.throttleCommand(message.host))
-                            callback.call();
-                    }
-                }
-            }, this);
-        } else if (client.nick === to) {
-            // private message commands
-            _.each(self.msgs, function (c) {
-                callback = function() { c.callback(client, message, cmdArgs); };
-                if (cmd === c.cmd) {
-                    if (!self.throttleCommand(message.host))
-                        callback.call();
-                }
-            }, this);
+            callback = function() { self.cah[cmd.handler](client, message, cmdArgs); };
+            if (!cmd.flag || client.nickHasChanMode(message.nick, cmd.flag, channel)) {
+                if (!self.throttleCommand(message.host))
+                    callback.call();
+            }
         }
     };
+
+    self.loadCommands();
 
     // handle connection to server for logging
     client.addListener('registered', function (message) {

@@ -30,6 +30,7 @@ var config = _.extend(
     shush(__dirname + '/../config/env/' + process.env.NODE_ENV + '.json') || {},
     { cards: [] }
 );
+config.commands = shush(__dirname + '/../config/commands.json');
 
 // check custom card files and create them if they don't exist
 if (!fs.existsSync(__dirname + '/../config/cards/Custom_a.json')) {
