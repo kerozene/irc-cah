@@ -12,11 +12,13 @@ var Games = function Games() {
 
     /**
      * Find a game by channel it is running on
-     * @param channel
+     * @param [channel]
      * @returns {*}
      */
     self.findGame = function (channel) {
-        return _.findWhere(self.games, {channel: channel});
+        if (channel)
+            return _.findWhere(self.games, {channel: channel});
+        return _.find(self.games, function(game) { return (game.channel); });
     };
 
     /**
