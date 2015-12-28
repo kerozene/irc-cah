@@ -986,13 +986,17 @@ var Game = function Game(channel, client, config, cmdArgs) {
             addTopic = _.template(addTopic)(data); // render template
         addTopic = addTopic.split('%%').join(p); // replace command prefix
         if (format) {
-            try {
-                // apply string formatting to addTopic
-                addTopic = eval("c." + format)(addTopic);
-            } catch (error) {
-                self.log("format: " + error);
-                return false;
-            }
+            var cformat = c;
+            var doFormat = _.every(format.split('.'), function(f) {
+                if (typeof cformat[f] !== 'function') {
+                    util.log("Invalid format: " + format);
+                    return false;
+                }
+                cformat = cformat[f];
+                return true;
+            });
+            if (doFormat)
+                addTopic = cformat(addTopic);
         }
         var sep = config.topic.separator;
         var topic = client.chanData(channel).topic || '';
