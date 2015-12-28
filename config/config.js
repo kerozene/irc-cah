@@ -1,122 +1,36 @@
-var fs = require('fs'),
-    JaySchema = require('jayschema'),
-    shush = require('shush'),
-    _ = require('underscore');
+var shush = require('shush'),
+        _ = require('underscore'),
+     util = require('util');
 
-/**
- * Load and validate a card file
- * @param identifier Identifier of the card file
- * @param filename Filename of the card file
- */
-function loadCardFile(identifier, filename) {
-    if (fs.existsSync(filename)) {
-        var data = shush(filename);
-        validator.validate(data, schema, function (errors) {
-            if (errors) {
-                console.error(identifier + ': Validation error');
-                console.error(errors);
-            }
-            else
-                config.cards = _.union(config.cards, data);
-        });
-    } else {
-        console.error('File does not exists');
-    }
-}
-
-// Initialize base configuration and ENV
 var config = _.extend(
     require(__dirname + '/../config/env/all.js'),
-    shush(__dirname + '/../config/env/' + process.env.NODE_ENV + '.json') || {},
-    { cards: [] }
+      shush(__dirname + '/../config/env/' + process.env.NODE_ENV + '.json') || {}
 );
 config.commands = shush(__dirname + '/../config/commands.json');
 
-// check custom card files and create them if they don't exist
-if (!fs.existsSync(__dirname + '/../config/cards/Custom_a.json')) {
-    fs.writeFileSync(__dirname + '/../config/cards/Custom_a.json', '[]');
-}
-if (!fs.existsSync(__dirname + '/../config/cards/Custom_q.json')) {
-    fs.writeFileSync(__dirname + '/../config/cards/Custom_q.json', '[]');
-}
+var Decks = require(config.root + '/app/controllers/decks');
+config.decksTool = new Decks();
 
-// All card file paths. You can comment out the ones you don't want to use.
-var cardFiles = {
-    OfficialBaseSetQuestions: __dirname + '/../config/cards/OfficialBaseSet_q.json',
-    OfficialBaseSetAmericaQuestions: __dirname + '/../config/cards/OfficialBaseSetAmerica_q.json',
-    Official2ndExpansionQuestions: __dirname + '/../config/cards/Official2ndExpansion_q.json',
-    Official2ndExpansionAmericaQuestions: __dirname + '/../config/cards/Official2ndExpansionAmerica_q.json',
-    Official3rdExpansionQuestions: __dirname + '/../config/cards/Official3rdExpansion_q.json',
-    Official3rdExpansionAmericaQuestions: __dirname + '/../config/cards/Official3rdExpansionAmerica_q.json',
-    Official4thExpansionQuestions: __dirname + '/../config/cards/Official4thExpansion_questions.json',
-    Official5thExpansionQuestions: __dirname + '/../config/cards/Official5thExpansion_questions.json',
-    Official6thExpansionQuestions: __dirname + '/../config/cards/Official6thExpansion_questions.json',
-    OfficialCanadianExpansionQuestions: __dirname + '/../config/cards/OfficialCanadianExpansion_q.json',
-    OfficialChristmasExpansionQuestions: __dirname + '/../config/cards/OfficialChristmasExpansion_q.json',
-    BGGQuestions: __dirname + '/../config/cards/BGG_q.json',
-    BGGAmericaQuestions: __dirname + '/../config/cards/BGGAmerica_q.json',
-    CustomQuestions: __dirname + '/../config/cards/Custom_q.json',
-    OfficialBaseSetAnswers: __dirname + '/../config/cards/OfficialBaseSet_a.json',
-    OfficialBaseSetAmericaAnswers: __dirname + '/../config/cards/OfficialBaseSetAmerica_a.json',
-    Official2ndExpansionAnswers: __dirname + '/../config/cards/Official2ndExpansion_a.json',
-    Official2ndExpansionAmericaAnswers: __dirname + '/../config/cards/Official2ndExpansionAmerica_a.json',
-    Official3rdExpansionAnswers: __dirname + '/../config/cards/Official3rdExpansion_a.json',
-    Official3rdExpansionAmericaAnswers: __dirname + '/../config/cards/Official3rdExpansionAmerica_a.json',
-    Official4thExpansionAnswers: __dirname + '/../config/cards/Official4thExpansion_answers.json',
-    Official5thExpansionAnswers: __dirname + '/../config/cards/Official5thExpansion_answers.json',
-    Official6thExpansionAnswers: __dirname + '/../config/cards/Official6thExpansion_answers.json',
-    OfficialCanadianExpansionAnswers: __dirname + '/../config/cards/OfficialCanadianExpansion_a.json',
-    OfficialChristmasExpansionAnswers: __dirname + '/../config/cards/OfficialChristmasExpansion_a.json',
-    BGGAnswers: __dirname + '/../config/cards/BGG_a.json',
-    CustomAnswers: __dirname + '/../config/cards/Custom_a.json'
-};
+config.loadDecks = [];
+config.decksTool.init().then(function(message) {
+	util.log(message);
+	_.each(config.decks, function(deck) {
+		config.decksTool.fetchDeck(deck).then(function(data) {
+			config.loadDecks.push(data);
+			var pad = function(str, char, width) {
+				var padded = new Array(width + 1).join(char) + str;
+				return padded.slice(-width);
+			};
+			util.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
+				_.map([ data.calls.length, data.responses.length ], function(el) { return pad(el, ' ', 4); })
+			)));
+		}, function(error) {
+			if (error.name === 'NotFoundError')
+				error.message = error.message.split('/').reverse()[0];
+			util.log(error.name + ': ' + error.message);
+		});
+	});
+});
 
-// Init validator
-var validator = new JaySchema();
-// Define schema to calidate against
-var schema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Card Schema",
-    "type": "array",
-    "items": {
-        "title": "Single card",
-        "type": "object",
-        "properties": {
-            "type": {
-                "description": "Type of the card (question or answer",
-                "type": "string"
-            },
-            "value": {
-                "description": "The text value of the card",
-                "type": "string"
-            },
-            "keep": {
-                "type": "string"
-            },
-            "draw": {
-                "description": "Amount of cards that should be drawn from the deck when this card is in play",
-                "type": "integer"
-            },
-            "pick": {
-                "description": "Amount of cards that should be picked from the hand when this card is in play",
-                "type": "integer"
-            },
-            "source": {
-                "description": "Source of the card (e.g. expansion, community etc)",
-                "type": "string"
-            }
-        },
-        "required": ["value", "type", "pick", "draw"]
-    }
-};
-
-
-// Validate and load cards files
-console.log('Loading card data...');
-for (var i in cardFiles) {
-    if (cardFiles.hasOwnProperty(i)) {
-        loadCardFile(i, cardFiles[i]);
-    }
-}
 
 module.exports = config;

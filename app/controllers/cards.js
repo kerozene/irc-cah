@@ -1,7 +1,7 @@
-var _ = require('underscore'),
+var    _ = require('underscore'),
     Card = require('../models/card');
 
-var Cards = function Cards(cards) {
+var Cards = function Cards(cards, type) {
     var self = this;
 
     self.cards = [];
@@ -9,13 +9,12 @@ var Cards = function Cards(cards) {
     // add all cards in init array
     _.each(cards, function (c) {
         var card;
-        if(c instanceof Card) {
+        if (c instanceof Card)
             card = c;
-        } else if(c.hasOwnProperty('value')) {
-            card = new Card(c);
-        } else {
-            console.warning('Invalid card', c);
-        }
+        else if (c.hasOwnProperty('text'))
+            card = new Card(c, type);
+        else
+            console.warn('Invalid card', c);
         self.cards.push(card);
     });
 
@@ -25,9 +24,8 @@ var Cards = function Cards(cards) {
      * @returns {Array} Array of the old, replaced cards
      */
     self.reset = function(cards) {
-        if(typeof cards === 'undefined') {
+        if (typeof cards === 'undefined')
             cards = [];
-        }
         var oldCards = self.cards;
         self.cards = cards;
         return oldCards;

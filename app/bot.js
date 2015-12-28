@@ -167,7 +167,7 @@ var Bot = function Bot() {
         var cmd, cmdArgs = [],
             pickArr = text.trim().split(/[^\d\s]/)[0].match(/(\d+)/g); // get the numbers
         if (config.enableFastPick && !_.isNull(pickArr)) {
-            cmd      = 'pick';
+            cmd = self.findCommand('pick');
             cmdArgs  = [pickArr, true]; // fastPick=true
         } else {
             var escape = ['-', '^'];

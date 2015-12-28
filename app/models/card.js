@@ -1,12 +1,13 @@
 var _ = require('underscore');
 
-var Card = function Card(card) {
+var Card = function Card(card, type) {
     var self = this;
-    self.id = _.uniqueId();
-    self.type = card.type || '';
-    self.draw = card.draw || 0;
-    self.pick = card.pick || 0;
-    self.value = card.value || 'A bug in the mainframe (please file a bug report, if you actually get this card)';
+    self.id = card.id;
+    self.type = (type === 'q') ? 'Question' : 'Answer';
+    self.pick = card.numResponses || 1;
+    self.draw = self.pick - 1;
+    self.text = card.text;
+    self.displayText = (_.isArray(card.text)) ? card.text.join('___') : card.displayText.replace(/\.$/, '');
 };
 
 /**

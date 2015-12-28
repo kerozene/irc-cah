@@ -1,10 +1,12 @@
 // import modules
-var _ = require('underscore'),
-    util = require('util'),
-    Game = require('./game'),
+var      _ = require('underscore'),
+      util = require('util'),
+    moment = require('moment'),
+         c = require('irc-colors'),
+      Game = require('./game'),
     Player = require('../models/player'),
     config = require('../../config/config'),
-    p = config.commandPrefixChars[0];
+         p = config.commandPrefixChars[0];
 
 var Games = function Games() {
     var self = this;
@@ -477,6 +479,66 @@ var Games = function Games() {
         }
         if (beerToBot) // pour for self last
             self.beer(client, message, [ client.nick ]);
+    };
+
+    /**
+     * List the card decks available
+     * @param client
+     * @param message
+     * @param cmdArgs
+     */
+    self.decks = function(client, message, cmdArgs) {
+        var reply  = util.format('Card decks available (use %sdeckinfo for details): %s', p, config.decks.join(', '));
+            reply += util.format('; default decks: %s', config.defaultDecks.join(', '));
+        client.say(message.args[0], reply);
+    };
+
+    /**
+     * Get information about a deck
+     * @param client
+     * @param message
+     * @param cmdArgs
+     */
+    self.deckinfo = function(client, message, cmdArgs) {
+        var data, deckCode = cmdArgs[0], channel = message.args[0];
+
+        if (!deckCode || !deckCode.match(/^\w{5}$/)) {
+            client.say(channel, 'Invalid deck code format: ' + cmdArgs[0]);
+            return false;
+        }
+        else {
+            deckCode = deckCode.toUpperCase();
+            if (!_.contains(config.decks, deckCode)) {
+                client.say(channel, 'Deck ' + deckCode + ' is not enabled. If you really want it, yell about it.');
+                return false;
+            }
+        }
+
+        config.decksTool.fetchDeck(deckCode).then(function(data) {
+            data.q = data.calls.length;
+            data.a = data.responses.length;
+            data = _.pick(data, 'name', 'description', 'created', 'author', 'q', 'a');
+            data.url = 'https://www.cardcastgame.com/browse/deck/' + deckCode;
+            if (typeof data.created === 'object')
+                data.created = moment(data.created).format('YYYY-MM-DD');
+            else if (typeof data.created == 'string')
+                data.created = data.created.match(/^(\d{4}-\d{2}-\d{2})/)[1];
+            var reply = util.format('%s: "%s" [%s/%s] by %s on %s (%s) - %s',
+                            deckCode,    data.name, 
+                            c.bold(data.q),
+                                   data.a, 
+                            data.author, data.created, 
+                            data.url,    data.description.split('\n')[0]
+                        ).substring(0, 400);
+            client.say(channel, reply);
+            return true;
+        }, function(error) {
+            if (error.name === 'NotFoundError')
+                error.message = error.message.split('/').reverse()[0];
+            util.log(error.name + ': ' + error.message);
+            client.say(channel, 'Error ' + error.name + ': ' + error.message);
+            return false;
+        });
     };
 
 };

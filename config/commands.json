@@ -1,6 +1,7 @@
 [
 	{
 		"commands": ["start", "go"],
+		"info":     "Start a game with # rounds and selected decks.",
 		"handler":  "start",
 		"params":   [
 			{
@@ -8,28 +9,34 @@
 				"type":     "number",
 				"required": false,
 				"multiple": false
+			},
+			{
+				"name":     "deck",
+				"type":     "string",
+				"required": false,
+				"multiple": true
 			}
-		],
-		"info":     "Start a game with # rounds"
+		]
 	},
 	{
 		"commands": ["stop"],
+		"info":     "Stop the current game",
 		"flag":     "o",
-		"handler":  "stop",
-		"info":     "Stop the current game"
+		"handler":  "stop"
 	},
 	{
 		"commands": ["join", "j"],
-		"handler":  "join",
-		"info":     "Join the current game or start a new one"
+		"info":     "Join the current game or start a new one",
+		"handler":  "join"
 	},
 	{
 		"commands": ["quit", "q", "leave"],
-		"handler":  "quit",
-		"info":     "(player) Leave the current game"
+		"info":     "(player) Leave the current game",
+		"handler":  "quit"
 	},
 	{
 		"commands": ["remove", "r"],
+		"info":     "Remove <player> from the current game",
 		"flag":     "o",
 		"handler":  "remove",
 		"params":   [
@@ -39,16 +46,16 @@
 				"required": true,
 				"multiple": false
 			}
-		],
-		"info":     "Remove <player> from the current game"
+		]
 	},
 	{
 		"commands": ["cards", "c"],
-		"handler":  "cards",
-		"info":     "(player) Show your current cards"
+		"info":     "(player) Show your current cards",
+		"handler":  "cards"
 	},
 	{
 		"commands": ["play"],
+		"info":     "(player) Play your card number #",
 		"handler":  "play",
 		"params":   [
 			{
@@ -57,17 +64,17 @@
 				"required": true,
 				"multiple": true
 			}
-		],
-		"info":     "(player) Play your card number #"
+		]
 	},
 	{
 		"commands": ["list"],
+		"info":     "List the current players",
 		"flag":     "",
-		"handler":  "list",
-		"info":     "List the current players"
+		"handler":  "list"
 	},
 	{
 		"commands": ["winner", "w"],
+		"info":     "(czar) Pick the winning entry",
 		"handler":  "winner",
 		"params":   [
 			{
@@ -76,33 +83,33 @@
 				"required": true,
 				"multiple": false
 			}
-		],
-		"info":     "(czar) Pick the winning entry"
+		]
 	},
 	{
 		"commands": ["points", "scores"],
-		"handler":  "points",
-		"info":     "Show the current scores for all players"
+		"info":     "Show the current scores for all players",
+		"handler":  "points"
 	},
 	{
 		"commands": ["status"],
-		"handler":  "status",
-		"info":     "Show the current game status"
+		"info":     "Show the current game status",
+		"handler":  "status"
 	},
 	{
 		"commands": ["pause"],
+		"info":     "Pause the current game",
 		"flag":     "o",
-		"handler":  "pause",
-		"info":     "Pause the current game"
+		"handler":  "pause"
 	},
 	{
 		"commands": ["resume", "unpause"],
+		"info":     "Resume the currently paused game",
 		"flag":     "o",
-		"handler":  "resume",
-		"info":     "Resume the currently paused game"
+		"handler":  "resume"
 	},
 	{
 		"commands": ["pick", "p"],
+		"info":     "(player,czar) Play a card or pick a winning entry. (If fastpick is on, you can just type the number(s))",
 		"handler":  "pick",
 		"params":   [
 			{
@@ -111,11 +118,11 @@
 				"required": true,
 				"multiple": true
 			}
-		],
-		"info":     "(player,czar) Play a card or pick a winning entry. (If fastpick is on, you can just type the number(s))"
+		]
 	},
 	{
 		"commands": ["help"],
+		"info":     "List commands or get help for <command>",
 		"handler":  "help",
 		"params":   [
 			{
@@ -124,16 +131,16 @@
 				"required": false,
 				"multiple": false
 			}
-		],
-		"info":     "List commands or get help for <command>"
+		]
 	},
 	{
 		"commands": ["test"],
-		"handler":  "test",
-		"info":     "Get a test NOTICE from the bot. If you can't see this, you won't be able to see your cards"
+		"info":     "Get a test NOTICE from the bot. If you can't see this, you won't be able to see your cards",
+		"handler":  "test"
 	},
 	{
 		"commands": ["beer"],
+		"info":     "Order a beer, or order beers for <nick1, nick2, ...>. Use \"all\" to send beers to all current players",
 		"handler":  "beer",
 		"params":   [
 			{
@@ -142,7 +149,24 @@
 				"required": false,
 				"multiple": true
 			}
-		],
-		"info":     "Order a beer, or order beers for <nick1, nick2, ...>. Use \"all\" to send beers to all current players"
+		]
+	},
+	{
+		"commands": ["decks", "d"],
+		"info":     "List the card decks available",
+		"handler":  "decks"
+	},
+	{
+		"commands": ["deckinfo", "di"],
+		"info":     "Get information about a deck by code",
+		"handler":  "deckinfo",
+		"params":   [
+			{
+				"name":     "deck",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			}
+		]
 	}
 ]

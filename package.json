@@ -18,7 +18,10 @@
     "irc-colors": "~1.0.3",
     "grunt-nodemon": "~0.2.1",
     "nodemon": "~1.0.17",
-    "jayschema": "~0.2.7",
+    "cardcast-api": "latest",
+    "node-persist": "latest",
+    "bluebird": "latest",
+    "moment": "latest",
     "shush": "latest"
   },
   "devDependencies": {

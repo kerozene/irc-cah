@@ -20,10 +20,12 @@ var STATES = {
 
 // TODO: Implement the ceremonial haiku round that ends the game
 var HAIKU = new Card({
+    "id": 1234567,
     "draw": 2,
     "pick": 3,
-    "value": "(Draw 2, Pick 3) Make a haiku."
-});
+    "text": "(Draw 2, Pick 3) Make a haiku.",
+    "displayText": "(Draw 2, Pick 3) Make a haiku."
+}, 'q');
 
 /**
  * A single game object that handles all operations in a game
@@ -54,40 +56,73 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.lastWinner = {}; // store the streak count of the last winner
     p = config.commandPrefixChars[0]; // default prefix char
 
-    var questions = _.filter(config.cards, function(card) {
-        return card.type.toLowerCase() === 'question';
-    });
-    var answers = _.filter(config.cards, function(card) {
-        return card.type.toLowerCase() === 'answer';
-    });
-    console.log('Loaded', config.cards.length, 'cards:' + questions.length, 'questions,', answers.length, 'answers');
+    /**
+     * Set options
+     * @param cmdArgs
+     */
+    self.parseCommandArgs = function(cmdArgs) {
+        var loadDecks = [],
+            failDecks = [];
 
-    // init decks
-    self.decks = {
-        question: new Cards(questions),
-        answer:   new Cards(answers)
+        // point limit
+        if (typeof cmdArgs[0] !==  'undefined' && !isNaN(cmdArgs[0])) {
+            self.pointLimit = parseInt(cmdArgs[0]);
+            cmdArgs = _.rest(cmdArgs);
+        }
+        _.each(cmdArgs, function(arg) {
+            if (arg.match(/^\w{5}$/)) {
+                arg = arg.toUpperCase();
+                if (_.contains(config.decks, arg))
+                    loadDecks.push(arg);
+                else
+                    failDecks.push(arg);
+            }
+        }, this);
+        if (failDecks.length) {
+            self.say(util.format('Could not load decks: %s; see %sdecks', failDecks.join(', '), p));
+        }
+        return loadDecks;
     };
-    // init discard piles
-    self.discards = {
-        question: new Cards(),
-        answer:   new Cards()
+
+    self.initCards = function(decks) {
+        var defaultDecks = (self.isChristmas()) ? config.defaultDecks.concat(config.christmasDecks) : config.defaultDecks;
+        decks = (decks.length) ? decks : defaultDecks;
+        var loadDecks = _.filter(config.loadDecks, function(loadDeck) { return (_.contains(decks, loadDeck.code)); });
+        var questions = Array.prototype.concat.apply([], _.pluck(loadDecks, 'calls'));
+        var answers   = Array.prototype.concat.apply([], _.pluck(loadDecks, 'responses'));
+
+        util.log(util.format('Loaded %d decks (%s): %d questions, %d answers',
+            decks.length,
+            _.pluck(loadDecks, 'code').join(', '),
+            questions.length,
+            answers.length
+        ));
+        if (decks != defaultDecks)
+            self.say(util.format('Loaded %d decks: %d questions, %d answers', decks.length, questions.length, answers.length));
+
+        // init decks
+        self.decks = {
+            question: new Cards(questions, 'q'),
+            answer:   new Cards(answers, 'a')
+        };
+        // init discard piles
+        self.discards = {
+            question: new Cards(),
+            answer:   new Cards()
+        };
+        // init table slots
+        self.table = {
+            question: null,
+            answer: []
+        };
+        // shuffle decks
+        self.decks.question.shuffle();
+        self.decks.answer.shuffle();  
     };
-    // init table slots
-    self.table = {
-        question: null,
-        answer: []
-    };
-    // shuffle decks
-    self.decks.question.shuffle();
-    self.decks.answer.shuffle();
 
     // parse point limit from configuration file
     if(typeof config.pointLimit !== 'undefined' && !isNaN(config.pointLimit))
         self.pointLimit = parseInt(config.pointLimit);
-
-    // parse point limit from command arguments
-    if(typeof cmdArgs[0] !==  'undefined' && !isNaN(cmdArgs[0]))
-        self.pointLimit = parseInt(cmdArgs[0]);
 
     /**
      * Stop game
@@ -347,7 +382,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         self.checkDecks();
         var card = self.decks.question.pickCards();
         // replace all instance of %s with underscores for prettier output
-        var value = card.value.replace(/\%s/g, '___');
+        var value = card.displayText;
         // check if special pick & draw rules
         if (card.pick > 1) {
             value += c.bold(' [PICK ' + card.pick + ']');
@@ -598,11 +633,11 @@ var Game = function Game(channel, client, config, cmdArgs) {
      * @returns {*|Object|ServerResponse}
      */
     self.getFullEntry = function (question, answers) {
-        var args = [question.value];
+        var args = [];
         _.each(answers, function (card) {
-            args.push(c.bold(card.value));
+            args.push(c.bold(card.displayText));
         }, this);
-        return util.format.apply(this, args);
+        return util.format.apply(null, [ question.text.join('%s') ].concat(args));
     };
 
     /**
@@ -778,7 +813,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
                 message = 'Your cards are:',
                 newMessage;
             _.each(cards, function (card, index) {
-                 remainingCards.push(c.bold(' [' + index + '] ') + card.value);
+                 remainingCards.push(c.bold(' [' + index + '] ') + card.displayText);
             }, this);
             // split output if longer than allowed message length
             while (remainingCards.length) {
@@ -1052,7 +1087,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
 
     self.isChristmas = function() {
         var now = new Date();
-        return (now.getMonth() == 11 && now.getDate() > 19);        
+        return (now.getMonth() == 11 && now.getDate() > 9);        
     };
 
     c.christmas = function(str) {
@@ -1069,6 +1104,8 @@ var Game = function Game(channel, client, config, cmdArgs) {
         str = (c.yellow('*') + str.join('') + c.yellow('*'));
         return str;
     };
+
+    self.initCards(self.parseCommandArgs(cmdArgs));
 
     self.setTopic(config.topic.messages.on);
 
