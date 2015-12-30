@@ -1,6 +1,7 @@
 var  util = require('util'),
         _ = require('underscore'),
       irc = require('irc'),
+utilities = require('./utilities.js'),
    Config = require('./controllers/config'),
     Decks = require('./controllers/decks'),
       Cmd = require('./controllers/cmd');
@@ -207,12 +208,8 @@ var Bot = function Bot() {
             if (!cmd)
                 return false;
             // parse arguments
-            cmdArgs = [];
-            if (cmdArr[2]) {
-                cmdArgs = _.map(cmdArr[2].match(/([^\s]+)\s?/gi), function (str) {
-                    return str.trim();
-                });
-            }
+            if (cmdArr[2])
+                cmdArgs = utilities.getMatches(cmdArr[2], /([^\s]+)\s?/gi, 1);
         }
 
         // build callback options
