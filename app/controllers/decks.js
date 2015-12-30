@@ -1,12 +1,11 @@
 var           _ = require('underscore'),
-         config = require('../../config/config'),
         Promise = require('bluebird'),
         storage = require('node-persist'),
     CardcastAPI = require("cardcast-api").CardcastAPI;
 
 Promise.config({warnings: false});
 
-var Decks = function() {
+var Decks = function(bot) {
     var self = this;
     self.storage = storage;
 

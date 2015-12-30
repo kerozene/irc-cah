@@ -5,20 +5,19 @@
  * @version 0.6.0
  */
 
-process.env.NODE_ENV = process.env.NODE_ENV || 'production';
-
-var repl = (process.env.NODE_ENV === 'development') ? require('repl').start('> ') : { context: {} };
+var repl = require('repl').start('> ');
 
 console.log('Cards Against Humanity IRC bot');
-
 
 var Bot = require('./app/bot'),
     bot = new Bot();
 
 repl.context.repl = repl;
 repl.context.bot  = bot;
-repl.context.config = bot.config;
-repl.context.client = bot.client;
-repl.context.cah    = bot.cah;
+repl.context.conf = bot.config;
+repl.context.irc  = bot.client;
+repl.context.c    = bot.controller.cmd;
+repl.context.chan = bot.channel;
+repl.context.g    = bot.game;
 
 bot.connect();

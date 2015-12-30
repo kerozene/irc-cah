@@ -1,6 +1,7 @@
 {
     "server": "openirc.snt.utwente.nl",  // - Server to connect to.
     "nick": "cah",                       // - The bot's nickname.
+    "channel": "#cah",                   // - The channel to join.
 
     "notifyUsers": false,
 
@@ -81,35 +82,31 @@
         }
     ],
 
-    "joinCommands": {
-        "#cah": [
+    "joinCommands": [
 
-        // ^ Sent after joining this channel.
+    // ^ Sent after joining the channel.
 
-            {
-                "target": "#cah",
-                "message": "Hello guys"
-            },
-            {
-                "target": "yournick",
-                "message": "I just joined #cah"
-            }
-        ]
-    },
+        {
+            "target": "#cah",
+            "message": "Hello guys"
+        },
+        {
+            "target": "yournick",
+            "message": "I just joined #cah"
+        }
+    ],
 
-    "userJoinCommands": {
-        "#cah": [
+    "userJoinCommands": [
 
-        // ^ Sent after someone else joins this channel.
-        //   'nick' and 'channel' are valid template tags in userJoinCommands messages.
-        //   '%%' is the command prefix placeholder.
+    // ^ Sent after someone else joins the channel.
+    //   'nick' and 'channel' are valid template tags in userJoinCommands messages.
+    //   '%%' is the command prefix placeholder.
 
-            {
-                "target": "#cah",
-                "message": "Hi <%= nick %>! Type %%join to play"
-            }
-        ]
-    },
+        {
+            "target": "#cah",
+            "message": "Hi <%= nick %>! Type %%join to play"
+        }
+    ],
 
     "clientOptions": {
 
@@ -119,7 +116,6 @@
         "userName": "cah",
         "debug": true,
         "capabilities": ["account-notify", "extended-join"],
-        "channels": ["#cah"],
         "messageSplit": 410,             // Split player card output into multiple notices if message is longer than this.
         "retryCount": 2,                 // Number of connection retries to attempt.
         "autoRejoin": false,             // Rejoin the channel if kicked?

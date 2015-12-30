@@ -1,9 +1,9 @@
-var util = require('util'),
-    c = require('irc-colors'),
-    _ = require('underscore'),
+var  util = require('util'),
+        c = require('irc-colors'),
+        _ = require('underscore'),
     Cards = require('../controllers/cards'),
-    Card = require('../models/card'),
-    p; // default prefix char from config
+     Card = require('../models/card'),
+        p; // default prefix char from config
 
 /**
  * Available states for game
@@ -35,8 +35,11 @@ var HAIKU = new Card({
  * @param cmdArgs !start command arguments
  * @constructor
  */
-var Game = function Game(channel, client, config, cmdArgs) {
-    var self = this;
+var Game = function Game(bot, rounds, decks) {
+    var    self = this,
+        channel = bot.channel,
+         client = bot.client,
+         config = bot.config;
 
     // properties
     self.round = 0; // round number
@@ -52,42 +55,14 @@ var Game = function Game(channel, client, config, cmdArgs) {
     self.listeners = []; // irc client event listeners
     self.pauseState = []; // pause state storage
     self.points = [];
-    self.pointLimit = 0; // point limit for the game, defaults to 0 (== no limit)
+    self.pointLimit = rounds || 0; // point limit for the game, defaults to 0 (== no limit)
     self.lastWinner = {}; // store the streak count of the last winner
     p = config.commandPrefixChars[0]; // default prefix char
 
-    /**
-     * Set options
-     * @param cmdArgs
-     */
-    self.parseCommandArgs = function(cmdArgs) {
-        var loadDecks = [],
-            failDecks = [];
-
-        // point limit
-        if (typeof cmdArgs[0] !==  'undefined' && !isNaN(cmdArgs[0])) {
-            self.pointLimit = parseInt(cmdArgs[0]);
-            cmdArgs = _.rest(cmdArgs);
-        }
-        _.each(cmdArgs, function(arg) {
-            if (arg.match(/^\w{5}$/)) {
-                arg = arg.toUpperCase();
-                if (_.contains(config.decks, arg))
-                    loadDecks.push(arg);
-                else
-                    failDecks.push(arg);
-            }
-        }, this);
-        if (failDecks.length) {
-            self.say(util.format('Could not load decks: %s; see %sdecks', failDecks.join(', '), p));
-        }
-        return loadDecks;
-    };
-
-    self.initCards = function(decks) {
+    self.initCards = function() {
         var defaultDecks = (self.isChristmas()) ? config.defaultDecks.concat(config.christmasDecks) : config.defaultDecks;
         decks = (decks.length) ? decks : defaultDecks;
-        var loadDecks = _.filter(config.loadDecks, function(loadDeck) { return (_.contains(decks, loadDeck.code)); });
+        var loadDecks = _.filter(bot.decks, function(loadDeck) { return (_.contains(decks, loadDeck.code)); });
         var questions = Array.prototype.concat.apply([], _.pluck(loadDecks, 'calls'));
         var answers   = Array.prototype.concat.apply([], _.pluck(loadDecks, 'responses'));
 
@@ -119,10 +94,6 @@ var Game = function Game(channel, client, config, cmdArgs) {
         self.decks.question.shuffle();
         self.decks.answer.shuffle();  
     };
-
-    // parse point limit from configuration file
-    if(typeof config.pointLimit !== 'undefined' && !isNaN(config.pointLimit))
-        self.pointLimit = parseInt(config.pointLimit);
 
     /**
      * Stop game
@@ -162,6 +133,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         delete self.decks;
         delete self.discards;
         delete self.table;
+        bot.game = undefined;
 
     };
 
@@ -1105,7 +1077,7 @@ var Game = function Game(channel, client, config, cmdArgs) {
         return str;
     };
 
-    self.initCards(self.parseCommandArgs(cmdArgs));
+    self.initCards();
 
     self.setTopic(config.topic.messages.on);
 

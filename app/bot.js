@@ -11,8 +11,9 @@ var  util = require('util'),
 var Bot = function Bot() {
     var self = this;
 
-    self.config = config;
+    self.controller = {};
     self.commands = [];
+    self.decks = [];
     self.msgs = [];
     self.timers = [];
 
@@ -21,28 +22,53 @@ var Bot = function Bot() {
     self.lastDevoiceOnJoin = {};
     self.lastCommandFromHost = {};
 
+    self.controller.config = new Config(self);
+    self.config = config = self.controller.config.load();
+
+    self.controller.decks = new Decks(self);
+    self.controller.decks.init()
+    .then(function(message) {
+        util.log(message);
+        _.each(config.decks, function(deck) {
+            self.controller.decks.fetchDeck(deck)
+            .then(function(data) {
+                self.decks.push(data);
+                var pad = function(str, char, width) {
+                    var padded = new Array(width + 1).join(char) + str;
+                    return padded.slice(-width);
+                };
+                util.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
+                    _.map([ data.calls.length, data.responses.length ], function(el) { return pad(el, ' ', 4); })
+                )));
+            }, function(error) {
+                if (error.name === 'NotFoundError')
+                    error.message = error.message.split('/').reverse()[0];
+                util.log(error.name + ': ' + error.message);
+            });
+        });
+    });
+
+    self.channel = config.channel.toLowerCase();
+    config.clientOptions.channels = [ self.channel ];
     config.clientOptions.autoConnect = false;
-    client = self.client = new irc.Client(config.server, config.nick, config.clientOptions);
+
     console.log('Configuration loaded.');
 
-    self.cah = new Games();
+    self.client = client = new irc.Client(config.server, config.nick, config.clientOptions);
 
-    /**
-     * Get the command data associated with 'alias'
-     */
-    self.findCommand = function(alias) {
-        return _.find(self.commands, function(cmd) { return (_.contains(cmd.commands, alias)); });
-    };
+    self.controller.cmd = new Cmd(self);
+
+    var p = config.commandPrefixChars[0];
 
     /**
      * Load game commands from config
      */
     self.loadCommands = function() {
         _.each(config.commands, function(command) {
-            if (!self.cah[command.handler])
-                throw Error('Unknown handler: Games.' + command.handler);
+            if (!self.controller.cmd[command.handler])
+                throw Error('Unknown handler: Cmd.' + command.handler);
             _.each(command.commands, function(alias) {
-                if (self.findCommand(alias))
+                if (self.controller.cmd.findCommand(alias))
                     throw Error('Command alias already in use: ' + alias);
             });
             self.commands.push(command);
@@ -56,9 +82,7 @@ var Bot = function Bot() {
         process.on('uncaughtException', function (err) {
             console.log('Caught exception: ' + err);
             console.log(err.stack);
-            _.each(config.clientOptions.channels, function(channel) {
-                client.say(channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.");
-            });
+            client.say(self.channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.");
         });
     };
 
@@ -83,10 +107,8 @@ var Bot = function Bot() {
         retryCount = retryCount || config.clientOptions.retryCount;
         clearInterval(self.timers.checkServer);
         console.warn('Trying to reconnect...');
-        _.each(self.cah.games, function(game) {
-            if (game.channel && game.isRunning())
-                game.pause();
-        });
+        if (self.game.isRunning())
+            game.pause();
         client.disconnect('Reconnecting...');
         setTimeout(function() { // Waiting for disconnect to call back doesn't work
             console.warn('Connecting...');
@@ -111,12 +133,14 @@ var Bot = function Bot() {
      */
     self.channelJoinHandler = function(channel) {
         console.log('Joined ' + channel + ' as ' + client.nick);
+        if (channel.toLowerCase() != self.channel) {
+            util.log('Joined unknown channel ' + channel + ', parting...'); // maybe forwarded
+            client.part(channel, 'nope nope nope');
+            return false;
+        }
         self.devoiceOnJoin(channel);
-        if (  !self.cah.findGame(channel) &&
-               typeof config.joinCommands !== 'undefined' &&
-               config.joinCommands[channel]
-        ) {
-            _.each(config.joinCommands[channel], function (cmd) {
+        if (  !self.game && config.joinCommands ) {
+            _.each(config.joinCommands, function (cmd) {
                 if(cmd.target && cmd.message) {
                     message = _.template(cmd.message)({nick: client.nick, channel: channel}).split('%%').join(p);
                     client.say(cmd.target, message);
@@ -137,7 +161,7 @@ var Bot = function Bot() {
         self.lastDevoiceOnJoin[channel] = newTimestamp;
         if (oldTimestamp && newTimestamp - oldTimestamp < 5000)
             return;
-        var game = self.cah.findGame(channel);
+        var game = self.game;
         var players = (game) ? game.getPlayerNicks()
                              : [];
         var nicks   = _.difference(client.nicksWithVoice(channel), players);
@@ -166,7 +190,7 @@ var Bot = function Bot() {
         var cmd, cmdArgs = [],
             pickArr = text.trim().split(/[^\d\s]/)[0].match(/(\d+)/g); // get the numbers
         if (config.enableFastPick && !_.isNull(pickArr)) {
-            cmd = self.findCommand('pick');
+            cmd = self.controller.cmd.findCommand('pick');
             cmdArgs  = [pickArr, true]; // fastPick=true
         } else {
             var escape = ['-', '^'];
@@ -179,7 +203,7 @@ var Bot = function Bot() {
                 // command not found
                 return false;
             }
-            cmd = self.findCommand(cmdArr[1].toLowerCase());
+            cmd = self.controller.cmd.findCommand(cmdArr[1].toLowerCase());
             if (!cmd)
                 return false;
             // parse arguments
@@ -192,11 +216,10 @@ var Bot = function Bot() {
         }
 
         // build callback options
-        if (config.clientOptions.channels.indexOf(to) >= 0) {
-            var channel = to;
-            // public commands
-            callback = function() { self.cah[cmd.handler](client, message, cmdArgs); };
-            if (!cmd.flag || client.nickHasChanMode(message.nick, cmd.flag, channel)) {
+        if (to.toLowerCase() == self.channel) {
+            // public command
+            callback = function() { self.controller.cmd[cmd.handler](message, cmdArgs); };
+            if (!cmd.flag || client.nickHasChanMode(message.nick, cmd.flag, self.channel)) {
                 if (!self.throttleCommand(message.host))
                     callback.call();
             }
@@ -220,14 +243,10 @@ var Bot = function Bot() {
         }
     });
 
-    // handle joins to channels
+    // handle user joins to channel
     client.addListener('join', function (channel, nick, message) {
-        if (client.nick === nick)
-            return false;
-        if (  typeof config.userJoinCommands !== 'undefined' &&
-              config.userJoinCommands[channel]
-           ) {
-            _.each(config.userJoinCommands[channel], function (cmd) {
+        if ( client.nick !== nick && config.userJoinCommands ) {
+            _.each(config.userJoinCommands, function (cmd) {
                 if(cmd.target && cmd.message) {
                     message = _.template(cmd.message)({nick: nick, channel: channel}).split('%%').join(p);
                     client.say(cmd.target, message);
@@ -236,9 +255,9 @@ var Bot = function Bot() {
         }
     });
 
-    // accept invites for known channels
+    // accept invites to configured channel
     client.addListener('invite', function(channel, from, message) {
-        if (  _.contains(config.clientOptions.channels, channel) &&
+        if (  channel.toLowerCase() == self.channel &&
             ! _.contains(_.keys(client.chans, channel)) ) {
             client.send('JOIN', channel);
             client.say(from, 'Attempting to join ' + channel);
