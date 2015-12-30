@@ -123,6 +123,23 @@
         "floodProtectionDelay": 2000
     },
 
+    "decks": [
+        "CAHBS", "CAHE1", "CAHE2", "CAHE3", "CAHE4", "EU6CJ", "PEU3Q", // Main deck + official expansions
+        "XMAS1", "XVMCS", "CANCK", "4MCMT", "CYAFZ", // Christmas 1 & 2, Canadian, Australian, UK
+        "GAWR5", "XMJP5", "2HJMW", // Doctor Who, The Simpsons, QI
+        "74JJ5", "XQ8X2", "MWCE5"  // Relentlessly Random, Big Stupid Deck, Crabs Against Humidity
+    ],
+
+    // ^ List of decks to enable from cardcastgame.com
+
+    "defaultDecks": ["CAHBS", "CAHE1", "CAHE2", "CAHE3", "CAHE4", "EU6CJ", "PEU3Q"],
+
+    // ^ Decks to select by default
+
+    "christmasDecks": ["XMAS1", "XVMCS"],
+
+    // ^ Load these decks from mid- to end of December
+
     // When the !beer command is issued, a random beer is selected from this list.
     "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois", 
                "Modelo", "Fat Tire Amber Ale", "Magic Hat", "Samuel Adams",
