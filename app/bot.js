@@ -1,10 +1,9 @@
-var util = require('util'),
-       _ = require('underscore'),
-     irc = require('irc'),
-  config = require('../config/config'),
-   Games = require('../app/controllers/games.js'),
-       p = config.commandPrefixChars[0],
-  client = {};
+var  util = require('util'),
+        _ = require('underscore'),
+      irc = require('irc'),
+   Config = require('./controllers/config'),
+    Decks = require('./controllers/decks'),
+      Cmd = require('./controllers/cmd');
 
 /**
  * Initialize the bot
