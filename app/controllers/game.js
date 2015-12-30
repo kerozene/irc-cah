@@ -1,6 +1,6 @@
 var  util = require('util'),
         c = require('irc-colors'),
-        _ = require('underscore'),
+        _ = require('lodash'),
     Cards = require('../controllers/cards'),
      Card = require('../models/card'),
         p; // default prefix char from config

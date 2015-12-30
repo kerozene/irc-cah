@@ -1,4 +1,4 @@
-var    _ = require('underscore'),
+var    _ = require('lodash'),
     Card = require('../models/card');
 
 var Cards = function Cards(cards, type) {

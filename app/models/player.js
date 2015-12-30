@@ -1,4 +1,4 @@
-var _ = require('underscore'),
+var     _ = require('lodash'),
     Cards = require('../controllers/cards');
 
 var Player = function Player(nick, user, hostname) {

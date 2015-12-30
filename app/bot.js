@@ -1,5 +1,5 @@
 var  util = require('util'),
-        _ = require('underscore'),
+        _ = require('lodash'),
       irc = require('irc'),
 utilities = require('./utilities.js'),
    Config = require('./controllers/config'),

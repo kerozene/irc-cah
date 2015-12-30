@@ -1,4 +1,4 @@
-var           _ = require('underscore'),
+var           _ = require('lodash'),
         Promise = require('bluebird'),
         storage = require('node-persist'),
     CardcastAPI = require("cardcast-api").CardcastAPI;

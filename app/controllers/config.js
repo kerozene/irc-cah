@@ -1,5 +1,5 @@
 var shush = require('shush'),
-        _ = require('underscore'),
+        _ = require('lodash'),
      util = require('util'),
 	 path = require('path');
 

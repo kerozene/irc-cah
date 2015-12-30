@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 
 var Card = function Card(card, type) {
     var self = this;

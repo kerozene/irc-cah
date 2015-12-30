@@ -1,5 +1,5 @@
 // import modules
-var      _ = require('underscore'),
+var      _ = require('lodash'),
       util = require('util'),
     moment = require('moment'),
          c = require('irc-colors'),
