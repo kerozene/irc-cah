@@ -169,8 +169,9 @@ var Bot = function Bot() {
         client.setChanMode(channel, '-v', nicks);
     };
 
-    self.throttleCommand = function(host) {
+    self.throttleCommand = function(message) {
         var now      = _.now(),
+            host     = message.host,
             last     = self.lastCommandFromHost[host],
             throttle = config.commandThrottle;
 
@@ -183,6 +184,8 @@ var Bot = function Bot() {
             last[1]++;
             self.lastCommandFromHost[host] = last;
         }
+        if (last[1] === throttle[0])
+            client.notice(message.nick, util.format('Too many commands. Ignoring for %s seconds.', throttle[1]));
         return (last[1] > throttle[0]);
     };
 
@@ -217,7 +220,7 @@ var Bot = function Bot() {
             // public command
             callback = function() { self.controller.cmd[cmd.handler](message, cmdArgs); };
             if (!cmd.flag || client.nickHasChanMode(message.nick, cmd.flag, self.channel)) {
-                if (!self.throttleCommand(message.host))
+                if (!self.throttleCommand(message))
                     callback.call();
             }
         }
