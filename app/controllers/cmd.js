@@ -93,7 +93,7 @@ var Cmd = function Cmd(bot) {
      */
     self.stop = function (message, cmdArgs) {
         if (self.noGame()) return;
-        bot.game.stop(bot.game.getPlayer({user: message.user, hostname: message.hostname}));
+        bot.game.stop(bot.game.getPlayer({user: message.user, hostname: message.host}));
         bot.game = undefined;
     };
 
@@ -143,7 +143,7 @@ var Cmd = function Cmd(bot) {
      */
     self.quit = function (message, cmdArgs) {
         if (self.noGame()) return;
-        bot.game.removePlayer(bot.game.getPlayer({user: message.user, hostname: message.hostname}));
+        bot.game.removePlayer(bot.game.getPlayer({user: message.user, hostname: message.host}));
     };
 
     /**
@@ -171,7 +171,7 @@ var Cmd = function Cmd(bot) {
      */
     self.cards = function (message, cmdArgs) {
         if (self.noGame()) return;
-        var player = bot.game.getPlayer({user: message.user, hostname: message.hostname});
+        var player = bot.game.getPlayer({user: message.user, hostname: message.host});
         bot.game.showCards(player);
     };
 
@@ -182,7 +182,7 @@ var Cmd = function Cmd(bot) {
      */
     self.play = function (message, cmdArgs) {
         if (self.noGame()) return;
-        var player = bot.game.getPlayer({user: message.user, hostname: message.hostname});
+        var player = bot.game.getPlayer({user: message.user, hostname: message.host});
         if (player)
             bot.game.playCard(cmdArgs, player);
     };
@@ -204,7 +204,7 @@ var Cmd = function Cmd(bot) {
      */
     self.winner = function (message, cmdArgs) {
         if (self.noGame()) return;
-        var player = bot.game.getPlayer({user: message.user, hostname: message.hostname});
+        var player = bot.game.getPlayer({user: message.user, hostname: message.host});
         if (player)
             bot.game.selectWinner(cmdArgs[0], player);
     };

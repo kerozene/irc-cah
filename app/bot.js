@@ -108,7 +108,7 @@ var Bot = function Bot() {
         retryCount = retryCount || config.clientOptions.retryCount;
         clearInterval(self.timers.checkServer);
         console.warn('Trying to reconnect...');
-        if (self.game.isRunning())
+        if (self.game && self.game.isRunning())
             game.pause();
         client.disconnect('Reconnecting...');
         setTimeout(function() { // Waiting for disconnect to call back doesn't work

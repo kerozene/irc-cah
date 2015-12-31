@@ -716,40 +716,37 @@ var Game = function Game(bot, rounds, decks) {
      */
     self.removePlayer = function (player, options) {
         options = _.extend({}, options);
-        if (typeof player !== 'undefined') {
-            // get cards in hand
-            var cards = player.cards.reset();
-            // remove player
-            self.players = _.without(self.players, player);
-            if ( !_.contains(self.removed, self.getPlayerUhost(player)) && self.round > 0 )
-                self.waitToJoin.push(self.getPlayerUhost(player));
-            // put player's cards to discard
-            _.each(cards, function (card) {
-                self.discards.answer.addCard(card);
-            });
-            if (options.silent !== true) {
-                self.say(player.nick + ' has left the game');
-            }
-            if (self.config.voicePlayers === true)
-                self.client.setChanMode(channel, '-v', player.nick);
+        if (!player)
+            return false;
+        // get cards in hand
+        var cards = player.cards.reset();
+        // remove player
+        self.players = _.without(self.players, player);
+        if ( !_.contains(self.removed, self.getPlayerUhost(player)) && self.round > 0 )
+            self.waitToJoin.push(self.getPlayerUhost(player));
+        // put player's cards to discard
+        _.each(cards, function (card) {
+            self.discards.answer.addCard(card);
+        });
+        if (!options.silent)
+            self.say(player.nick + ' has left the game');
+        if (self.config.voicePlayers === true)
+            self.client.setChanMode(channel, '-v', player.nick);
 
-            // check if remaining players have all player
-            if (self.state === STATES.PLAYABLE && self.checkAllPlayed()) {
-                self.showEntries();
-            }
+        // check if remaining players have all player
+        if (self.state === STATES.PLAYABLE && self.checkAllPlayed())
+            self.showEntries();
 
-            // check czar
-            if (self.state === STATES.PLAYED && self.czar === player) {
-                self.say('The czar has fled the scene. So I will pick the winner on this round.');
-                self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
-            }
-
-            if (self.players.length === 0 && config.stopOnLastPlayerLeave === true) {
-                self.stop();
-            }
-            return player;
+        // check czar
+        if (self.state === STATES.PLAYED && self.czar === player) {
+            self.say('The czar has fled the scene. So I will pick the winner on this round.');
+            self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
         }
-        return false;
+
+        if (self.players.length === 0 && config.stopOnLastPlayerLeave === true)
+            self.stop();
+
+        return player;
     };
 
     /**
