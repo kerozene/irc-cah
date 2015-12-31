@@ -327,12 +327,11 @@ var Cmd = function Cmd(bot) {
     self.beer = function (message, cmdArgs)
     {
         var nicks     = [ message.nick ],
-            beerNicks = [], beer = [], action = '', beerToBot = false,
+            beer = [], action = '', beerToBot = false, reply = '',
             maxNicks  = _.min([config.beers.length, 7]);
-        message = '';
         var actions = [
-            'pours a tall, cold glass of <%= beer %> and slides it down the bar to <%= nick %>.',
-            'cracks open a bottle of <%= beer %> for <%= nick %>.',
+            'pours a tall, cold glass of <%= beer %> and slides it down the bar to <%= nick %>',
+            'cracks open a bottle of <%= beer %> for <%= nick %>',
             'pours a refreshing pint of <%= beer %> for <%= nick %>',
             'slams a foamy stein of <%= beer %> down on the table for <%= nick %>'
         ];
@@ -354,39 +353,39 @@ var Cmd = function Cmd(bot) {
             nicks = cmdArgs;
 
         if (_.isEqual(nicks, [ client.nick ])) {
-            message = _.template('pours itself a tall, cold glass of <%= beer %>. cheers, <%= from %>!');
-            client.action(channel, message({
+            reply = _.template('pours itself a tall, cold glass of <%= beer %>. cheers, <%= from %>!');
+            client.action(channel, reply({
                 beer: _.sample(config.beers, 1)[0],
                 from: message.nick,
                 nick: client.nick
             }));
-            return true;            
+            return true;
         }
-        _.chain(nicks).uniq().each(function (nick) {
+        nicks = _(nicks).uniq().map(function (nick) {
             if (client.nick == nick)
                 beerToBot = true;
             else if (client.nickIsInChannel(nick, channel))
-                beerNicks.push(nick);
-        });
-        if (beerNicks.length > maxNicks) {
+                return nick;
+        }).compact().value();
+        if (nicks.length > maxNicks) {
             self.say("There's not enough beer!");
             return false;
         }
-        if (beerNicks.length) {
-            action = _.sample(actions, 1)[0];
-            if (beerNicks.length > 1) {
-                _.each(plurals, function(from, to) { // value, key
-                    action = action.split(from).join(to);
-                });
-            }
-            message = _.template(action);
-            client.action(channel, message({
-                beer: listToString(_.sample(config.beers, beerNicks.length)),
-                nick: listToString(beerNicks)
-            }));
+        if (!nicks.length)
+            return false;
+        action = _.sample(actions, 1)[0];
+        if (nicks.length > 1) {
+            _.each(plurals, function(one, many) { // value, key
+                action = action.split(one).join(many);
+            });
         }
+        reply = _.template(action);
+        client.action(channel, reply({
+            beer: listToString(_.sample(config.beers, nicks.length)),
+            nick: listToString(nicks)
+        }));
         if (beerToBot) // pour for self last
-            self.beer(message, [ client.nick ]);
+            self.beer(reply, [ client.nick ]);
     };
 
     /**
@@ -395,7 +394,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.decks = function(message, cmdArgs) {
-        var reply  = util.format('Card decks available (use %sdeckinfo for details): %s', p, config.decks.join(', '));
+        var reply  = util.format('Card decks available (use %sdeckinfo <code> for details): %s', p, config.decks.join(', '));
             reply += util.format('; default decks: %s', config.defaultDecks.join(', '));
         self.say(reply);
     };
