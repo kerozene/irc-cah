@@ -22,6 +22,7 @@
     "node-persist": "latest",
     "bluebird": "latest",
     "moment": "latest",
+    "n_": "latest",
     "shush": "latest"
   },
   "devDependencies": {

@@ -8,10 +8,10 @@ var Config = function(bot) {
 
 	self.load = function() {
 		var config = {
-			rootPath:  path.normalize(__dirname + '/../..')
+			rootPath:  path.dirname(require.main.filename)
 		};
-		config = _.extend(config,             shush(config.rootPath + '/config.json'));
-		config = _.extend(config, {commands:  shush(config.rootPath + '/commands.json')});
+		config = _.extend(config,             shush(config.rootPath + '/config'));
+		config = _.extend(config, {commands:  shush(config.rootPath + '/commands')});
 		return config;
 	};
 

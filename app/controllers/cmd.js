@@ -234,9 +234,7 @@ var Cmd = function Cmd(bot) {
      * @param message
      * @param cmdArgs
      */
-    self.pick = function (message, cmdArgs)
-    {
-        // check if everyone has played and end the round
+    self.pick = function (message, cmdArgs) {
         var user = message.user,
             hostname = message.host,
             fastPick = false;
