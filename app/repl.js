@@ -10,8 +10,12 @@ module.exports = function(repl, bot) {
         conf: bot.config,
         irc:  bot.client,
         chan: bot.channel,
-        g:    bot.game,
         c:    bot.controller.cmd
+    });
+
+    repl.defineCommand('game', {
+        help: "Assign game object to 'g'",
+        action: function() { repl.context.g = bot.game; }
     });
 
     repl.defineCommand('start', {
