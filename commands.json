@@ -1,11 +1,11 @@
 [
 	{
 		"commands": ["start", "go"],
-		"info":     "Start a game with # rounds and selected decks.",
+		"info":     "Start a game with # points to win and selected decks.",
 		"handler":  "start",
 		"params":   [
 			{
-				"name":     "rounds",
+				"name":     "points",
 				"type":     "number",
 				"required": false,
 				"multiple": false

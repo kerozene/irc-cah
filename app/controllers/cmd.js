@@ -55,7 +55,7 @@ var Cmd = function Cmd(bot) {
     self.start = function (message, cmdArgs) {
         var loadDecks = [],
             failDecks = [],
-               rounds = config.pointLimit;
+               points = config.pointLimit;
 
         if (bot.game) {
             if (bot.game.getPlayer({nick: message.nick}))
@@ -67,7 +67,7 @@ var Cmd = function Cmd(bot) {
 
         // point limit
         if (cmdArgs[0] && !isNaN(cmdArgs[0])) {
-            rounds = parseInt(cmdArgs[0]);
+            points = parseInt(cmdArgs[0]);
             cmdArgs = _.rest(cmdArgs);
         }
         _.each(cmdArgs, function(arg) {
@@ -82,7 +82,7 @@ var Cmd = function Cmd(bot) {
         if (failDecks.length)
             self.say(util.format('Could not load decks: %s; see %sdecks', failDecks.join(', '), p));
 
-        bot.game = new Game(bot, rounds, loadDecks);
+        bot.game = new Game(bot, points, loadDecks);
         self.join(message, cmdArgs);
     };
 

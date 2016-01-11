@@ -15,15 +15,15 @@ module.exports = function(repl, bot) {
     });
 
     repl.defineCommand('start', {
-        help: "Start a game. [rounds] [deck, ...]",
+        help: "Start a game. [points] [deck, ...]",
         action: function(cmdArgs) {
-            var rounds = bot.config.pointLimit;
+            var points = bot.config.pointLimit;
             cmdArgs = cmdArgs.split(' ');
             if (cmdArgs[0] && !isNaN(cmdArgs[0])) {
-                rounds = parseInt(cmdArgs[0]);
+                points = parseInt(cmdArgs[0]);
                 cmdArgs = _.rest(cmdArgs);
             }
-            bot.game = new Game(bot, rounds, cmdArgs);
+            bot.game = new Game(bot, points, cmdArgs);
         }
     });
 
