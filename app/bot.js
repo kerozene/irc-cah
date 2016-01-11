@@ -26,10 +26,26 @@ var Bot = function Bot() {
     self.controller.config = new Config(self);
     self.config = config = self.controller.config.load();
 
+    /**
+     * Logger
+     */
+    self.log = function(message, level) {
+        // TODO implement levels
+        util.log(message);
+    };
+
+    /**
+     * Logger
+     */
+    self.warn = function(message, level) {
+        // TODO implement levels
+        console.error(message);
+    };
+
     self.controller.decks = new Decks(self);
     self.controller.decks.init()
     .then(function(message) {
-        util.log(message);
+        self.log(message);
         _.each(config.decks, function(deck) {
             self.controller.decks.fetchDeck(deck)
             .then(function(data) {
@@ -38,13 +54,13 @@ var Bot = function Bot() {
                     var padded = new Array(width + 1).join(char) + str;
                     return padded.slice(-width);
                 };
-                util.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
+                self.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
                     _.map([ data.calls.length, data.responses.length ], function(el) { return pad(el, ' ', 4); })
                 )));
             }, function(error) {
                 if (error.name === 'NotFoundError')
                     error.message = error.message.split('/').reverse()[0];
-                util.log(error.name + ': ' + error.message);
+                self.log(error.name + ': ' + error.message);
             });
         });
     });
@@ -53,7 +69,7 @@ var Bot = function Bot() {
     config.clientOptions.channels = [ self.channel ];
     config.clientOptions.autoConnect = false;
 
-    console.log('Configuration loaded.');
+    self.log('Configuration loaded.');
 
     self.client = client = new irc.Client(config.server, config.nick, config.clientOptions);
 
@@ -81,8 +97,8 @@ var Bot = function Bot() {
      */
     self.persevere = function() {
         process.on('uncaughtException', function (err) {
-            console.log('Caught exception: ' + err);
-            console.log(err.stack);
+            self.log('Caught exception: ' + err);
+            self.log(err.stack);
             client.say(self.channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.");
         });
     };
@@ -91,9 +107,9 @@ var Bot = function Bot() {
      * Connect to server
      */
     self.connect = function() {
-        console.log('Connecting to ' + config.server + ' as ' + config.nick + '...');
+        self.log('Connecting to ' + config.server + ' as ' + config.nick + '...');
         client.connect(function() {
-            console.log('Connected.');
+            self.log('Connected.');
             if (typeof config.exitOnError !== "undefined" && config.exitOnError === false) {
                 self.persevere();
             }
@@ -133,9 +149,9 @@ var Bot = function Bot() {
      * @param channel
      */
     self.channelJoinHandler = function(channel) {
-        console.log('Joined ' + channel + ' as ' + client.nick);
+        self.log('Joined ' + channel + ' as ' + client.nick);
         if (channel.toLowerCase() != self.channel) {
-            util.log('Joined unknown channel ' + channel + ', parting...'); // maybe forwarded
+            self.log('Joined unknown channel ' + channel + ', parting...'); // maybe forwarded
             client.part(channel, 'nope nope nope');
             return false;
         }
@@ -230,7 +246,7 @@ var Bot = function Bot() {
 
     // handle connection to server for logging
     client.addListener('registered', function (message) {
-        console.log('Connected to server ' + message.server);
+        self.log('Connected to server ' + message.server);
         // start server monitor
         self.timers.checkServer = setInterval(self.checkServer, self.maxServerSilence * 1000);
         // Send connect commands after joining a server
@@ -261,7 +277,7 @@ var Bot = function Bot() {
             ! _.contains(_.keys(client.chans, channel)) ) {
             client.send('JOIN', channel);
             client.say(from, 'Attempting to join ' + channel);
-            console.log('Attempting to join ' + channel + ' : invited by ' + from);
+            self.log('Attempting to join ' + channel + ' : invited by ' + from);
         }
     });
 
