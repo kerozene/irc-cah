@@ -158,7 +158,7 @@ var Bot = function Bot() {
         self.devoiceOnJoin(channel);
         if (  !self.game && config.joinCommands ) {
             _.each(config.joinCommands, function (cmd) {
-                if(cmd.target && cmd.message) {
+                if (cmd.target && cmd.message) {
                     message = _.template(cmd.message)({nick: client.nick, channel: channel}).split('%%').join(p);
                     client.say(cmd.target, message);
                 }

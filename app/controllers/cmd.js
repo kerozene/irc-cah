@@ -44,7 +44,7 @@ var Cmd = function Cmd(bot) {
      * Say there's no game running
      */
     self.sayNoGame = function () {
-        self.say(util.format('No game running. Start the game by typing %sstart.', p));
+        self.say(util.format('No game running. Start the game by typing %sstart', p));
     };
 
     /**
