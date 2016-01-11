@@ -82,7 +82,7 @@ var Cmd = function Cmd(bot) {
         if (failDecks.length)
             self.say(util.format('Could not load decks: %s; see %sdecks', failDecks.join(', '), p));
 
-        bot.game = new Game(bot, points, loadDecks);
+        bot.game = new Game(bot, {points: points, decks: loadDecks, init: true});
         self.join(message, cmdArgs);
     };
 

@@ -29,17 +29,22 @@ var HAIKU = new Card({
 
 /**
  * A single game object that handles all operations in a game
- * @param channel The channel the game is running on
- * @param client The IRC client object
- * @param config Configuration variables
- * @param cmdArgs !start command arguments
+ * @param {Object}    bot                - The main Bot object
+ * @param {Object}   [options]           - Game initialisation options: points, decks, init
+ * @param {number}   [options.points]    - The number of points needed to win
+ * @param {string[]} [options.decks]     - The codes of card decks to load: ['CODE1', 'CODE2', ...]
+ * @param {boolean}  [options.init=true] - Whether to initialise the game immediately
  * @constructor
  */
-var Game = function Game(bot, rounds, decks) {
+var Game = function Game(bot, options) {
     var    self = this,
         channel = bot.channel,
          client = bot.client,
          config = bot.config;
+
+    options = options || {};
+    if (options.init === undefined)
+        options.init = true; // pass false for testing
 
     // properties
     self.round = 0; // round number
@@ -55,13 +60,13 @@ var Game = function Game(bot, rounds, decks) {
     self.listeners = []; // irc client event listeners
     self.pauseState = []; // pause state storage
     self.points = [];
-    self.pointLimit = rounds || 0; // point limit for the game, defaults to 0 (== no limit)
+    self.pointLimit = options.points || 0; // point limit for the game, defaults to 0 (== no limit)
     self.lastWinner = {}; // store the streak count of the last winner
     p = config.commandPrefixChars[0]; // default prefix char
 
     self.initCards = function() {
         var defaultDecks = (self.isChristmas()) ? config.defaultDecks.concat(config.christmasDecks) : config.defaultDecks;
-        decks = (decks.length) ? decks : defaultDecks;
+        decks = (options.decks && options.decks.length) ? options.decks : defaultDecks;
         var loadDecks = _.filter(bot.decks, function(loadDeck) { return (_.contains(decks, loadDeck.code)); });
         var questions = Array.prototype.concat.apply([], _.pluck(loadDecks, 'calls'));
         var answers   = Array.prototype.concat.apply([], _.pluck(loadDecks, 'responses'));

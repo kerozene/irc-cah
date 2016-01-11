@@ -23,7 +23,7 @@ module.exports = function(repl, bot) {
                 points = parseInt(cmdArgs[0]);
                 cmdArgs = _.rest(cmdArgs);
             }
-            bot.game = new Game(bot, points, cmdArgs);
+            bot.game = new Game(bot, {points: points, decks: cmdArgs, init: true});
         }
     });
 
