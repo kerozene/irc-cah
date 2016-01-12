@@ -651,6 +651,16 @@ describe('GameController', function() {
             game.players = _.cloneDeep(fixtures.players).slice(0, 2);
         });
 
+        it('should return true if there are not enough players', function() {
+            sinon.spy(game, 'needPlayers');
+
+            game.needPlayers();
+
+            game.needPlayers.returned(true).should.be.true;
+
+            game.needPlayers.restore();
+        });
+
         it('should return false if there are enough players', function() {
             sinon.spy(game, 'needPlayers');
             game.players= _.cloneDeep(fixtures.players);
@@ -658,6 +668,8 @@ describe('GameController', function() {
             game.needPlayers();
 
             game.needPlayers.returned(false).should.be.true;
+
+            game.needPlayers.restore();
         });
 
         it('should start a timer to stop the game after waiting', function() {
@@ -686,20 +698,6 @@ describe('GameController', function() {
             game.needPlayers();
 
             game.state.should.equal(game.STATES.WAITING);
-        });
-
-        it('should reset the waitToJoin list', function() {
-            game.waitToJoin = [ 'foo' ];
-
-            game.needPlayers();
-
-            game.waitToJoin.should.not.be.empty;
-
-            game.round = 1;
-
-            game.needPlayers();
-
-            game.waitToJoin.should.be.empty;
         });
 
         it('should call showPoints() if rounds have been played', function() {
@@ -1687,6 +1685,38 @@ describe('GameController', function() {
             should.exist(_.findWhere(game.players, {nick: 'Frederick'}));
         });
 
+        it('should say the player was added', function() {
+            var stubSay = sinon.stub(bot.client, 'say');
+
+            game.addPlayer(player);
+
+            stubSay.should.have.been.calledWithExactly(
+                '#test',
+                'Frederick has joined the game');
+
+            stubSay.restore();
+        });
+
+        it('should say how many more players needed if waiting more than 30 seconds', function() {
+            var stubSay = sinon.stub(bot.client, 'say');
+            game.startTime = moment().toDate();
+
+            game.addPlayer(player);
+
+            stubSay.should.not.have.been.calledWith('#test', sinon.match(/more players/));
+
+            stubSay.reset();
+            initGame();
+            game.players = [];
+            game.startTime = moment().subtract(40, 'seconds').toDate();
+
+            game.addPlayer(player);
+
+            stubSay.should.have.been.calledWith('#test', sinon.match(/more players/));
+
+            stubSay.restore();
+        });
+
         it('should add the player to the points list', function() {
             game.points = [];
 
@@ -1910,6 +1940,17 @@ describe('GameController', function() {
             bot.client.setChanMode.restore();
         });
 
+        it('should not devoice the nick if they left the channel', function() {
+            sinon.spy(bot.client, 'setChanMode');
+            bot.config.voicePlayers = true;
+
+            game.removePlayer(player, {left: true});
+
+            bot.client.setChanMode.should.not.have.been.called;
+
+            bot.client.setChanMode.restore();
+        });
+
         it('should show entries if everyone else has played', function() {
             var stub = sinon.stub(game, 'showEntries');
             game.state = game.STATES.PLAYABLE;
@@ -2072,7 +2113,7 @@ describe('GameController', function() {
             game.playerLeaveHandler('Frederick');
 
             game.removePlayer.should.have.been.calledOnce;
-            game.removePlayer.should.have.been.calledWithExactly(removed);
+            game.removePlayer.should.have.been.calledWithExactly(removed, {left: true});
 
             game.removePlayer.restore();
         });
