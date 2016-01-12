@@ -309,7 +309,7 @@ var Game = function Game(bot, options) {
         // stop game if not enough players
         self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
         if (self.round !== 0) {
-            self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's') + '.');
+            self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's'));
             self.showPoints('round');
             self.state = STATES.WAITING;
         }
@@ -710,6 +710,9 @@ var Game = function Game(bot, options) {
         }
         self.players.push(player);
         self.say(player.nick + ' has joined the game');
+        var needed = (3 - self.players.length);
+        if ( needed > 0 && _.now() > self.startTime.getTime() + 30 * 1000 )
+            self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's'));
         // check if player is returning to game
         var pointsPlayer = _.findWhere(self.points, {user: player.user, hostname: player.hostname});
         if (typeof pointsPlayer === 'undefined') {
