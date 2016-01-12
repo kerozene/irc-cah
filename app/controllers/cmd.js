@@ -394,8 +394,11 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.decks = function(message, cmdArgs) {
-        var reply  = util.format('Card decks available (use %sdeckinfo <code> for details): %s', p, config.decks.join(', '));
-            reply += util.format('; default decks: %s', config.defaultDecks.join(', '));
+        var decks = _.map(config.decks, function(deck) {
+            return (_.contains(config.defaultDecks, deck)) ? c.bold(deck) : deck;
+        });
+        var reply = util.format('Card decks available/%s (use %sdeckinfo <code> for details): %s',
+                                    c.bold('default'), p, decks.join(', '));
         self.say(reply);
     };
 
