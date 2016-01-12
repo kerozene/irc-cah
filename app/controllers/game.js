@@ -311,8 +311,8 @@ var Game = function Game(bot, options) {
         if (self.round !== 0) {
             self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's') + '.');
             self.showPoints('round');
+            self.state = STATES.WAITING;
         }
-        self.state = STATES.WAITING;
         return true;
     };
 
