@@ -201,7 +201,9 @@ var Bot = function Bot() {
             self.lastCommandFromHost[host] = last;
         }
         if (last[1] === throttle[0])
-            client.notice(message.nick, util.format('Too many commands. Ignoring for %s seconds.', throttle[1]));
+            client.notice(message.nick, util.format(
+                'That\'s %s commands in %s seconds. Wait %s seconds before next command.',
+                throttle[0], throttle[1], throttle[1]));
         return (last[1] > throttle[0]);
     };
 

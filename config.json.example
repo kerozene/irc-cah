@@ -20,7 +20,7 @@
 
     "waitFromLastJoin": true,       // - Restart the wait timer when a player joins.
 
-    "commandThrottle": [3, 30],     // - Number of commands to accept from a user per interval (seconds).
+    "commandThrottle": [4, 30],     // - Number of commands to accept from a user per interval (seconds).
 
     "voicePlayers": false,          // - Give current players +v on join? (Bot will assume it is opped.)
 
