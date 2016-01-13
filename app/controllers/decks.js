@@ -1,37 +1,59 @@
 var           _ = require('lodash'),
+           util = require('util'),
+          shush = require('shush'),
         Promise = require('bluebird'),
         storage = require('node-persist'),
-    CardcastAPI = require("cardcast-api").CardcastAPI;
+    CardcastAPI = require('cardcast-api').CardcastAPI,
+         config = shush('../../config');
 
 Promise.config({warnings: false});
 
+/**
+ * @param {Bot} bot
+ */
 var Decks = function(bot) {
     var self = this;
     self.storage = storage;
+    self._findCardState = {};
 
+    /**
+     * @return {Promise}
+     */
     self.init = function() {
         return new Promise(function(resolve, reject) {
+
             self.storage.init({
                 dir: '../../../cards',
                 ttl: 7 * 24 * 60 * 60 * 1000
             }).then(function() {
+
                 setTimeout(function() { // promise is fulfilled even though data isn't loaded yet
                     self.api = new CardcastAPI();
                     resolve("Storage: " + self.storage.length() + ' keys loaded.');
                 }, 1000);
+
             }).catch(function(error) {
                 reject(error);
             });
         });
     };
 
+    /**
+     * @param  {string}  deckCode
+     * @return {Promise}
+     */
     self.fetchDeck = function(deckCode) {
         var deckData, key = 'deck-' + deckCode;
+
         return new Promise(function(resolve, reject) {
+
             deckData = self.storage.getItemSync(key);
+
             if (deckData)
                 resolve(deckData);
+
             self.api.deck(deckCode).then(function(deck) {
+
                 deck.populatedPromise.then(function() {
                     var fields = ['name', 'code', 'description', 'category', 'created', 'updated',
                                   'rating', 'author', 'baseURL', 'calls', 'responses'];
@@ -39,10 +61,163 @@ var Decks = function(bot) {
                     self.storage.setItemSync(key, deckData);
                     resolve(deckData);
                 });
+
             }, function(error) {
+
                 reject(error);
+
             });
         });
+    };
+
+    self._getSearchPredicate = function(search, searchType, noCase) {
+        var predicate;
+        var searchFor = search;
+        var flags = (noCase) ? 'i' : '';
+
+        if (searchType === 'id')
+            return {id: searchFor};
+
+        else if (searchType === 'text')
+            searchFor = new RegExp(searchFor, flags);
+        else if (searchType !== 'regex')
+            throw new Error(util.format('Invalid searchType %s', searchType));
+
+        return function(card) {
+            var fullText = card.text;
+            if (typeof fullText != 'string')
+                fullText = fullText.join('_');
+
+            return searchFor.test(fullText);
+        };
+    };
+
+    self._searchCollection = function(cardType) {
+        var collection = self._findCardState.deck[cardType];
+        var predicate = self._getSearchPredicate(
+            self._findCardState.search,
+            self._findCardState.searchType,
+            self._findCardState.noCase
+        );
+
+        var card = _.find(collection, predicate);
+
+        if (!card)
+            return false;
+
+        self._findCardState.response = {
+            card: card,
+            deck: self._findCardState.deckCode,
+            cardType: cardType
+        };
+        return true;
+    };
+
+    self._searchDeck = function(deck) {
+//        self._findCardState.deckCode = deckCode;
+        self._findCardState.deck = deck;
+        return _.some(self._findCardState.checkCardTypes, self._searchCollection, self);
+    };
+
+    /**
+     * @param  {string[]} arr
+     * @return {string[]}
+     */
+    self._arrayToUpperCase = function(arr) {
+        return _.map(arr, function(str) { return str.toUpperCase(); });
+    };
+
+    /**
+     * @param  {string[]} codes - list of deck codes
+     * @return {string[]} - list of valid deck codes
+     */
+    self._filterDeckCodes = function(codes) {
+        return _.intersection(self._arrayToUpperCase(codes), config.decks);
+    };
+
+    self._getValidCardTypes = function(cardType) {
+        var validCardTypes = ['calls', 'responses'];
+
+        if (!cardType)
+            return validCardTypes;
+
+        if (!_.contains(validCardTypes, cardType))
+            throw new Error(util.format('Invalid cardType %s', cardType));
+
+        return [ cardType ];
+    };
+
+    self._getValidDeckCodes = function(deckCodes) {
+        if (!deckCodes)
+            return config.decks;
+
+        if (typeof deckCodes == 'string')
+            deckCodes = deckCodes.split(' ');
+
+        deckCodes = self._arrayToUpperCase(deckCodes);
+
+        var initDeckCodes = deckCodes;
+        deckCodes = self._filterDeckCodes(deckCodes);
+
+        if (!_.isEqual(deckCodes, initDeckCodes)) {
+            var missingDecks = _.difference(initDeckCodes, deckCodes);
+            throw new Error(util.format(
+                'Deck%s not enabled for searching: %s',
+                missingDecks.length > 1 ? 's' : '',
+                missingDecks
+            ));
+        }
+
+        return deckCodes;
+    };
+
+    /**
+     * @typedef Card
+     * @property {string}          id
+     * @property {Date}            created
+     * @property {string|string[]} text
+     * @property {string|string[]} displayText
+     */
+
+    /**
+     * @typedef Response
+     * @property {Card}
+     * @property {string} deck     - the deckCode where the card was found
+     * @property {string} cardType - 'calls' or 'responses'
+     */
+
+    /**
+     * @param  {string|RegExp} search
+     * @param  {string}        searchType         - 'id', 'text' or 'regex'
+     * @param  {Object}        [options]
+     * @param  {string}        [options.cardType] - 'calls' or 'responses'
+     * @param  {boolean}       [options.caseInsensitive]
+     * @param  {string}        [options.deckCodes]
+     * @return {Promise<Response>}
+     */
+    self.findCard = function(search, searchType, options) {
+        options = options || {};
+        self._findCardState = {
+            response:       {},
+            search:         search,
+            searchType:     searchType,
+            noCase:         (options.caseInsensitive !== false),
+            checkCardTypes: self._getValidCardTypes(options.cardType)
+        };
+        var deckCodes;
+        try { deckCodes = self._getValidDeckCodes(options.deckCodes); }
+        catch(e) { self._findCardState.response.err = e.message; }
+
+        var decks = _.map(deckCodes, function(deckCode) {
+            self._findCardState.deckCode = deckCode;
+            return self.fetchDeck(deckCode);
+        });
+
+        return Promise.all(decks)
+                .then(_)
+                .call('some', self._searchDeck, self)
+                .then(function()  { return self._findCardState.response; })
+                .catch(function() { return {}; });
     };
 
 };
