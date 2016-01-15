@@ -635,13 +635,13 @@ var Game = function Game(bot, options) {
         self.lastWinner.count++;
         switch (self.lastWinner.count) {
             case 2:
-                message = _.template('Two in a row!');
+                message = _.template('Two in a row! Go <%= nick %>');
                 break;
             case 3:
                 message = _.template('That\'s three! <%= nick %>\'s on a roll.');
                 break;
             case 4:
-                message = _.template('Four??? Who can stop this mad person?');
+                message = _.template('Four in a row??? Who can stop this mad person?');
                 break;
             case 5:
                 message = _.template('<%= nick %>, I\'m speaking as a friend. It\'s not healthy to be this good at CAH.');
