@@ -137,30 +137,24 @@ var Game = function Game(bot, options) {
      * Stop game
      */
     self.stop = function (player, pointLimitReached) {
+        _.each(self.timers, function(timer) {
+            clearTimeout(timer);
+        });
+        self.toggleListeners();
+        self.destroy();
         self.state = STATES.STOPPED;
 
-        if (typeof player !== 'undefined' && player !== null)
+        if (player)
             self.say(player.nick + ' stopped the game.');
         else if (pointLimitReached !== true) {
             self.say('Game has been stopped.');
-            // set topic
             self.setTopic(config.topic.messages.off);
         }
         if (self.round > 1)
             self.showPoints();
 
-
         if (self.config.voicePlayers === true)
             client.setChanMode(channel, '-v', self.getPlayerNicks());
-
-        // clear all timers
-        _.each(self.timers, function(timer) {
-            clearTimeout(timer);
-        });
-
-        // Remove irc client listeners
-        self.toggleListeners();
-        self.destroy();
     };
 
     /**
@@ -331,6 +325,11 @@ var Game = function Game(bot, options) {
      */
     self.dealCard = function (player) {
         self.checkDecks();
+        if (self.decks.answer.cards.length === 0) {
+            self.say('Not enough cards to deal. Stopping...');
+            self.stop();
+            return false;
+        }
         var card = self.decks.answer.pickCards();
         player.cards.addCard(card);
         card.owner = player;
