@@ -141,7 +141,6 @@ var Game = function Game(bot, options) {
             clearTimeout(timer);
         });
         self.toggleListeners();
-        self.destroy();
         self.state = STATES.STOPPED;
 
         if (player)
@@ -155,6 +154,8 @@ var Game = function Game(bot, options) {
 
         if (self.config.voicePlayers === true)
             client.setChanMode(channel, '-v', self.getPlayerNicks());
+
+        self.destroy();
     };
 
     /**

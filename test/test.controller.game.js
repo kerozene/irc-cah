@@ -729,7 +729,7 @@ describe('GameController', function() {
 
             stubSay.should.have.been.calledWithExactly(
                 '#test',
-                'Need 1 more player.');
+                'Need 1 more player');
 
             stubSay.restore();
         });
@@ -787,6 +787,10 @@ describe('GameController', function() {
                 answer: new Cards(answerCards, 'a'),
                 question: new Cards(cards.cards.calls, 'q')
             };
+            game.discards = {
+                answer: new Cards(),
+                question: new Cards()
+            };
             game.players = _.map(game.players, function(player) {
                 player.cards = new Cards();
                 return player;
@@ -806,6 +810,18 @@ describe('GameController', function() {
             game.deal();
 
             game.players[0].cards.cards[0].owner.should.equal(game.players[0]);
+        });
+
+        it('should stop the game if there aren\'t enough cards', function() {
+            var stubStop = sinon.stub(game, 'stop');
+
+            game.decks.answer.cards = game.decks.answer.cards.slice(0, 20);
+
+            game.deal();
+
+            stubStop.should.have.been.called;
+
+            stubStop.restore();
         });
 
     });
