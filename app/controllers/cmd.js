@@ -32,7 +32,7 @@ var Cmd = function Cmd(bot) {
      * @param alias
      */
     self.findCommand = function(alias) {
-        return _.find(bot.commands, function(cmd) { return (_.contains(cmd.commands, alias)); });
+        return _.find(bot.commands, function(cmd) { return (_.includes(cmd.commands, alias)); });
     };
 
     /**
@@ -432,7 +432,7 @@ var Cmd = function Cmd(bot) {
                                     p, bot.game.deckCodes.join(', ')));
         var defaultDecks = decksTool.getDecksFromGroup('~DEFAULT');
         var decks = _.map(config.decks, function(deck) {
-            return (_.contains(defaultDecks, deck)) ? c.bold(deck) : deck;
+            return (_.includes(defaultDecks, deck)) ? c.bold(deck) : deck;
         });
         var reply = util.format('Card decks available/%s (%sdeckinfo <code>): %s',
                                     c.bold('default'), p, decks.join(', '));
@@ -455,7 +455,7 @@ var Cmd = function Cmd(bot) {
         }
         else {
             deckCode = deckCode.toUpperCase();
-            if (!_.contains(config.decks, deckCode)) {
+            if (!_.includes(config.decks, deckCode)) {
                 self.say('Deck ' + deckCode + ' is not enabled. If you really want it, yell about it.');
                 return false;
             }

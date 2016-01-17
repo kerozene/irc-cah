@@ -116,7 +116,7 @@ var Game = function Game(bot, options) {
             _.every(args, function(arg) {
                 if (arg[0] === '+' || arg.match(/^\w{5}$/)) {
                     arg = _.trimLeft(arg, '+');
-                    if (_.contains(config.decks, arg)) {
+                    if (_.includes(config.decks, arg)) {
                         decks.push(arg);
                     }
                     else
@@ -131,7 +131,7 @@ var Game = function Game(bot, options) {
             _.every(args, function(arg) {
                 if (arg[0] === '-') {
                     arg = _.trimLeft(arg, '-');
-                    if (_.contains(config.decks, arg)) {
+                    if (_.includes(config.decks, arg)) {
                         removeDecks.push(arg);
                     }
                     else
@@ -157,7 +157,7 @@ var Game = function Game(bot, options) {
         decks = (options.decks && options.decks.length) ? self.compileDecksList(options.decks) : defaultDecks;
 
         var loadDecks = _.filter(bot.decks, function(loadDeck) {
-            return _.contains(decks, loadDeck.code);
+            return _.includes(decks, loadDeck.code);
         });
         var questions = Array.prototype.concat.apply([], _.pluck(loadDecks, 'calls'));
         var answers   = Array.prototype.concat.apply([], _.pluck(loadDecks, 'responses'));
@@ -255,7 +255,7 @@ var Game = function Game(bot, options) {
      * Can the game be paused?
      */
     self.isRunning = function() {
-        return _.contains([
+        return _.includes([
                     self.STATES.PLAYABLE,
                     self.STATES.PLAYED,
                     self.STATES.ROUND_END
@@ -312,7 +312,7 @@ var Game = function Game(bot, options) {
         // resume timers
         if (self.state === STATES.PLAYED) {
             // check if czar quit during pause
-            if (_.contains(self.players, self.czar))
+            if (_.includes(self.players, self.czar))
                 self.timers.winner = setInterval(self.winnerTimerCheck, 10 * 1000);
             else {
                 // no czar
@@ -795,9 +795,9 @@ var Game = function Game(bot, options) {
      * @returns The new player or false if invalid player
      */
     self.addPlayer = function (player) {
-        if (_.contains(self.removed, self.getPlayerUhost(player)))
+        if (_.includes(self.removed, self.getPlayerUhost(player)))
             return false;
-        if (_.contains( self.waitToJoin, self.getPlayerUhost(player))) {
+        if (_.includes( self.waitToJoin, self.getPlayerUhost(player))) {
             self.say(player.nick + ': you can\'t rejoin until the next round :(');
             return false;
         }
@@ -873,7 +873,7 @@ var Game = function Game(bot, options) {
         var cards = player.cards.reset();
         // remove player
         self.players = _.without(self.players, player);
-        if ( !_.contains(self.removed, self.getPlayerUhost(player)) && self.round > 0 )
+        if ( !_.includes(self.removed, self.getPlayerUhost(player)) && self.round > 0 )
             self.waitToJoin.push(self.getPlayerUhost(player));
         // put player's cards to discard
         _.each(cards, function (card) {

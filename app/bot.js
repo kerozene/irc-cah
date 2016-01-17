@@ -217,7 +217,7 @@ var Bot = function Bot() {
         } else {
             var escape = ['-', '^'];
             var prefix = _.map(config.commandPrefixChars.split(''), function(char) {
-                return (_.contains(escape, char)) ? "\\" + char : char;
+                return (_.includes(escape, char)) ? "\\" + char : char;
             }).join('');
             var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)(?:\\s(.*))?', 'i');
             var cmdArr = text.trim().match(cmdPattern);
@@ -276,7 +276,7 @@ var Bot = function Bot() {
     // accept invites to configured channel
     client.addListener('invite', function(channel, from, message) {
         if (  channel.toLowerCase() == self.channel &&
-            ! _.contains(_.keys(client.chans, channel)) ) {
+            ! _.includes(_.keys(client.chans, channel)) ) {
             client.send('JOIN', channel);
             client.say(from, 'Attempting to join ' + channel);
             self.log('Attempting to join ' + channel + ' : invited by ' + from);

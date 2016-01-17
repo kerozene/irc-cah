@@ -133,7 +133,7 @@ var Decks = function(bot) {
         if (!cardType)
             return validCardTypes;
 
-        if (!_.contains(validCardTypes, cardType))
+        if (!_.includes(validCardTypes, cardType))
             throw new Error(util.format('Invalid cardType %s', cardType));
 
         return [ cardType ];

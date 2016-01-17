@@ -3,7 +3,7 @@ var _ = require('lodash');
 var Card = function Card(card, type) {
     var self = this;
 
-    if (!_.contains(['q', 'a'], type))
+    if (!_.includes(['q', 'a'], type))
     	throw new Error("Missing or bad argument: type");
 
     _.each(['id', 'text'], function(field) {
