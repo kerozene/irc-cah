@@ -109,12 +109,12 @@ var Game = function Game(bot, options) {
         self.decks.answer.shuffle();
 
         bot.log(util.format('Loaded %d decks (%s): %d questions, %d answers',
-            decks.length,
+            loadDecks.length,
             _.pluck(loadDecks, 'code').join(', '),
             questions.length,
             answers.length
         ));
-        self.say(util.format('Loaded %d decks: %d questions, %d answers', decks.length, questions.length, answers.length));
+        self.say(util.format('Loaded %d decks: %d questions, %d answers', loadDecks.length, questions.length, answers.length));
     };
 
     /**
