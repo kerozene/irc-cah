@@ -4,6 +4,7 @@ var           _ = require('lodash'),
         Promise = require('bluebird'),
         storage = require('node-persist'),
     CardcastAPI = require('cardcast-api').CardcastAPI,
+      utilities = require('../../app/utilities'),
          config = shush('../../config');
 
 Promise.config({warnings: false});
@@ -114,17 +115,8 @@ var Decks = function(bot) {
     };
 
     self._searchDeck = function(deck) {
-//        self._findCardState.deckCode = deckCode;
         self._findCardState.deck = deck;
         return _.some(self._findCardState.checkCardTypes, self._searchCollection, self);
-    };
-
-    /**
-     * @param  {string[]} arr
-     * @return {string[]}
-     */
-    self._arrayToUpperCase = function(arr) {
-        return _.map(arr, function(str) { return str.toUpperCase(); });
     };
 
     /**
@@ -132,7 +124,7 @@ var Decks = function(bot) {
      * @return {string[]} - list of valid deck codes
      */
     self._filterDeckCodes = function(codes) {
-        return _.intersection(self._arrayToUpperCase(codes), config.decks);
+        return _.intersection(utilities.arrayToUpperCase(codes), config.decks);
     };
 
     self._getValidCardTypes = function(cardType) {
@@ -154,7 +146,7 @@ var Decks = function(bot) {
         if (typeof deckCodes == 'string')
             deckCodes = deckCodes.split(' ');
 
-        deckCodes = self._arrayToUpperCase(deckCodes);
+        deckCodes = utilities.arrayToUpperCase(deckCodes);
 
         var initDeckCodes = deckCodes;
         deckCodes = self._filterDeckCodes(deckCodes);
