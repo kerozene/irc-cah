@@ -465,6 +465,7 @@ var Game = function Game(bot, options) {
         _.each(self.players, function (player) {
             player.hasPlayed = false;
             player.isCzar = false;
+            delete player.picked;
             // check inactive count & remove after threshold
             if (player.inactiveRounds >= config.maxIdleRounds) {
                 self.removePlayer(player, {silent: true});
@@ -541,25 +542,33 @@ var Game = function Game(bot, options) {
             return fastPick || self.say(player.nick +
                         ': You are the card czar. The czar does not play. The czar makes other people do their dirty work.');
 
-        if (player.hasPlayed)
-            return fastPick || self.say(player.nick + ': You have already played on this round.');
-
         if (cards.length != self.table.question.pick) {
             // invalid card count
-            var s = (self.table.question.pick > 1) ? 's' : '';
-            return self.say(util.format('%s: You must pick %s different card%s.', player.nick, self.table.question.pick, s));
+            var multi = (self.table.question.pick > 1) ? 'different cards' : 'card';
+            return self.say(util.format('%s: You must pick %s %s.', player.nick, self.table.question.pick, multi));
         }
-        var playerCards;
+        if (player.picked) {
+            self.notice(player.nick, 'Changing your pick...');
+            self.table.answer = _.without(self.table.answer, player.picked.cards);
+            _.each(player.picked.cards.getCards(), function(card, index) {
+                player.cards.cards.splice(player.picked.indexes[index], 0, card);
+            });
+        }
+        var picked;
         try {
-            playerCards = player.cards.pickCards(cards);
+            picked = {
+                indexes: cards,
+                cards: player.cards.pickCards(cards)
+            };
         } catch (error) {
             self.notice(player.nick, 'Invalid card index');
             return false;
         }
-        self.table.answer.push(playerCards);
+        self.table.answer.push(picked.cards);
         player.hasPlayed = true;
         player.inactiveRounds = 0;
-        self.notice(player.nick, 'You played: ' + self.getFullEntry(self.table.question, playerCards.getCards()));
+        player.picked = picked;
+        self.notice(player.nick, 'You played: ' + self.getFullEntry(self.table.question, picked.cards.getCards()));
         // show entries if all players have played
         if (self.checkAllPlayed())
             self.showEntries();

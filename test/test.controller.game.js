@@ -1109,6 +1109,8 @@ describe('GameController', function() {
             stubSay.should.have.been.calledWith('#test', sinon.match(/^Napoleon: You are the card czar/));
         });
 
+        it('should update the player\'s pick if they\'ve already played');
+/*
         it('should tell the player if they\'ve already played', function() {
             player = _.cloneDeep(game.players[0]);
 
@@ -1118,6 +1120,7 @@ describe('GameController', function() {
                 '#test',
                 'Frederick: You have already played on this round.');
         });
+*/
 
         it('should tell the player if they\'ve played the wrong number of cards', function() {
             game.playCard([ 0 ], player);
