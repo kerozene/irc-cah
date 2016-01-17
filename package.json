@@ -21,6 +21,7 @@
     "node-persist": "latest",
     "bluebird": "latest",
     "moment": "latest",
+    "moment-duration-format": "latest",
     "n_": "latest",
     "shush": "latest"
   },

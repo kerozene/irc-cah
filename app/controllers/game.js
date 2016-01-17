@@ -1,10 +1,13 @@
 var      util = require('util'),
             c = require('irc-colors'),
             _ = require('lodash'),
+       moment = require('moment'),
     utilities = require('../utilities'),
         Decks = require('../controllers/decks'),
         Cards = require('../controllers/cards'),
          Card = require('../models/card');
+
+                require('moment-duration-format');
 
 var p; // default prefix char from config
 
@@ -228,8 +231,12 @@ var Game = function Game(bot, options) {
             self.say('Game has been stopped.');
             self.setTopic(config.topic.messages.off);
         }
-        if (self.round > 1)
+        if (self.round > 1) {
+            var duration = moment.duration(moment().diff(moment(self.startTime)))
+                                 .format('d[d] h[h] m[m]');
+            self.say(util.format('Game lasted %s', duration));
             self.showPoints();
+        }
 
         if (self.config.voicePlayers === true)
             client.setChanMode(channel, '-v', self.getPlayerNicks());
@@ -338,6 +345,8 @@ var Game = function Game(bot, options) {
     self.startNextRound = function () {
         if (!self.isPaused())
             return false;
+        if (self.round === 0)
+            self.startTime = new Date();
         self.round++;
         self.setCzar();
         self.deal();
@@ -790,7 +799,9 @@ var Game = function Game(bot, options) {
         self.players.push(player);
         self.say(player.nick + ' has joined the game');
         var needed = (3 - self.players.length);
-        if ( needed > 0 && _.now() > self.startTime.getTime() + 30 * 1000 )
+        if ( needed > 0 &&
+             ( self.round > 0 ||  _.now() > self.startTime.getTime() + 30 * 1000 )
+        )
             self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's'));
         // check if player is returning to game
         var pointsPlayer = _.findWhere(self.points, {user: player.user, hostname: player.hostname});
