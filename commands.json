@@ -133,6 +133,19 @@
 		]
 	},
 	{
+		"commands": ["coin", "flip"],
+		"info":     "(player,czar) Flip a coin to randomly choose a card or a winning entry between two choices.",
+		"handler":  "coin",
+		"params":   [
+			{
+				"name":     "pick",
+				"type":     "number",
+				"required": true,
+				"multiple": true
+			}
+		]
+	},
+	{
 		"commands": ["help"],
 		"info":     "List commands or get help for <command>",
 		"handler":  "help",

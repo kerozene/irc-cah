@@ -237,9 +237,10 @@ var Cmd = function Cmd(bot) {
             if (fastPick === true)
                 cmdArgs = cmdArgs[0];
         }
-        if (self.noGame(fastPick)) return;
-        var player = bot.game.getPlayer({user: user, hostname: hostname});
+        if (self.noGame(fastPick))
+            return;
 
+        var player = bot.game.getPlayer({user: user, hostname: hostname});
         if (!player)
             return false;
 
@@ -249,6 +250,44 @@ var Cmd = function Cmd(bot) {
             bot.game.playCard(cmdArgs, player, fastPick);
         else
             fastPick || self.say(util.format('%spick command not available in current state.', p));
+    };
+
+    /**
+     * Randomly choose between two picks
+     * @param message
+     * @param cmdArgs
+     */
+    self.coin = function(message, cmdArgs) {
+        if (self.noGame() || !bot.game.isRunning())
+            return false;
+
+        var player = bot.game.getPlayer({user: message.user, hostname: message.host});
+        if (!player)
+            return false;
+
+        if (!player.isCzar && bot.game.table.question.pick > 1) {
+            self.say(util.format('%s: You can\'t use %scoin on multiple pick questions',
+                message.nick, p));
+            return false;
+        }
+
+        if (cmdArgs.length !== 2 ||
+            _.some(cmdArgs, function(arg) { return isNaN(arg); })
+        ) {
+            self.say(util.format('%s: You must specify two numbers.', message.nick));
+            return false;
+        }
+
+        var coin = _.sample([0, 1]);
+        var pick = cmdArgs[coin];
+        self.say(util.format('%s: Flipping a coin - heads: %s, tails: %s ...it\'s %s! You picked %s',
+            message.nick,
+            cmdArgs[0],
+            cmdArgs[1],
+            (coin === 0) ? 'heads' : 'tails',
+            pick
+        ));
+        self.pick(message, [ pick ]);
     };
 
     /**
