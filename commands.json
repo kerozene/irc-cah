@@ -1,7 +1,7 @@
 [
 	{
 		"commands": ["start", "go"],
-		"info":     "Start a game with # points to win and selected decks.",
+		"info":     "Start a game with # points to win and selected decks (see %%decks).",
 		"handler":  "start",
 		"params":   [
 			{
@@ -11,7 +11,19 @@
 				"multiple": false
 			},
 			{
-				"name":     "deck",
+				"name":     "~deckGroup",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			},
+			{
+				"name":     "+deck",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			},
+			{
+				"name":     "-deck",
 				"type":     "string",
 				"required": false,
 				"multiple": true
@@ -153,7 +165,7 @@
 	},
 	{
 		"commands": ["decks", "d"],
-		"info":     "List the card decks available",
+		"info":     "List the card decks and deck groups available",
 		"handler":  "decks"
 	},
 	{
@@ -166,6 +178,19 @@
 				"type":     "string",
 				"required": false,
 				"multiple": true
+			}
+		]
+	},
+	{
+		"commands": ["groupinfo", "gi"],
+		"info":     "Get information about a deck group by tag",
+		"handler":  "groupinfo",
+		"params":   [
+			{
+				"name":     "tag",
+				"type":     "string",
+				"required": true,
+				"multiple": false
 			}
 		]
 	}

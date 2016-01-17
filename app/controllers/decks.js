@@ -212,6 +212,26 @@ var Decks = function(bot) {
                 .catch(function() { return {}; });
     };
 
+    /**
+     * Get a list of the decks specified under a group tag
+     * @param  {string}  group   - group tag
+     * @param  {boolean} recurse - whether to recursively resolve group tags
+     * @return {string[]}
+     */
+    self.getDecksFromGroup = function(group, recurse) {
+        recurse = recurse !== false;
+        var decks = [];
+        var groupData = config.deckGroups[group];
+        if (!groupData)
+            return decks;
+        _.each(groupData, function(data) {
+            if (recurse && data[0] === '~')
+                data = self.getDecksFromGroup(data); // recurse on a reference to a group
+            decks = decks.concat(data);
+        });
+        return decks;
+    };
+
 };
 
 module.exports = Decks;

@@ -1,9 +1,12 @@
-var  util = require('util'),
-        c = require('irc-colors'),
-        _ = require('lodash'),
-    Cards = require('../controllers/cards'),
-     Card = require('../models/card'),
-        p; // default prefix char from config
+var      util = require('util'),
+            c = require('irc-colors'),
+            _ = require('lodash'),
+    utilities = require('../utilities'),
+        Decks = require('../controllers/decks'),
+        Cards = require('../controllers/cards'),
+         Card = require('../models/card');
+
+var p; // default prefix char from config
 
 /**
  * Available states for game
@@ -37,6 +40,7 @@ var HAIKU = new Card({
  */
 var Game = function Game(bot, options) {
     var    self = this,
+      decksTool = new Decks(),
         channel = bot.channel,
          client = bot.client,
          config = bot.config;
@@ -46,6 +50,7 @@ var Game = function Game(bot, options) {
         options.init = true; // pass false for testing
 
     // properties
+    self.loaded = false; // did init() complete successfully
     self.round = 0; // round number
     self.players = []; // list of players
     self.removed = [];    // people who are not allowed to join
@@ -65,7 +70,8 @@ var Game = function Game(bot, options) {
 
     self.init = function() {
         self.startTime = new Date();
-        self.initCards();
+        if (!self.initCards())
+            return false;
         self.toggleListeners([
             ['joinsync' + channel, self.channelRejoinHandler   ],
             ['selfpart' + channel, self.channelLeaveHandler    ],
@@ -79,14 +85,83 @@ var Game = function Game(bot, options) {
         self.setTopic(config.topic.messages.on);
         self.announce();
         self.nextRound();
+        self.loaded = true;
+        return true;
+    };
+
+    self.compileDecksList = function(args) {
+        var decks = [];
+        var failDecks = [];
+        var removeDecks = [];
+        var origArgs = args.slice();
+        args = utilities.arrayToUpperCase(args);
+        _.every(args, function(arg) {
+            if (arg[0] === '~') {
+                var groupData = decksTool.getDecksFromGroup(arg);
+                if (groupData.length)
+                    decks = decks.concat(groupData);
+                else
+                    failDecks.push(arg);
+                args = _.without(args, arg);
+                return true;
+            }
+            return false;
+        });
+        if (args.length) {
+            _.every(args, function(arg) {
+                if (arg[0] === '+' || arg.match(/^\w{5}$/)) {
+                    arg = _.trimLeft(arg, '+');
+                    if (_.contains(config.decks, arg)) {
+                        decks.push(arg);
+                    }
+                    else
+                        failDecks.push(arg);
+                    args = _.without(args, '+' + arg);
+                    return true;
+                }
+                return false;
+            });
+        }
+        if (args.length) {
+            _.every(args, function(arg) {
+                if (arg[0] === '-') {
+                    arg = _.trimLeft(arg, '-');
+                    if (_.contains(config.decks, arg)) {
+                        removeDecks.push(arg);
+                    }
+                    else
+                        failDecks.push(arg);
+                    args = _.without(args, '-' + arg);
+                    return true;
+                }
+                return false;
+            });
+            failDecks.push.apply(this, args);
+        }
+        if (failDecks.length)
+            self.say(util.format('Could not recognise: %s', failDecks.join(', ')));
+        decks = _.difference(decks, removeDecks);
+        return decks;
     };
 
     self.initCards = function() {
-        var defaultDecks = (self.isChristmas()) ? config.defaultDecks.concat(config.christmasDecks) : config.defaultDecks;
-        decks = (options.decks && options.decks.length) ? options.decks : defaultDecks;
-        var loadDecks = _.filter(bot.decks, function(loadDeck) { return (_.contains(decks, loadDeck.code)); });
+        var defaultDecks = self.compileDecksList(['~default']);
+        if (self.isChristmas())
+            defaultDecks = defaultDecks.concat(self.compileDecksList(['~christmas']));
+
+        decks = (options.decks && options.decks.length) ? self.compileDecksList(options.decks) : defaultDecks;
+
+        var loadDecks = _.filter(bot.decks, function(loadDeck) {
+            return _.contains(decks, loadDeck.code);
+        });
         var questions = Array.prototype.concat.apply([], _.pluck(loadDecks, 'calls'));
         var answers   = Array.prototype.concat.apply([], _.pluck(loadDecks, 'responses'));
+
+        if (!questions.length || !answers.length) {
+            self.say('No decks loaded. Stopping...');
+            self.stop();
+            return false;
+        }
 
         // init decks
         self.decks = {
@@ -115,6 +190,7 @@ var Game = function Game(bot, options) {
             answers.length
         ));
         self.say(util.format('Loaded %d decks: %d questions, %d answers', loadDecks.length, questions.length, answers.length));
+        return true;
     };
 
     /**

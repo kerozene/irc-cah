@@ -3,11 +3,13 @@ var      _ = require('lodash'),
       util = require('util'),
     moment = require('moment'),
          c = require('irc-colors'),
+     Decks = require('../controllers/decks'),
       Game = require('./game'),
     Player = require('../models/player');
 
 var Cmd = function Cmd(bot) {
     var   self = this,
+     decksTool = new Decks(),
         client = bot.client,
         config = bot.config,
        channel = bot.channel,
@@ -18,11 +20,11 @@ var Cmd = function Cmd(bot) {
      * @param silent - don't warn in the channel
      */
     self.noGame = function(silent) {
-        if (!bot.game) {
-            if (!silent) self.sayNoGame();
-            return true;
-        }
-        return false;
+        if (bot.game)
+            return false;
+        if (!silent)
+            self.sayNoGame();
+        return true;
     };
 
     /**
@@ -70,20 +72,12 @@ var Cmd = function Cmd(bot) {
             points = parseInt(cmdArgs[0]);
             cmdArgs = _.rest(cmdArgs);
         }
-        _.each(cmdArgs, function(arg) {
-            if (arg.match(/^\w{5}$/)) {
-                arg = arg.toUpperCase();
-                if (_.contains(config.decks, arg))
-                    loadDecks.push(arg);
-                else
-                    failDecks.push(arg);
-            }
-        }, this);
-        if (failDecks.length)
-            self.say(util.format('Could not load decks: %s; see %sdecks', failDecks.join(', '), p));
 
-        bot.game = new Game(bot, {points: points, decks: loadDecks, init: true});
-        self.join(message, cmdArgs);
+        bot.game = new Game(bot, {points: points, decks: cmdArgs, init: true});
+        if (bot.game.loaded)
+            self.join(message, cmdArgs);
+        else
+            bot.game = undefined;
     };
 
     /**
@@ -300,7 +294,7 @@ var Cmd = function Cmd(bot) {
             help += ' - ';
             if (cmd.flag && cmd.flag === 'o')
                 help += '(op) ';
-            help += cmd.info;
+            help += cmd.info.split('%%').join(p);
             if (cmd.commands.length > 1)
                 help += util.format(' (aliases: %s)', _.chain(cmd.commands)
                                                         .rest()
@@ -394,11 +388,14 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.decks = function(message, cmdArgs) {
+        var defaultDecks = decksTool.getDecksFromGroup('~DEFAULT');
         var decks = _.map(config.decks, function(deck) {
-            return (_.contains(config.defaultDecks, deck)) ? c.bold(deck) : deck;
+            return (_.contains(defaultDecks, deck)) ? c.bold(deck) : deck;
         });
-        var reply = util.format('Card decks available/%s (use %sdeckinfo <code> for details): %s',
+        var reply = util.format('Card decks available/%s (%sdeckinfo <code>): %s',
                                     c.bold('default'), p, decks.join(', '));
+        var groups = _.keys(config.deckGroups);
+        reply += util.format(' :: Groups (%sgroupinfo <tag>): %s', p, groups.join(', '));
         self.say(reply);
     };
 
@@ -432,11 +429,14 @@ var Cmd = function Cmd(bot) {
             else if (typeof data.created == 'string')
                 data.created = data.created.match(/^(\d{4}-\d{2}-\d{2})/)[1];
             var reply = util.format('%s: "%s" [%s/%s] by %s on %s (%s) - %s',
-                            deckCode,    data.name, 
+                            deckCode,
+                            data.name,
                             c.bold(data.q),
-                                   data.a, 
-                            data.author, data.created, 
-                            data.url,    data.description.split('\n')[0]
+                            data.a,
+                            data.author,
+                            data.created,
+                            data.url,
+                            data.description.split('\n')[0]
                         ).substring(0, 400);
             self.say(reply);
             return true;
@@ -447,6 +447,44 @@ var Cmd = function Cmd(bot) {
             self.say('Error ' + error.name + ': ' + error.message);
             return false;
         });
+    };
+
+    self.compileGroupTags = function(tags, decks, reply) {
+        var data = [], doTags = true;
+        reply = reply || tags.join(', ');
+        decks = decks || [];
+
+        var getTagData = function(data, tag) {
+            return data.concat(decksTool.getDecksFromGroup(tag, false));
+        };
+        var tagsFilter = function(d) { return (d[0] === '~'); };
+        var decksFilter = _.negate(tagsFilter);
+
+        data = _.reduce(tags, getTagData, data).concat(decks);
+
+        if (!data.length)
+            return reply;
+        reply += util.format(' -> [%s]', data.join(', '));
+        var newTags = _.filter(data, tagsFilter);
+        var newDecks = _.filter(data, decksFilter);
+        if (newTags.length)
+            reply = self.compileGroupTags(newTags, newDecks, reply);
+        return reply;
+    };
+
+    /**
+     * Get information about a deck group
+     * @param message
+     * @param cmdArgs
+     */
+    self.groupinfo = function(message, cmdArgs) {
+        var tag = '~' + _.trimLeft(cmdArgs[0], '~').toUpperCase();
+        var tagInfo = self.compileGroupTags([ tag ]);
+        if (tagInfo === tag) {
+            self.say(util.format('Group tag not found: %s', tag));
+            return false;
+        }
+        self.say(tagInfo);
     };
 
 };
