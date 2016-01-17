@@ -51,6 +51,8 @@ var Game = function Game(bot, options) {
 
     // properties
     self.loaded = false; // did init() complete successfully
+    self.decks = {};
+    self.deckCodes = [];
     self.round = 0; // round number
     self.players = []; // list of players
     self.removed = [];    // people who are not allowed to join
@@ -156,6 +158,7 @@ var Game = function Game(bot, options) {
         });
         var questions = Array.prototype.concat.apply([], _.pluck(loadDecks, 'calls'));
         var answers   = Array.prototype.concat.apply([], _.pluck(loadDecks, 'responses'));
+        self.deckCodes = Array.prototype.concat.apply([], _.pluck(loadDecks, 'code'));
 
         if (!questions.length || !answers.length) {
             self.say('No decks loaded. Stopping...');
