@@ -233,7 +233,7 @@ var Game = function Game(bot, options) {
         }
         if (self.round > 1) {
             var duration = moment.duration(moment().diff(moment(self.startTime)))
-                                 .format('d[d] h[h] m[m]');
+                                 .format('d [days] h [hours] m [minutes]');
             self.say(util.format('Game lasted %s', duration));
             self.showPoints();
         }
