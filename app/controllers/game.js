@@ -964,8 +964,9 @@ var Game = function Game(bot, options) {
         });
         if (stage === 'round') {
             self.say('Current scores: ' + output.slice(0, -2));
-            self.say('Needed to win: ' + c.bold(self.pointLimit));
-        } else if (stage === 'start')
+            if (self.pointLimit > 0)
+                self.say('Needed to win: ' + c.bold(self.pointLimit));
+        } else if (stage === 'start' && self.pointLimit > 0)
             self.say('Needed to win: ' + c.bold(self.pointLimit));
         else if (self.players.length)
             self.say('The most horrible people: ' + output.slice(0, -2));
