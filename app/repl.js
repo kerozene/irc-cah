@@ -94,6 +94,16 @@ module.exports = function(repl, bot) {
         }
     });
 
+    repl.defineCommand('ircusers', {
+        help: "Get a list of users in the channel",
+        action: function() {
+            users = _.filter(bot.client.chanData(bot.channel).users, function(user, nick) {
+                return ! _.includes([ bot.client.nick, 'ChanServ' ], nick);
+            });
+            console.log(users);
+        }
+    });
+
 /*
     repl.defineCommand('', {
         help: "",
