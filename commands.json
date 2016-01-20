@@ -134,14 +134,20 @@
 	},
 	{
 		"commands": ["coin", "flip"],
-		"info":     "(player,czar) Flip a coin to randomly choose a card or a winning entry between two choices.",
+		"info":     "(player,czar) Flip a coin to randomly choose a card or a winning entry between two choices; e.g. '.coin 4 9'",
 		"handler":  "coin",
 		"params":   [
 			{
-				"name":     "pick",
-				"type":     "number",
+				"name":     "heads",
+				"type":     "string",
 				"required": true,
-				"multiple": true
+				"multiple": false
+			},
+			{
+				"name":     "tails",
+				"type":     "string",
+				"required": true,
+				"multiple": false
 			}
 		]
 	},
