@@ -212,5 +212,28 @@
 				"multiple": false
 			}
 		]
+	},
+	{
+		"commands": ["ping"],
+		"info":     "Highlight people who might want to play. Use /away or %%away to remove yourself from this list.",
+		"handler":  "ping"
+	},
+	{
+		"commands": ["away"],
+		"info":     "Remove yourself from the ping list (%%help ping). Resets on join unless you use 'forever'. Setting /away in your client also works. (%%back to undo)",
+		"handler":  "away",
+		"params":	[
+			{
+				"name":     "\"forever\"",
+				"type":     "string",
+				"required": false,
+				"multiple": false
+			}
+		]
+	},
+	{
+		"commands": ["back"],
+		"info":     "Add yourself to the ping list (%%help ping) after being away (%%help away)",
+		"handler":  "back"
 	}
 ]

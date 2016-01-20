@@ -43,10 +43,29 @@ var Cmd = function Cmd(bot) {
     };
 
     /**
+     * Send a NOTICE
+     */
+    self.notice = function(target, message) {
+        client.notice(target, message);
+    };
+
+    /**
      * Say there's no game running
      */
     self.sayNoGame = function () {
         self.say(util.format('No game running. Start the game by typing %sstart', p));
+    };
+
+    /**
+     * Warn or return valid user
+     */
+    self.mustBeUser = function(nick) {
+        var user = bot.controller.users.updateUserFromNick(nick);
+        if (!user) {
+            self.say('Only known users can use this command.');
+            return undefined;
+        }
+        return user;
     };
 
     /**
@@ -527,6 +546,70 @@ var Cmd = function Cmd(bot) {
             return false;
         }
         self.say(tagInfo);
+    };
+
+    /**
+     * Highlight users who might want to play
+     * @param  message
+     * @param  cmdArgs
+     */
+    self.ping = function(message, cmdArgs) {
+        if (bot.game && bot.game.isRunning())
+            return false;
+
+        var needed = (bot.game) ? bot.game.needPlayers(true) : 2;
+        if (!needed)
+            return false;
+
+        var nicks = bot.client.nicksInChannel(bot.channel);
+        nicks = _.filter(nicks, function(nick) {
+            if (nick == bot.client.nick || nick == message.nick)
+                return false;
+            if ( bot.game && _.includes(bot.game.getPlayerNicks(), nick) )
+                    return false;
+
+            var user = bot.controller.users.updateUserFromNick(nick);
+            if (!user)
+                return false;
+
+            return (user.data.away !== true && !user.data.doNotPing);
+        }, self);
+        if (!nicks.length) {
+            self.say('There is no-one else available to play right now.');
+            return false;
+        }
+
+        self.say(util.format('%s is looking for players - %s more needed. Pinging %s (\'%shelp away\' to turn this off)',
+                                message.nick, needed, nicks.join(', '), p));
+        return true;
+    };
+
+    /**
+     * Remove yourself from the .ping list
+     * @param  message
+     * @param  cmdArgs
+     */
+    self.away = function(message, cmdArgs) {
+        var setting = (cmdArgs[0] && cmdArgs[0].toLowerCase() == 'forever') ? 'forever' : true;
+        var user = self.mustBeUser(message.nick);
+        if (user)
+            user.data.doNotPing = setting;
+        self.notice(message.nick, util.format('You have now been marked as away%s and will not be pinged by the bot. %s',
+                                                (setting === 'forever') ? ' forever' : '', p,
+                                                (setting === 'forever') ? '' :'(\'%saway forever\' to make this permanent)'));
+    };
+
+    /**
+     * Add yourself back to the .ping list
+     * @param  message
+     * @param  cmdArgs
+     */
+    self.back = function(message, cmdArgs) {
+        var user = self.mustBeUser(message.nick);
+        if (user)
+            delete user.data.doNotPing;
+        self.notice(message.nick, util.format('You have now been marked as back and will be included in pings by the bot. ' +
+                                                '(\'%saway forever\' to be marked away permanently)', p));
     };
 
 };
