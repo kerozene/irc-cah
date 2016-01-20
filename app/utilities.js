@@ -24,3 +24,17 @@ exports.getMatches = function (string, regex, index) {
 exports.arrayToUpperCase = function(arr) {
     return _.map(arr, function(str) { return str.toUpperCase(); });
 };
+
+/**
+ * Get user@host string from a user object
+ * @param  {Object} user - bot.users or client.users or game.players
+ * @return {string}
+ */
+exports.getUhost = function getUhost(user, char) {
+	char = char || '@';
+	if (!user)
+		return char;
+	var host = user.host || user.hostname;
+	var username = user.username || user.user;
+    return [ username, host ].join(char);
+};

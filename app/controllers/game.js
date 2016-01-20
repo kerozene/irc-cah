@@ -725,7 +725,7 @@ var Game = function Game(bot, options) {
      * @param player
      */
     self.updateLastWinner = function(player) {
-        var message, uhost = self.getPlayerUhost(player);
+        var message, uhost = utilities.getUhost(player);
         if ( _.isEmpty(self.lastWinner) || self.lastWinner.uhost !== uhost ) {
             self.lastWinner = {uhost: uhost, count: 1};
             return;
@@ -795,9 +795,9 @@ var Game = function Game(bot, options) {
      * @returns The new player or false if invalid player
      */
     self.addPlayer = function (player) {
-        if (_.includes(self.removed, self.getPlayerUhost(player)))
+        if (_.includes(self.removed, utilities.getUhost(player)))
             return false;
-        if (_.includes( self.waitToJoin, self.getPlayerUhost(player))) {
+        if (_.includes( self.waitToJoin, utilities.getUhost(player))) {
             self.say(player.nick + ': you can\'t rejoin until the next round :(');
             return false;
         }
@@ -851,15 +851,6 @@ var Game = function Game(bot, options) {
     };
 
     /**
-     * Format player user,hostname identifier
-     * @param player
-     * @returns user@hostname
-     */
-    self.getPlayerUhost = function(player) {
-        return [player.user, player.hostname].join('@');
-    };
-
-    /**
      * Remove player from game
      * @param player
      * @param options Extra options
@@ -873,8 +864,8 @@ var Game = function Game(bot, options) {
         var cards = player.cards.reset();
         // remove player
         self.players = _.without(self.players, player);
-        if ( !_.includes(self.removed, self.getPlayerUhost(player)) && self.round > 0 )
-            self.waitToJoin.push(self.getPlayerUhost(player));
+        if ( !_.includes(self.removed, utilities.getUhost(player)) && self.round > 0 )
+            self.waitToJoin.push(utilities.getUhost(player));
         // put player's cards to discard
         _.each(cards, function (card) {
             self.discards.answer.addCard(card);
