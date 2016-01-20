@@ -103,6 +103,16 @@ var Bot = function Bot() {
         });
     };
 
+    self.shutdown = function(message) {
+        if (message)
+            self.client.say(self.channel, util.format('Shutting down: %s', message));
+        if (self.game)
+            self.game.stop();
+        self.controller.users.storeAll();
+        self.log(util.format('Shutting down: %s', message));
+        client.disconnect(message, process.exit);
+    };
+
     /**
      * Connect to server
      */

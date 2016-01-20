@@ -104,6 +104,13 @@ module.exports = function(repl, bot) {
         }
     });
 
+    repl.defineCommand('quit', {
+        help: "Shut down the bot with optional <message>",
+        action: function(message) {
+            bot.shutdown(message);
+        }
+    });
+
 /*
     repl.defineCommand('', {
         help: "",
