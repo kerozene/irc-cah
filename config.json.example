@@ -132,16 +132,22 @@
 
     // ^ List of decks to enable from cardcastgame.com
 
-    "defaultDecks": ["CAHBS", "CAHE1", "CAHE2", "CAHE3", "CAHE4", "EU6CJ", "PEU3Q"],
+    "deckGroups": {
+        "~BASE":       ["CAHBS"],
+        "~EXPANSIONS": ["CAHE1", "CAHE2", "CAHE3", "CAHE4", "EU6CJ", "PEU3Q"],
+        "~CHRISTMAS":  ["XMAS1", "XVMCS"],
+        "~REGIONAL":   ["CANCK", "4MCMT", "CYAFZ"],
+        "~COMMUNITY":  ["74JJ5", "XQ8X2", "MWCE5"],
+        "~THEME":      ["GAWR5", "XMJP5", "2HJMW"],
+        "~STANDARD":   ["~BASE", "~EXPANSIONS"],
+        "~FULL":       ["~STANDARD", "~REGIONAL", "~COMMUNITY"],
+        "~DEFAULT":    ["~FULL", "2HJMW"]
+    },
 
-    // ^ Decks to select by default
-
-    "christmasDecks": ["XMAS1", "XVMCS"],
-
-    // ^ Load these decks from mid- to end of December
+    // ^ Tagged deck groups - ~DEFAULT is what gets loaded when no decks are specified with .start (.join)
 
     // When the !beer command is issued, a random beer is selected from this list.
-    "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois", 
+    "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois",
                "Modelo", "Fat Tire Amber Ale", "Magic Hat", "Samuel Adams",
                "Sierra Nevada", "Leffe Blonde", "Duvel", "Warsteiner", "Erdinger Weiss"
     ]
