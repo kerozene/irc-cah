@@ -7,7 +7,7 @@ var _ = require('lodash');
  * @param  {number} index
  * @return {string[]}
  */
-exports.getMatches = function (string, regex, index) {
+exports.getMatches = function getMatches(string, regex, index) {
     index = index || 1; // default to the first capturing group
     var match, matches = [];
     while ((match = regex.exec(string))) {
@@ -17,11 +17,43 @@ exports.getMatches = function (string, regex, index) {
 };
 
 /**
+ * Get a string with special regex chars escaped
+ * @param  {string} str
+ * @return {string}
+ */
+exports.RegExpEscape = function RegExpEscape(str) {
+    return str.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&');
+};
+
+/**
+ * Get a string with special regex chars escaped except '*' and '?'
+ * @param  {string} str
+ * @return {string}
+ */
+exports.RegExpIrcEscape = function RegExpIrcEscape(str) {
+    str = str.replace(/[-\\^$+.()|[\]{}]/g, '\\$&');
+    str = str.replace(/[*?]/g, '.$&');
+    return str;
+};
+
+/**
+ * Test whether a string matches an irc-style mask
+ * @param  {string} str
+ * @param  {string} mask
+ * @return {boolean}
+ */
+exports.maskMatch = function maskMatch(str, mask) {
+	mask = this.RegExpIrcEscape(mask);
+	var re = new RegExp(mask);
+	return re.test(str);
+};
+
+/**
  * Convert an array of strings to uppercase
  * @param  {string[]} arr
  * @return {string[]}
  */
-exports.arrayToUpperCase = function(arr) {
+exports.arrayToUpperCase = function arrayToUpperCase(arr) {
     return _.map(arr, function(str) { return str.toUpperCase(); });
 };
 
@@ -37,4 +69,13 @@ exports.getUhost = function getUhost(user, char) {
 	var host = user.host || user.hostname;
 	var username = user.username || user.user;
     return [ username, host ].join(char);
+};
+
+/**
+ * Get an identifier key from a user object - account name (preferably) or user@host
+ * @param  {Object} user
+ * @return {string}
+ */
+exports.getUserKey = function getUserKey(ircUser) {
+    return (ircUser.isRegistered) ? ircUser.account : this.getUhost(ircUser);
 };

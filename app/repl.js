@@ -104,6 +104,14 @@ module.exports = function(repl, bot) {
         }
     });
 
+    repl.defineCommand('users', {
+        help: "Get a list of internal permanent users",
+        action: function() {
+            users = bot.users;
+            console.log(users);
+        }
+    });
+
     repl.defineCommand('quit', {
         help: "Shut down the bot with optional <message>",
         action: function(message) {

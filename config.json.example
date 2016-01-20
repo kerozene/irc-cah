@@ -108,6 +108,10 @@
         }
     ],
 
+    "nonUsers": ["ChanServ@*"],
+
+    // ^ These identities will not be added to the internal user list. (Uses standard irc masking: user@host)
+
     "clientOptions": {
 
     // General IRC-related settings.

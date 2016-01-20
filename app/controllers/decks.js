@@ -14,7 +14,10 @@ Promise.config({warnings: false});
  */
 var Decks = function(bot) {
     var self = this;
-    self.storage = storage;
+    self.storage = storage.create({
+        dir: '../../../cards',
+        ttl: 7 * 24 * 60 * 60 * 1000
+    });
     self._findCardState = {};
 
     /**
@@ -23,14 +26,11 @@ var Decks = function(bot) {
     self.init = function() {
         return new Promise(function(resolve, reject) {
 
-            self.storage.init({
-                dir: '../../../cards',
-                ttl: 7 * 24 * 60 * 60 * 1000
-            }).then(function() {
+            self.storage.init().then(function() {
 
                 setTimeout(function() { // promise is fulfilled even though data isn't loaded yet
                     self.api = new CardcastAPI();
-                    resolve("Storage: " + self.storage.length() + ' keys loaded.');
+                    resolve(util.format('Card storage: %s keys loaded', self.storage.length()));
                 }, 1000);
 
             }).catch(function(error) {

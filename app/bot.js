@@ -4,6 +4,7 @@ var  util = require('util'),
 utilities = require('./utilities.js'),
    Config = require('./controllers/config'),
     Decks = require('./controllers/decks'),
+    Users = require('./controllers/users'),
       Cmd = require('./controllers/cmd');
 
 /**
@@ -15,6 +16,7 @@ var Bot = function Bot() {
     self.controller = {};
     self.commands = [];
     self.decks = [];
+    self.users = {};
     self.msgs = [];
     self.timers = [];
 
@@ -25,6 +27,8 @@ var Bot = function Bot() {
 
     self.controller.config = new Config(self);
     self.config = config = self.controller.config.load();
+
+    self.nonUsers = self.config.nonUsers;
 
     /**
      * Logger
@@ -64,6 +68,12 @@ var Bot = function Bot() {
             });
         });
     });
+
+    self.controller.users = new Users(self);
+    self.controller.users.init();
+    setTimeout(function() {
+        self.timers.storeUsers = setInterval(self.controller.users.storeAll, 5 * 60 * 1000);
+    }, 10 * 1000); // 10 seconds after chanData refresh
 
     self.channel = config.channel.toLowerCase();
     config.clientOptions.channels = [ self.channel ];
@@ -154,6 +164,20 @@ var Bot = function Bot() {
         }
     };
 
+    self.refreshUsers = function() {
+        self.log('Refreshing user list...');
+        setTimeout(function() {
+            _.each(client.nicksInChannel(self.channel), function(nick) {
+                if (client.nick != nick)
+                    self.controller.users.updateUserFromNick(nick);
+            });
+        }, 200);
+    };
+
+    self.refreshChanData = function() {
+        client.who(self.channel, '%cuhnfa');
+    };
+
     /**
      * On joining a channel (syncchan event)
      * @param channel
@@ -165,6 +189,7 @@ var Bot = function Bot() {
             client.part(channel, 'nope nope nope');
             return false;
         }
+        self.refreshUsers();
         self.devoiceOnJoin(channel);
         if (  !self.game && config.joinCommands ) {
             _.each(config.joinCommands, function (cmd) {
@@ -273,7 +298,14 @@ var Bot = function Bot() {
 
     // handle user joins to channel
     client.addListener('join', function (channel, nick, message) {
-        if ( client.nick !== nick && config.userJoinCommands ) {
+        if (client.nick == nick || nick == 'ChanServ')
+            return false;
+
+        var user = self.controller.users.updateUserFromNick(nick);
+        if (user && user.data.doNotPing === true)
+            self.controller.cmd.back(message, [ 'ONJOIN' ]);
+
+        if (config.userJoinCommands) {
             _.each(config.userJoinCommands, function (cmd) {
                 if(cmd.target && cmd.message) {
                     message = _.template(cmd.message)({nick: nick, channel: channel}).split('%%').join(p);
@@ -312,6 +344,9 @@ var Bot = function Bot() {
 
     client.addListener('joinsync', self.channelJoinHandler);
     client.addListener('message',  self.messageHandler);
+
+    client.addListener('who' + self.channel, self.refreshUsers);
+    self.timers.refreshChannel = setInterval(self.refreshChanData, 5 * 60 * 1000);
 
 };
 
