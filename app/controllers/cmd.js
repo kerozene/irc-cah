@@ -290,10 +290,11 @@ var Cmd = function Cmd(bot) {
             return false;
         }
 
-        if (cmdArgs.length !== 2 ||
-            _.some(cmdArgs, function(arg) { return isNaN(arg); })
+        if ( cmdArgs.length !== 2 ||
+             _.some(cmdArgs, isNaN) ||
+             cmdArgs[0] === cmdArgs[1]
         ) {
-            self.say(util.format('%s: You must specify two numbers.', message.nick));
+            self.say(util.format('%s: You must specify two different numbers.', message.nick));
             return false;
         }
 
