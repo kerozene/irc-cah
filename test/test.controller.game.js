@@ -1157,7 +1157,7 @@ describe('GameController', function() {
             game.playCard([ 0, 1 ], player);
 
             stubNotice.should.have.been.calledWithExactly('Vladimir',
-                'You played: I never truly understood \u0002Switching to Geico®\u0002 until I encountered \u0002Bling\u0002.');
+                'You played: I never truly understood \u0002switching to Geico®\u0002 until I encountered \u0002bling\u0002.');
 
             stubNotice.restore();
         });
@@ -1636,7 +1636,7 @@ describe('GameController', function() {
 
         it('should return an entry with the question blanks filled in', function() {
             var question = _.first(cards.cards.calls);
-            var answers = [ _.first(cards.cards.responses)];
+            var answers = [ _.first(cards.cards.responses) ];
 
             var entry = game.getFullEntry(question, answers);
 
@@ -1649,7 +1649,22 @@ describe('GameController', function() {
 
             var entry = game.getFullEntry(question, answers);
 
-            entry.should.equal('I never truly understood \u0002Switching to Geico®\u0002 until I encountered \u0002Bling\u0002.');
+            entry.should.equal('I never truly understood \u0002switching to Geico®\u0002 until I encountered \u0002bling\u0002.');
+        });
+
+        it('should use capitalized answers after certain punctuation', function() {
+            var question = _.first(cards.cards.calls);
+            var answers = [ _.first(cards.cards.responses) ];
+
+            var entry = game.getFullEntry(question, answers);
+
+            entry.should.equal('What ended my last relationship? \u0002Switching to Geico®\u0002.');
+
+            question.text[0] = 'What ended my last relationship ';
+
+            entry = game.getFullEntry(question, answers);
+
+            entry.should.equal('What ended my last relationship \u0002switching to Geico®\u0002.');
         });
 
     });

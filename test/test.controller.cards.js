@@ -22,8 +22,8 @@ describe('CardsController', function() {
         var qCards = new Cards(dataCalls, 'q'),
             aCards = new Cards(dataResponses, 'a');
 
-        qCards.cards.should.deep.equal(fixtures.cards.calls);
-        aCards.cards.should.deep.equal(fixtures.cards.responses);
+        qCards.cards.slice(0, 3).should.deep.equal(fixtures.cards.calls.slice(0, 3));
+        aCards.cards.slice(0, 2).should.deep.equal(fixtures.cards.responses.slice(0, 2));
     });
 
     it('should create an empty Cards object if called without args', function() {

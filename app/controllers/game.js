@@ -759,8 +759,16 @@ var Game = function Game(bot, options) {
      */
     self.getFullEntry = function (question, answers) {
         var args = [];
-        _.each(answers, function (card) {
-            args.push(c.bold(card.displayText));
+        _.each(answers, function (card, index) {
+            var text = card.text;
+            if (
+                ( index === 0 && question.text[index] === '' ) || // if at the start
+                question.text[index].match(/[!?"':] $/)           // or after certain punctuation
+            )
+                text = card.displayText; // get capitalized version
+
+            args.push(c.bold(text));
+
         }, this);
         return util.format.apply(null, [ question.text.join('%s') ].concat(args));
     };

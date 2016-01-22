@@ -19,7 +19,7 @@ fixtures.cardData = {
             text: ["What ended my last relationship? ","."],
             numResponses: 1
         },
-        twoSpace: {
+        twoBlank: {
             id: "1b29cdad-d4d6-4b9f-bb04-540b4aa5e763",
             text: ["I never truly understood "," until I encountered ","."],
             numResponses: 2
@@ -27,6 +27,16 @@ fixtures.cardData = {
         trim: {
             id: "1b29cdad-d4d6-4b9f-bb04-540b4aa5e763",
             text: [" I never truly understood "," until I encountered ",". "],
+            numResponses: 2
+        },
+        doubleSpace: {
+            id: "1b29cdad-d4d6-4b9f-bb04-540b4aa5e763",
+            text: ["I never  truly understood "," until I encountered ","."],
+            numResponses: 2
+        },
+        parentheses: {
+            id: "1b29cdad-d4d6-4b9f-bb04-540b4aa5e763",
+            text: ["I never truly understood (",") until I encountered (",")."],
             numResponses: 2
         }
     },
@@ -44,6 +54,11 @@ fixtures.cardData = {
             id: "0130dbe6-2517-430b-a8c8-1ef0d5d06953",
             text: "bling",
             displayText: " Bling. "
+        },
+        doubleSpace: {
+            id: "0064b920-a058-4a48-a16c-4396ef867174",
+            text: "switching to Geico®",
+            displayText: "Switching  to Geico®"
         }
     }
 };
