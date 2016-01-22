@@ -58,8 +58,8 @@ var Game = function Game(bot, options) {
     self.deckCodes = [];
     self.round = 0; // round number
     self.players = []; // list of players
-    self.removed = [];    // people who are not allowed to join
-    self.waitToJoin = []; // people who are not allowed to join until the next round
+    self.removed = []; // people who are not allowed to join
+    self.left = []; // people who left the game and might rejoin
     self.channel = channel; // the channel this game is running on
     self.client = client; // reference to the irc client
     self.config = config; // configuration data
@@ -350,7 +350,6 @@ var Game = function Game(bot, options) {
         self.round++;
         self.setCzar();
         self.deal();
-        self.waitToJoin = []; // allow recently removed players to rejoin
         self.say('Round ' + self.round + '! ' + self.czar.nick + ' is the card czar.');
         self.playQuestion();
         self.state = STATES.PLAYABLE;
@@ -800,22 +799,17 @@ var Game = function Game(bot, options) {
     self.addPlayer = function (player) {
         if (_.includes(self.removed, utilities.getUhost(player)))
             return false;
-        if (_.includes( self.waitToJoin, utilities.getUhost(player))) {
-            self.say(player.nick + ': you can\'t rejoin until the next round :(');
-            return false;
-        }
         if (typeof self.getPlayer({user: player.user, hostname: player.hostname}) !== 'undefined') {
             bot.log('Player tried to join again', player.nick, player.user, player.hostname);
             return false;
         }
-        self.players.push(player);
-        self.say(player.nick + ' has joined the game');
-        var needed = (3 - self.players.length);
-        if ( needed > 0 &&
-             ( self.round > 0 ||  _.now() > self.startTime.getTime() + 30 * 1000 )
-        )
-            self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's'));
-        // check if player is returning to game
+
+        var returningPlayer = _.findWhere(self.left, {user: player.user, hostname: player.hostname});
+        if (returningPlayer) {
+            player = returningPlayer;
+            self.left = _.without(self.left, returningPlayer);
+        }
+
         var pointsPlayer = _.findWhere(self.points, {user: player.user, hostname: player.hostname});
         if (typeof pointsPlayer === 'undefined') {
             // new player
@@ -830,6 +824,16 @@ var Game = function Game(bot, options) {
             pointsPlayer.player = player;
             player.points = pointsPlayer.points;
         }
+
+        self.players.push(player);
+
+        self.say(util.format('%s has %sjoined the game.', player.nick, (returningPlayer) ? 're' : ''));
+
+        var needed = (3 - self.players.length);
+        if ( needed > 0 &&
+             ( self.round > 0 ||  _.now() > self.startTime.getTime() + 30 * 1000 )
+        )
+            self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's'));
         // check if waiting for players
         if (self.state === STATES.WAITING && self.players.length >= 3) {
             // enough players, start the game
@@ -863,16 +867,21 @@ var Game = function Game(bot, options) {
         options = _.extend({}, options);
         if (!player)
             return false;
-        // get cards in hand
-        var cards = player.cards.reset();
+
+
         // remove player
         self.players = _.without(self.players, player);
-        if ( !_.includes(self.removed, utilities.getUhost(player)) && self.round > 0 )
-            self.waitToJoin.push(utilities.getUhost(player));
-        // put player's cards to discard
-        _.each(cards, function (card) {
-            self.discards.answer.addCard(card);
-        });
+
+        if ( _.includes(self.removed, utilities.getUhost(player)) && self.round > 0 ) {
+            // put player's cards to discard
+            var cards = player.cards.reset();
+            _.each(cards, function (card) {
+                self.discards.answer.addCard(card);
+            });
+        }
+        else // store the player's cards in case they rejoin
+            self.left.push(player);
+
         if (!options.silent)
             self.say(player.nick + ' has left the game');
 
