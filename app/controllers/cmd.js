@@ -594,6 +594,17 @@ var Cmd = function Cmd(bot) {
             return false;
         }
 
+        if (bot.lastUseOfPing) {
+            var ready = moment(bot.lastUseOfPing).add(config.pingInterval, 'minutes');
+            var wait = ready.diff(moment());
+            if (wait > 0) {
+                self.say(util.format('You can use %sping again in %s minutes.',
+                    p, Math.ceil(moment.duration(wait).asMinutes())));
+                return false;
+            }
+        }
+        bot.lastUseOfPing = moment();
+
         self.say(util.format('%s is looking for players - %s more needed. Pinging %s (\'%shelp away\' to turn this off)',
                                 message.nick, needed, nicks.join(', '), p));
         return true;

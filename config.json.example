@@ -49,6 +49,8 @@
 
     // ^ Number of times a player can use .coin in a single game.
 
+    "pingInterval": 10,     // - Cooldown time between uses of .ping.
+
     "topic": {
 
     // The bot can add/update a segment of the channel topic when games start and end.
