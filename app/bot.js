@@ -189,7 +189,6 @@ var Bot = function Bot() {
             client.part(channel, 'nope nope nope');
             return false;
         }
-        self.refreshUsers();
         self.devoiceOnJoin(channel);
         if (  !self.game && config.joinCommands ) {
             _.each(config.joinCommands, function (cmd) {
