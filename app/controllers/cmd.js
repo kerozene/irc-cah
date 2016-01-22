@@ -334,6 +334,8 @@ var Cmd = function Cmd(bot) {
         if (cmdArgs[0] === undefined) {
             // list commands and aliases
             var commands = _.map(config.commands, function(cmd) {
+                                if (cmd.hidden)
+                                    return null;
                                 var result = p + cmd.commands[0];
                                 if (cmd.commands.length > 1) {
                                     var aliases =  _.chain(cmd.commands)
@@ -636,6 +638,16 @@ var Cmd = function Cmd(bot) {
             delete user.data.doNotPing;
         self.notice(message.nick, util.format('You have now been marked as back and will be included in pings by the bot. ' +
                                                 '(\'%saway forever\' to be marked away permanently)', p));
+    };
+
+    /**
+     * Interpret 'gg'
+     * @param  message
+     * @param  cmdArgs
+     */
+    self.gg = function(message, cmdArgs) {
+        var expansion = util.format('%s %s', _.sample(config.gg.adjectives), _.sample(config.gg.nouns));
+        self.say(expansion);
     };
 
 };

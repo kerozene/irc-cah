@@ -156,6 +156,25 @@
 
     // ^ Tagged deck groups - ~DEFAULT is what gets loaded when no decks are specified with .start (.join)
 
+    "gg": {
+        "adjectives":
+            ["galloping", "galvanized", "gamboling", "gaseous", "gelatinous", "generic", "generous",
+             "gentille", "gentle", "genuine", "geocentric", "germane", "germanic", "giant", "gifted",
+             "giggly", "gilded", "glacial", "glamorous", "gleaming", "gloomy", "glorious", "glossy",
+             "golfing", "gorey", "gorgeous", "graceful", "gracious", "graphic", "granite", "grazing",
+             "great", "gregarious", "grieving", "grinding", "grotesque", "grumpy", "gubernatorial",
+             "guilty", "gyrating"],
+        "nouns":
+            ["galahs", "gastrectomy", "gastropods", "gators", "geeks", "geese", "geckos", "gentiles",
+             "gentoos", "gerbils", "germans", "ghosts", "giblets", "giraffes", "gizzards", "glitterbombs",
+             "glockenspiels", "gloop", "gloryholes", "glowsticks", "glowworms", "glutes", "gluttons",
+             "goblins", "golfers", "gonads", "gonorrhea", "GOOOOOOON", "goons", "gophers", "gorillas",
+             "governator", "greeks", "gremlins", "gropers", "grouches", "guerrillas", "gumballs",
+             "gumbies", "gypsies"]
+    },
+
+    // ^ 'gg'
+
     // When the !beer command is issued, a random beer is selected from this list.
     "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois",
                "Modelo", "Fat Tire Amber Ale", "Magic Hat", "Samuel Adams",

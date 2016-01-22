@@ -243,8 +243,9 @@ var Bot = function Bot() {
 
     self.messageHandler = function (from, to, text, message) {
         // parse command
-        var cmd, cmdArgs = [],
+        var cmd, cmdArr, cmdArgs = [],
             pickArr = text.trim().split(/[^\d\s]/)[0].match(/(\d+)/g); // get the numbers
+
         if (config.enableFastPick && !_.isNull(pickArr)) {
             cmd = self.controller.cmd.findCommand('pick');
             cmdArgs  = [pickArr, true]; // fastPick=true
@@ -253,18 +254,23 @@ var Bot = function Bot() {
             var prefix = _.map(config.commandPrefixChars.split(''), function(char) {
                 return (_.includes(escape, char)) ? "\\" + char : char;
             }).join('');
-            var cmdPattern = new RegExp('^[' + prefix + ']([^\\s]+)(?:\\s(.*))?', 'i');
-            var cmdArr = text.trim().match(cmdPattern);
-            if (!cmdArr || cmdArr.length <= 1) {
-                // command not found
+            var cmdPattern = new RegExp('^([' + prefix + '])?([^\\s]+)(?:\\s(.*))?', 'i');
+
+            cmdArr = text.trim().match(cmdPattern);
+            if ( !cmdArr || !cmdArr[2])
                 return false;
+
+            cmd = self.controller.cmd.findCommand(cmdArr[2].toLowerCase());
+            if (  !cmd ||
+                 ( cmd.noPrefix &&  cmdArr[1]) ||  // called as '.cmd' but prefix disallowed
+                 (!cmd.noPrefix && !cmdArr[1]) ||  // called as  'cmd' but prefix required
+                 ( cmd.noParams &&  cmdArr[3])     // called as '.cmd foo' but params disallowed
+            )
+                return false;
+
+            if (cmdArr[3]) {
+                cmdArgs = utilities.getMatches(cmdArr[3], /([^\s]+)\s?/gi, 1);
             }
-            cmd = self.controller.cmd.findCommand(cmdArr[1].toLowerCase());
-            if (!cmd)
-                return false;
-            // parse arguments
-            if (cmdArr[2])
-                cmdArgs = utilities.getMatches(cmdArr[2], /([^\s]+)\s?/gi, 1);
         }
 
         // build callback options
@@ -272,7 +278,7 @@ var Bot = function Bot() {
             // public command
             callback = function() { self.controller.cmd[cmd.handler](message, cmdArgs); };
             if (!cmd.flag || client.nickHasChanMode(message.nick, cmd.flag, self.channel)) {
-                if (!self.throttleCommand(message))
+                if (cmd.noThrottle || !self.throttleCommand(message))
                     callback.call();
             }
         }

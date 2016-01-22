@@ -235,5 +235,13 @@
 		"commands": ["back"],
 		"info":     "Add yourself to the ping list (%%help ping) after being away (%%help away)",
 		"handler":  "back"
+	},
+	{
+		"commands":   ["gg"],
+		"hidden":     true,
+		"handler":    "gg",
+		"noPrefix":   true,
+		"noParams":   true,
+		"noThrottle": true
 	}
 ]
