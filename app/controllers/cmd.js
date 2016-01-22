@@ -349,8 +349,8 @@ var Cmd = function Cmd(bot) {
             // single command details
             var alias = cmdArgs[0].toLowerCase();
             var cmd = self.findCommand(alias);
-            if (!cmd) {
-                self.say(util.format('No command "%s%s"', p, cmd));
+            if (!cmd || cmd.hidden) {
+                self.say(util.format('No command "%s%s"', p, alias));
                 return;
             }
             help = p + cmd.commands[0];
