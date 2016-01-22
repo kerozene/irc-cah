@@ -284,6 +284,18 @@ var Cmd = function Cmd(bot) {
         if (!player)
             return false;
 
+        var max = config.maxCoinUsesPerGame;
+        if (max === 0) {
+            self.say(util.format('%scoin is disabled.', p));
+            return false;
+        }
+
+        if (player.coinUsed && player.coinUsed == max) {
+            self.say(util.format('%s: You can only use %scoin %s time%s per game.',
+                message.nick, p, max, (max > 1) ? 's' : ''));
+            return false;
+        }
+
         if (!player.isCzar && bot.game.table.question.pick > 1) {
             self.say(util.format('%s: You can\'t use %scoin on multiple pick questions',
                 message.nick, p));
@@ -297,6 +309,8 @@ var Cmd = function Cmd(bot) {
             self.say(util.format('%s: You must specify two different numbers.', message.nick));
             return false;
         }
+
+        player.coinUsed = (player.coinUsed) ? player.coinUsed + 1 : 1;
 
         var coin = _.sample([0, 1]);
         var pick = cmdArgs[coin];

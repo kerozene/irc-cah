@@ -45,6 +45,10 @@
 
     // ^ Allow picking a card or winner by just typing the number(s) without an explict command.
 
+    "maxCoinUsesPerGame": 2,
+
+    // ^ Number of times a player can use .coin in a single game.
+
     "topic": {
 
     // The bot can add/update a segment of the channel topic when games start and end.
