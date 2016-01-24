@@ -405,8 +405,13 @@ var Game = function Game(bot, options) {
      * Set a new czar
      * @returns Player The player object who is the new czar
      */
-    self.setCzar = function () {
-        self.czar = self.players[self.players.indexOf(self.czar) + 1] || self.players[0];
+    self.setCzar = function (newCzar) {
+        if (newCzar)
+            self.say(util.format('%s is the new Card Czar.', newCzar.nick));
+        else
+            newCzar = self.players[self.players.indexOf(self.czar) + 1] || self.players[0];
+
+        self.czar = newCzar;
         self.czar.isCzar = true;
         return self.czar;
     };
@@ -807,19 +812,28 @@ var Game = function Game(bot, options) {
     self.addPlayer = function (player) {
         if (_.includes(self.removed, utilities.getUhost(player)))
             return false;
+
         if (typeof self.getPlayer({user: player.user, hostname: player.hostname}) !== 'undefined') {
             bot.log('Player tried to join again', player.nick, player.user, player.hostname);
             return false;
         }
 
         var returningPlayer = _.findWhere(self.left, {user: player.user, hostname: player.hostname});
+        var pointsPlayer =    _.findWhere(self.points, {user: player.user, hostname: player.hostname});
+
         if (returningPlayer) {
             player = returningPlayer;
+            player.isCzar = (
+                player === self.czar &&
+                player.roundLeft === self.round &&
+                _.contains([ self.STATES.PLAYABLE, self.STATES.PLAYED ], self.state)
+            );
+            player.hasPlayed = (player.hasPlayed && player.roundLeft === self.round);
+            pointsPlayer.player = player;
+            player.points = pointsPlayer.points;
+            delete player.roundLeft;
             self.left = _.without(self.left, returningPlayer);
-        }
-
-        var pointsPlayer = _.findWhere(self.points, {user: player.user, hostname: player.hostname});
-        if (typeof pointsPlayer === 'undefined') {
+        } else {
             // new player
             self.points.push({
                 user:     player.user, // user and hostname are used for matching returning players
@@ -827,10 +841,6 @@ var Game = function Game(bot, options) {
                 player:   player, // reference to player object saved to points object as well
                 points:   0
             });
-        } else {
-            // returning player
-            pointsPlayer.player = player;
-            player.points = pointsPlayer.points;
         }
 
         self.players.push(player);
@@ -876,7 +886,6 @@ var Game = function Game(bot, options) {
         if (!player)
             return false;
 
-
         // remove player
         self.players = _.without(self.players, player);
 
@@ -887,8 +896,10 @@ var Game = function Game(bot, options) {
                 self.discards.answer.addCard(card);
             });
         }
-        else // store the player's cards in case they rejoin
+        else { // store the player's cards in case they rejoin
+            player.roundLeft = self.round;
             self.left.push(player);
+        }
 
         if (!options.silent)
             self.say(player.nick + ' has left the game');
