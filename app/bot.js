@@ -278,7 +278,11 @@ var Bot = function Bot() {
             // public command
             callback = function() { self.controller.cmd[cmd.handler](message, cmdArgs); };
             if (!cmd.flag || client.nickHasChanMode(message.nick, cmd.flag, self.channel)) {
-                if (cmd.noThrottle || !self.throttleCommand(message))
+                if (
+                    cmd.noThrottle ||
+                    client.nickHasOp(message.nick, self.channel) ||
+                    !self.throttleCommand(message)
+                )
                     callback.call();
             }
         }
