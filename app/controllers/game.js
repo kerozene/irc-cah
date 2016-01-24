@@ -316,7 +316,7 @@ var Game = function Game(bot, options) {
                 self.timers.winner = setInterval(self.winnerTimerCheck, 10 * 1000);
             else {
                 // no czar
-                self.say('The czar quit the game during pause. I will pick the winner on this round.');
+                self.say('The Card Czar quit the game during pause. I will pick the winner on this round.');
                 // select winner
                 self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
             }
@@ -350,7 +350,7 @@ var Game = function Game(bot, options) {
         self.round++;
         self.setCzar();
         self.deal();
-        self.say('Round ' + self.round + '! ' + self.czar.nick + ' is the card czar.');
+        self.say('Round ' + self.round + '! ' + self.czar.nick + ' is the Card Czar.');
         self.playQuestion();
         self.state = STATES.PLAYABLE;
         // show cards for all players (except czar)
@@ -363,7 +363,6 @@ var Game = function Game(bot, options) {
     /**
      * End game
      */
-
     self.endGame = function() {
         // check if any player reached the point limit
         if (self.pointLimit <= 0)
@@ -547,7 +546,7 @@ var Game = function Game(bot, options) {
 
         if (player.isCzar)
             return fastPick || self.say(player.nick +
-                        ': You are the card czar. The czar does not play. The czar makes other people do their dirty work.');
+                        ': You are the Card Czar. The Czar does not play. The Czar makes other people do their dirty work.');
 
         if (cards.length != self.table.question.pick) {
             // invalid card count
@@ -614,7 +613,7 @@ var Game = function Game(bot, options) {
         var currentCzar = _.findWhere(this.players, {isCzar: true});
         if (typeof currentCzar === 'undefined') {
             // no czar, random winner (TODO: Voting?)
-            self.say('The czar has fled the scene. So I will pick the winner on this round.');
+            self.say('The Card Czar has fled the scene. So I will pick the winner on this round.');
             self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
             return;
         }
@@ -702,7 +701,7 @@ var Game = function Game(bot, options) {
         var winner = self.table.answer[index];
 
         if (typeof player !== 'undefined' && player !== self.czar)
-            return fastPick || self.say(player.nick + ': You are not the card czar. Only the card czar can select the winner');
+            return fastPick || self.say(player.nick + ': You are not the Card Czar. Only the Card Czar can select the winner');
 
         if (typeof winner === 'undefined')
             return self.say('Invalid winner');
@@ -913,7 +912,7 @@ var Game = function Game(bot, options) {
 
         // check czar
         if (self.state === STATES.PLAYED && self.czar === player) {
-            self.say('The czar has fled the scene. So I will pick the winner on this round.');
+            self.say('The Card Czar has fled the scene. So I will pick the winner on this round.');
             self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
         }
 
@@ -1008,7 +1007,7 @@ var Game = function Game(bot, options) {
 
         switch (self.state) {
             case STATES.PLAYABLE:
-                self.say(c.bold('Status: ') + self.czar.nick + ' is the czar. Waiting for players to play: ' + _.pluck(notPlayed, 'nick').join(', '));
+                self.say(c.bold('Status: ') + self.czar.nick + ' is the Card Czar. Waiting for players to play: ' + _.pluck(notPlayed, 'nick').join(', '));
                 break;
             case STATES.PLAYED:
                 self.say(c.bold('Status: ') + 'Waiting for ' + self.czar.nick + ' to select the winner.');
