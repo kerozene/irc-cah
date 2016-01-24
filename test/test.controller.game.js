@@ -331,7 +331,7 @@ describe('GameController', function() {
 
             stubs.say.should.have.been.calledWithExactly(
                 '#test',
-                'The czar quit the game during pause. I will pick the winner on this round.');
+                'The Czar quit the game during pause. I will pick the winner on this round.');
             stubs.select.should.have.been.called;
 
             game.players = _.cloneDeep(fixtures.players);
@@ -524,14 +524,6 @@ describe('GameController', function() {
             stubs.deal.should.have.been.called;
         });
 
-        it('should reset the waitToJoin list', function() {
-            game.waitToJoin = [ 'foo' ];
-
-            game.startNextRound();
-
-            game.waitToJoin.should.be.empty;
-        });
-
         it('should announce the round start and czar', function() {
             game.round = 1;
 
@@ -539,7 +531,7 @@ describe('GameController', function() {
 
             stubs.say.should.have.been.calledWithExactly(
                 '#test',
-                'Round 2! Napoleon is the card czar.');
+                'Round 2! Napoleon is the Card Czar.');
         });
 
         it('should call playQuestion()', function() {
@@ -656,7 +648,7 @@ describe('GameController', function() {
 
             game.needPlayers();
 
-            game.needPlayers.returned(true).should.be.true;
+            game.needPlayers.returned(1).should.be.true;
 
             game.needPlayers.restore();
         });
@@ -667,7 +659,7 @@ describe('GameController', function() {
 
             game.needPlayers();
 
-            game.needPlayers.returned(false).should.be.true;
+            game.needPlayers.returned(0).should.be.true;
 
             game.needPlayers.restore();
         });
@@ -1106,7 +1098,7 @@ describe('GameController', function() {
 
             game.playCard([ 0 ], player);
 
-            stubSay.should.have.been.calledWith('#test', sinon.match(/^Napoleon: You are the card czar/));
+            stubSay.should.have.been.calledWith('#test', sinon.match(/^Napoleon: You are the Card Czar/));
         });
 
         it('should update the player\'s pick if they\'ve already played');
@@ -1455,7 +1447,7 @@ describe('GameController', function() {
 
         after(function() {
             stubNextRound.restore();
-        })
+        });
 
         beforeEach(function() {
             stubNextRound.reset();
@@ -1569,7 +1561,7 @@ describe('GameController', function() {
             game.selectWinner(0, winner);
 
             game.points[0].points.should.equal(3);
-            bot.client.say.should.have.been.calledWithMatch('#test', /^Frederick: You are not the card czar/);
+            bot.client.say.should.have.been.calledWithMatch('#test', /^Frederick: You are not the Card Czar/);
 
             bot.client.say.reset();
 
@@ -1726,7 +1718,7 @@ describe('GameController', function() {
 
             stubSay.should.have.been.calledWithExactly(
                 '#test',
-                'Frederick has joined the game');
+                'Frederick has joined the game.');
 
             stubSay.restore();
         });
@@ -1822,20 +1814,7 @@ describe('GameController', function() {
             game.removed = [];
         });
 
-        it('should fail with message if user previously left the game', function() {
-            game.waitToJoin = [ '~freddy@unaffiliated/fredd' ];
-            game.players = [];
-            sinon.spy(bot.client, 'say');
-
-            game.addPlayer(player);
-
-            bot.client.say.should.have.been.calledWithExactly(
-                '#test',
-                'Frederick: you can\'t rejoin until the next round :(');
-
-            bot.client.say.restore();
-            game.waitToJoin = [];
-        });
+        it('should do something about rejoining players');
 
         it('should fail if player is already in the game', function() {
             var stub = sinon.stub(bot, 'log');
@@ -1895,50 +1874,26 @@ describe('GameController', function() {
             game.waitToJoin = [];
         });
 
-        it('should call cards.reset() on the Player object', function() {
-            sinon.spy(player.cards, 'reset');
-
-            game.removePlayer(player);
-
-            player.cards.reset.should.have.been.calledOnce;
-        });
-
         it('should remove the player from the game', function() {
             game.removePlayer(player);
 
             game.players.should.deep.equal(_.without(game.players, player));
         });
 
-        it('should add the player to the waitToJoin list', function() {
-            game.round = 1;
+        it('should store players that leave the game');
 
-            game.removePlayer(player);
+        it('should not store players if the game hasn\'t started');
 
-            game.waitToJoin.should.include.members(['~freddy@unaffiliated/fredd']);
-        });
+        it('should not store players if they were manually removed');
 
-        it('should not add the player to the waitToJoin list if the game hasn\'t started', function() {
-            game.round = 0;
-
-            game.removePlayer(player);
-
-            game.waitToJoin.should.be.empty;
-        });
-
-        it('should not add the player to the waitToJoin list if they were manually removed', function() {
-            game.round = 1;
-            game.removed.push('~freddy@unaffiliated/fredd');
-
-            game.removePlayer(player);
-
-            game.waitToJoin.should.be.empty;
-        });
-
-        it('should add the player\'s cards to the discard pile', function() {
+        it('should add the player\'s cards to the discard pile if manually removed');
+/*
+        , function() {
             game.removePlayer(player);
 
             game.discards.answer.cards.should.deep.equal(_.cloneDeep(cards.cards.responses));
         });
+*/
 
         it('should say nothing if silent option is passed', function() {
             sinon.spy(bot.client, 'say');
@@ -2012,7 +1967,7 @@ describe('GameController', function() {
             stub.should.have.been.called;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                'The czar has fled the scene. So I will pick the winner on this round.');
+                'The Czar has fled the scene. So I will pick the winner on this round.');
 
             stub.restore();
             bot.client.say.restore();
@@ -2161,6 +2116,7 @@ describe('GameController', function() {
         before(function() {
             initGame();
             game.points = [];
+            game.pointLimit = 1;
             _.each(game.players, function(player) {
                 game.points.push({
                     user:     player.user,
@@ -2198,9 +2154,11 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                'Needed to win: \u00020\u0002'
+                'Needed to win: \u00021\u0002'
             );
         });
+
+        it('should not show the point limit in infinity games');
 
         it('should show the current scores and pointLimit after a round', function() {
             game.showPoints('round');
@@ -2215,7 +2173,7 @@ describe('GameController', function() {
             );
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                'Needed to win: \u00020\u0002'
+                'Needed to win: \u00021\u0002'
             );
         });
 
@@ -2303,7 +2261,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Napoleon is the czar. Waiting for players to play: Vladimir');
+                '\u0002Status: \u0002Napoleon is the Czar. Waiting for players to play: Vladimir');
         });
 
     });

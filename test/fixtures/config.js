@@ -12,7 +12,7 @@ var fixtures = {
 		commands: [
 			{
 				commands: ["start", "go"],
-				info:     "Start a game with # points to win and selected decks.",
+				info:     "Start a game with # points to win and selected decks (see %%decks).",
 				handler:  "start",
 				params:   [
 					{
@@ -22,7 +22,19 @@ var fixtures = {
 						"multiple": false
 					},
 					{
-						"name":     "deck",
+						"name":     "~deckGroup",
+						"type":     "string",
+						"required": false,
+						"multiple": true
+					},
+					{
+						"name":     "+deck",
+						"type":     "string",
+						"required": false,
+						"multiple": true
+					},
+					{
+						"name":     "-deck",
 						"type":     "string",
 						"required": false,
 						"multiple": true
