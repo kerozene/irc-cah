@@ -830,10 +830,14 @@ var Game = function Game(bot, options) {
             player.hasPlayed = (player.hasPlayed && player.roundLeft === self.round);
             pointsPlayer.player = player;
             player.points = pointsPlayer.points;
+            player.roundJoined = self.round;
             delete player.roundLeft;
             self.left = _.without(self.left, returningPlayer);
+            if (!player.isCzar)
+                self.showCards(player);
         } else {
             // new player
+            player.roundJoined = self.round;
             self.points.push({
                 user:     player.user, // user and hostname are used for matching returning players
                 hostname: player.hostname,
@@ -938,7 +942,8 @@ var Game = function Game(bot, options) {
      */
     self.markInactivePlayers = function () {
         _.each(self.getNotPlayed(), function (player) {
-            player.inactiveRounds++;
+            if (player.roundJoined !== self.round)
+                player.inactiveRounds++;
         }, this);
     };
 
