@@ -65,6 +65,7 @@ Card.fixAnswer = function(card) {
     });
     text.unshift(first);
     data.text = text.join(' ');
+    data.displayText = data.displayText.replace(/^./, function(m) { return m.toUpperCase(); }); // force capitalize first word
     return data;
 };
 

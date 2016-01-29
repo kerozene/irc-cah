@@ -767,7 +767,8 @@ var Game = function Game(bot, options) {
             var text = card.text;
             if (
                 ( index === 0 && question.text[index] === '' ) || // if at the start
-                question.text[index].match(/[!?"':] $/)           // or after certain punctuation
+                question.text[index].match(/[!?"':] $/) ||        // or after certain punctuation
+                question.text[index].match(/((?![\.]).)\. $/)     // after '. ' but not '.. '
             )
                 text = card.displayText; // get capitalized version
 

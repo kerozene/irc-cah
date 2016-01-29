@@ -88,4 +88,12 @@ describe('CardModel', function() {
         });
     });
 
+    it('should force capitalize leading words in answer.displayText', function() {
+        var data = fixtures.responses.one;
+        data.displayText = "switching to Geico®";
+        card = new Card(data, 'a');
+
+        card.displayText.should.equal('Switching to Geico®');
+    });
+
 });

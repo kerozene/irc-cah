@@ -22,7 +22,7 @@ describe('CardsController', function() {
         var qCards = new Cards(dataCalls, 'q'),
             aCards = new Cards(dataResponses, 'a');
 
-        qCards.cards.slice(0, 3).should.deep.equal(fixtures.cards.calls.slice(0, 3));
+        qCards.cards.slice(0, 2).should.deep.equal(fixtures.cards.calls.slice(0, 2));
         aCards.cards.slice(0, 2).should.deep.equal(fixtures.cards.responses.slice(0, 2));
     });
 

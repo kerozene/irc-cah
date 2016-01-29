@@ -1657,6 +1657,18 @@ describe('GameController', function() {
             entry = game.getFullEntry(question, answers);
 
             entry.should.equal('What ended my last relationship \u0002switching to Geico®\u0002.');
+
+            question.text[0] = 'What ended my last relationship. ';
+
+            entry = game.getFullEntry(question, answers);
+
+            entry.should.equal('What ended my last relationship. \u0002Switching to Geico®\u0002.');
+
+            question.text[0] = 'What ended my last relationship... ';
+
+            entry = game.getFullEntry(question, answers);
+
+            entry.should.equal('What ended my last relationship... \u0002switching to Geico®\u0002.');
         });
 
     });
