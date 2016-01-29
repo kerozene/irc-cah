@@ -331,7 +331,7 @@ describe('GameController', function() {
 
             stubs.say.should.have.been.calledWithExactly(
                 '#test',
-                'The Czar quit the game during pause. I will pick the winner on this round.');
+                'The Card Czar quit the game during pause. I will pick the winner on this round.');
             stubs.select.should.have.been.called;
 
             game.players = _.cloneDeep(fixtures.players);
@@ -1979,7 +1979,7 @@ describe('GameController', function() {
             stub.should.have.been.called;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                'The Czar has fled the scene. So I will pick the winner on this round.');
+                'The Card Czar has fled the scene. So I will pick the winner on this round.');
 
             stub.restore();
             bot.client.say.restore();
@@ -2273,7 +2273,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Napoleon is the Czar. Waiting for players to play: Vladimir');
+                '\u0002Status: \u0002Napoleon is the Card Czar. Waiting for players to play: Vladimir');
         });
 
     });
