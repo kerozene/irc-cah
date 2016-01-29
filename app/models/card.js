@@ -23,40 +23,49 @@ var Card = function Card(card, type) {
     self.pick = card.numResponses || 1;
     self.draw = self.pick - 1;
     self.text = card.text;
-    if (_.isArray(card.text)) { // question
-        var lastIndex = card.text.length - 1;
-        card.text = _.map(card.text, function(str, index) {
-            str = str.replace(/ {2,}/g, ' '); // double-spacing is the devil
-            str = _.trimRight(str, '('); // some deck authors put parentheses around the blanks
-            str =  _.trimLeft(str, ')');
-            str = str.trim();
-            if ( index !== 0 && !str.match(/^[,.!?"':]/) ) // no space leading or before punctuation
-                str = ' ' + str;
-            if ( index !== lastIndex &&   // no space trailing,
-                 !str.match(/["'#]$/) &&  // after quote or hash(tag) mark
-                 str !== ''               // or after empty string
-            )
-                str += ' ';
-            return str;
-        });
-        self.displayText = card.text.join('___');
-    }
-    else { // answer
-        _.each([ 'text', 'displayText' ], function(field) {
-            self[field] = card[field].trim()
-                                     .replace(/\.$/, '') // no trailing dot
-                                     .replace(/ {2,}/g, ' '); // double-spacing is the devil
-        });
+    var fixed = (_.isArray(card.text)) ? Card.fixQuestion(card)
+                                       : Card.fixAnswer(card);
+    self = _.extend(self, fixed);
 
-        // sometimes the 'lowercase' version isn't set up right
-        var forceToLower = /^(A|An|The|Your|My|\w+ing|\w+es|\w+ly)$/;
-        text = self.text.split(' ');
-        var first = text.shift().replace(forceToLower, function(match) {
-            return match.toLowerCase();
-        });
-        text.unshift(first);
-        self.text = text.join(' ');
-    }
+};
+
+Card.fixQuestion = function(card) {
+    var data = {}, lastIndex = card.text.length - 1;
+    data.text = _.map(card.text, function(str, index) {
+        str = str.replace(/ {2,}/g, ' '); // double-spacing is the devil
+        str = _.trimRight(str, '('); // some deck authors put parentheses around the blanks
+        str =  _.trimLeft(str, ')');
+        str = str.trim();
+        if ( index !== 0 && !str.match(/^[,.!?"':]/) ) // no space leading or before punctuation
+            str = ' ' + str;
+        if ( index !== lastIndex &&   // no space trailing,
+             !str.match(/["'#]$/) &&  // after quote or hash(tag) mark
+             str !== ''               // or after empty string
+        )
+            str += ' ';
+        return str;
+    });
+    data.displayText = data.text.join('___');
+    return data;
+};
+
+Card.fixAnswer = function(card) {
+    var data = {};
+    _.each([ 'text', 'displayText' ], function(field) {
+        data[field] = card[field].trim()
+                                 .replace(/\.$/, '') // no trailing dot
+                                 .replace(/ {2,}/g, ' '); // double-spacing is the devil
+    });
+
+    // sometimes the 'lowercase' version isn't set up right
+    var forceToLower = /^(A|An|The|Your|My|\w+ing|\w+es|\w+ly)$/;
+    var text = data.text.split(' ');
+    var first = text.shift().replace(forceToLower, function(match) {
+        return match.toLowerCase();
+    });
+    text.unshift(first);
+    data.text = text.join(' ');
+    return data;
 };
 
 exports = module.exports = Card;
