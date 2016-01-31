@@ -76,7 +76,8 @@ var Cmd = function Cmd(bot) {
     self.start = function (message, cmdArgs) {
         var loadDecks = [],
             failDecks = [],
-               points = config.pointLimit;
+               points = config.pointLimit,
+               noCzar;
 
         if (bot.game) {
             if (bot.game.getPlayer({nick: message.nick}))
@@ -86,17 +87,58 @@ var Cmd = function Cmd(bot) {
             return false;
         }
 
+        switch (config.defaultWinMode) {
+            case 'czar':
+                noCzar = false;
+                break;
+            case 'vote':
+                noCzar = true;
+                break;
+            default:
+                throw new Error(util.format('Invalid option for config.defaultWinMode: %s', config.defaultWinMode));
+        }
+
+        if (cmdArgs[0] == '--noczar') {
+            noCzar = true;
+            cmdArgs = _.rest(cmdArgs);
+        }
+
+        if (cmdArgs[0] == '--withczar') {
+            noCzar = false;
+            cmdArgs = _.rest(cmdArgs);
+        }
+
         // point limit
         if (cmdArgs[0] && !isNaN(cmdArgs[0])) {
             points = parseInt(cmdArgs[0]);
             cmdArgs = _.rest(cmdArgs);
         }
 
-        bot.game = new Game(bot, {points: points, decks: cmdArgs, init: true});
+        bot.game = new Game(bot, {points: points, decks: cmdArgs, init: true, noCzar: noCzar});
         if (bot.game.loaded)
             self.join(message, cmdArgs);
         else
             bot.game = undefined;
+    };
+
+    /**
+     * Start a game with voting (no czar)
+     * @param message
+     * @param cmdArgs
+     */
+    self.vstart = function (message, cmdArgs) {
+        cmdArgs.unshift('--noczar');
+        self.start(message, cmdArgs);
+    };
+
+    /**
+     * Start a game with voting (no czar)
+     * @param message
+     * @param cmdArgs
+     */
+    self.cstart = function (message, cmdArgs) {
+        cmdArgs.unshift('--withczar');
+        self.start(message, cmdArgs);
     };
 
     /**
@@ -296,7 +338,7 @@ var Cmd = function Cmd(bot) {
             return false;
         }
 
-        if (!player.isCzar && bot.game.table.question.pick > 1) {
+        if (bot.game.state != bot.game.STATES.PLAYED && bot.game.table.question.pick > 1) {
             self.say(util.format('%s: You can\'t use %scoin on multiple pick questions',
                 message.nick, p));
             return false;

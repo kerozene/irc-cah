@@ -45,6 +45,12 @@
 
     // ^ Allow picking a card or winner by just typing the number(s) without an explict command.
 
+    "defaultWinMode": "czar",
+
+    // ^ When not specified with .start (or .vstart / .cstart), this specifies the default for how a round is won.
+    //   If set to 'czar' a Card Czar will pick the winner (and not be able to play for that round).
+    //   If set to 'vote' all players will vote for the winner at the end of the round.
+
     "maxCoinUsesPerGame": 2,
 
     // ^ Number of times a player can use .coin in a single game.

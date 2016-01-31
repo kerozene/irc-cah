@@ -79,3 +79,19 @@ exports.getUhost = function getUhost(user, char) {
 exports.getUserKey = function getUserKey(ircUser) {
     return (ircUser.isRegistered) ? ircUser.account : this.getUhost(ircUser);
 };
+
+/**
+ * Get all objects that are tied for _.max()
+ * @param  {object[]} list  - array of objects to compare
+ * @param  {string}   field - property to compare on
+ * @return {object[]}       - array of objects with max
+ */
+exports.multipleMax = function multipleMax(list, field){
+    var max = _.max(list, function(item){
+        return item[field];
+    });
+
+    return _.filter(list, function(item){
+        return item[field] === max[field];
+    });
+};

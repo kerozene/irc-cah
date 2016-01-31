@@ -31,6 +31,68 @@
 		]
 	},
 	{
+		"commands": ["vstart"],
+		"info":     "Start a game with voting enabled (no Card Czar).",
+		"handler":  "vstart",
+		"params":   [
+			{
+				"name":     "points",
+				"type":     "number",
+				"required": false,
+				"multiple": false
+			},
+			{
+				"name":     "~deckGroup",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			},
+			{
+				"name":     "+deck",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			},
+			{
+				"name":     "-deck",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			}
+		]
+	},
+	{
+		"commands": ["cstart"],
+		"info":     "Start a game with Card Czar enabled.",
+		"handler":  "cstart",
+		"params":   [
+			{
+				"name":     "points",
+				"type":     "number",
+				"required": false,
+				"multiple": false
+			},
+			{
+				"name":     "~deckGroup",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			},
+			{
+				"name":     "+deck",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			},
+			{
+				"name":     "-deck",
+				"type":     "string",
+				"required": false,
+				"multiple": true
+			}
+		]
+	},
+	{
 		"commands": ["stop"],
 		"info":     "Stop the current game",
 		"flag":     "o",
