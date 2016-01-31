@@ -463,6 +463,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.decks = function(message, cmdArgs) {
+
         if (bot.game)
             return self.say(util.format('Current game decks (%sdeckinfo <code>): %s',
                                     p, bot.game.deckCodes.join(', ')));
