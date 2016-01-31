@@ -148,8 +148,8 @@
         "~CHRISTMAS":  ["XMAS1", "XVMCS"],
         "~REGIONAL":   ["CANCK", "4MCMT", "CYAFZ"],
         "~COMMUNITY":  ["74JJ5", "XQ8X2", "MWCE5"],
-        "~THEME":      ["GAWR5", "XMJP5", "2HJMW"],
         "~STANDARD":   ["~BASE", "~EXPANSIONS"],
+        "~TV":         ["GAWR5", "XMJP5", "2HJMW"],
         "~FULL":       ["~STANDARD", "~REGIONAL", "~COMMUNITY"],
         "~DEFAULT":    ["~FULL", "2HJMW"]
     },
