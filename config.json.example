@@ -145,13 +145,13 @@
     "deckGroups": {
         "~BASE":       ["CAHBS"],
         "~EXPANSIONS": ["CAHE1", "CAHE2", "CAHE3", "CAHE4", "EU6CJ", "PEU3Q", "CWNUY"],
+        "~STANDARD":   ["~BASE", "~EXPANSIONS"],
         "~CHRISTMAS":  ["XMAS1", "XVMCS"],
         "~REGIONAL":   ["CANCK", "4MCMT", "CYAFZ"],
         "~COMMUNITY":  ["74JJ5", "XQ8X2", "MWCE5"],
-        "~STANDARD":   ["~BASE", "~EXPANSIONS"],
         "~TV":         ["GAWR5", "XMJP5", "2HJMW"],
         "~FULL":       ["~STANDARD", "~REGIONAL", "~COMMUNITY"],
-        "~DEFAULT":    ["~FULL", "2HJMW"]
+        "~DEFAULT":    ["~STANDARD"]
     },
 
     // ^ Tagged deck groups - ~DEFAULT is what gets loaded when no decks are specified with .start (.join)
