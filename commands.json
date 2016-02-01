@@ -3,6 +3,7 @@
 		"commands": ["start", "go"],
 		"info":     "Start a game with # points to win and selected decks (see %%decks).",
 		"handler":  "start",
+		"public":   true,
 		"params":   [
 			{
 				"name":     "points",
@@ -34,6 +35,7 @@
 		"commands": ["vstart"],
 		"info":     "Start a game with voting enabled (no Card Czar).",
 		"handler":  "vstart",
+		"public":   true,
 		"params":   [
 			{
 				"name":     "points",
@@ -65,6 +67,7 @@
 		"commands": ["cstart"],
 		"info":     "Start a game with Card Czar enabled.",
 		"handler":  "cstart",
+		"public":   true,
 		"params":   [
 			{
 				"name":     "points",
@@ -96,17 +99,20 @@
 		"commands": ["stop"],
 		"info":     "Stop the current game",
 		"flag":     "o",
-		"handler":  "stop"
+		"handler":  "stop",
+		"public":   true
 	},
 	{
 		"commands": ["join", "j"],
 		"info":     "Join the current game or start a new one",
-		"handler":  "join"
+		"handler":  "join",
+		"public":   true
 	},
 	{
 		"commands": ["quit", "q", "leave"],
 		"info":     "(player) Leave the current game",
-		"handler":  "quit"
+		"handler":  "quit",
+		"public":   true
 	},
 	{
 		"commands": ["remove", "r"],
@@ -144,7 +150,8 @@
 		"commands": ["list"],
 		"info":     "List the current players",
 		"flag":     "",
-		"handler":  "list"
+		"handler":  "list",
+		"public":   true
 	},
 	{
 		"commands": ["winner", "w"],
@@ -162,24 +169,28 @@
 	{
 		"commands": ["points", "scores"],
 		"info":     "Show the current scores for all players",
-		"handler":  "points"
+		"handler":  "points",
+		"public":   true
 	},
 	{
 		"commands": ["status"],
 		"info":     "Show the current game status",
-		"handler":  "status"
+		"handler":  "status",
+		"public":   true
 	},
 	{
 		"commands": ["pause"],
 		"info":     "Pause the current game",
 		"flag":     "o",
-		"handler":  "pause"
+		"handler":  "pause",
+		"public":   true
 	},
 	{
 		"commands": ["resume", "unpause"],
 		"info":     "Resume the currently paused game",
 		"flag":     "o",
-		"handler":  "resume"
+		"handler":  "resume",
+		"public":   true
 	},
 	{
 		"commands": ["pick", "p"],
@@ -235,6 +246,7 @@
 		"commands": ["beer"],
 		"info":     "Order a beer, or order beers for <nick1, nick2, ...>. Use \"all\" to send beers to all current players",
 		"handler":  "beer",
+		"public":   true,
 		"params":   [
 			{
 				"name":     "nick",
@@ -278,7 +290,8 @@
 	{
 		"commands": ["ping"],
 		"info":     "Highlight people who might want to play. Use /away or %%away to remove yourself from this list.",
-		"handler":  "ping"
+		"handler":  "ping",
+		"public":   true
 	},
 	{
 		"commands": ["away"],
@@ -304,6 +317,7 @@
 		"handler":    "gg",
 		"noPrefix":   true,
 		"noParams":   true,
-		"noThrottle": true
+		"noThrottle": true,
+		"public":     true
 	}
 ]

@@ -273,19 +273,27 @@ var Bot = function Bot() {
             }
         }
 
-        // build callback options
-        if (to.toLowerCase() == self.channel) {
-            // public command
-            callback = function() { self.controller.cmd[cmd.handler](message, cmdArgs); };
-            if (!cmd.flag || client.nickHasChanMode(message.nick, cmd.flag, self.channel)) {
-                if (
-                    cmd.noThrottle ||
-                    client.nickHasOp(message.nick, self.channel) ||
-                    !self.throttleCommand(message)
-                )
-                    callback.call();
-            }
+        if ( cmd.flag && !client.nickHasChanMode(message.nick, cmd.flag, self.channel) )
+            return false;
+
+        if ( !cmd.noThrottle &&
+             !client.nickHasOp(message.nick, self.channel) &&
+              self.throttleCommand(message)
+        )
+            return false;
+
+        if (cmd.private && to.toLowerCase() == self.channel.toLowerCase()) {
+            self.client.notice(from, 'That command can only be used by private message.');
+            return false;
         }
+        if (cmd.public  && to.toLowerCase() != self.channel.toLowerCase()) {
+            self.log(util.format('%s tried to use public command "%s" in private', from, cmd.commands[0]));
+            self.client.notice(from, 'That command can only be used in the channel.');
+            return false;
+        }
+
+        callback = function() { self.controller.cmd[cmd.handler](message, cmdArgs); };
+        callback.call();
     };
 
     self.loadCommands();
