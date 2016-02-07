@@ -3,6 +3,7 @@ var      _ = require('lodash'),
       util = require('util'),
     moment = require('moment'),
          c = require('irc-colors'),
+ utilities = require('../utilities'),
      Decks = require('../controllers/decks'),
       Game = require('./game'),
     Player = require('../models/player');
@@ -214,7 +215,7 @@ var Cmd = function Cmd(bot) {
         if (typeof(player) === 'undefined')
             self.say(target + ' is not currently playing.');
         else {
-            bot.game.removed.push(bot.game.getPlayerUhost(player));
+            bot.game.removed.push(bot.utilities.getUhost(player));
             bot.game.removePlayer(player);
         }
     };
