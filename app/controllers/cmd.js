@@ -668,9 +668,13 @@ var Cmd = function Cmd(bot) {
         var user = self.mustBeUser(message.nick);
         if (user)
             user.data.doNotPing = setting;
-        self.notice(message.nick, util.format('You have now been marked as away%s and will not be pinged by the bot. %s',
-                                                (setting === 'forever') ? ' forever' : '', p,
-                                                (setting === 'forever') ? '' :'(\'%saway forever\' to make this permanent)'));
+
+        var reply = util.format('You have now been marked as away%s and will not be pinged by the bot.',
+                                    (setting === 'forever') ? ' forever' : '');
+        if (setting !== 'forever')
+            reply += util.format(' (This will turn off when you rejoin the channel. Use \'%saway forever\' to make it permanent)', p);
+
+        self.notice(message.nick, reply);
     };
 
     /**
