@@ -570,8 +570,15 @@ var Game = function Game(bot, options) {
         if (player.picked) {
             self.notice(player.nick, 'Changing your pick...');
             self.table.answer = _.without(self.table.answer, player.picked.cards);
+
+            // we need to re-add the cards in sorted order or they will mess up the array length
             _.each(player.picked.cards.getCards(), function(card, index) {
-                player.cards.cards.splice(player.picked.indexes[index], 0, card);
+                card.pickedIndex = player.picked.indexes[index]; // add the picked index for sorting
+            });
+            player.picked.cards.cards = _.sortBy(player.picked.cards.cards, 'pickedIndex'); // sort
+            _.each(player.picked.cards.getCards(), function(card, index) {
+                player.cards.cards.splice(card.pickedIndex, 0, card); // re-add cards in sorted order
+                delete card.pickedIndex; // sorting done, clean up the card
             });
         }
         var picked;

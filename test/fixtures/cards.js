@@ -120,6 +120,88 @@ fixtures.cards = {
             text: 'bling',
             displayText: 'Bling'
         })
+    ],
+    repick: [
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867170",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "one",
+            displayText: "one"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867171",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "two",
+            displayText: "two"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867172",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "three",
+            displayText: "three"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867173",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "four",
+            displayText: "four"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867174",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "five",
+            displayText: "five"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867175",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "six",
+            displayText: "six"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867176",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "seven",
+            displayText: "seven"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867177",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "eight",
+            displayText: "eight"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867178",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "nine",
+            displayText: "nine"
+        }),
+        CardCreate({
+            id: "0064b920-a058-4a48-a16c-4396ef867179",
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: "ten",
+            displayText: "ten"
+        })
     ]
 };
 

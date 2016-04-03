@@ -1101,18 +1101,48 @@ describe('GameController', function() {
             stubSay.should.have.been.calledWith('#test', sinon.match(/^Napoleon: You are the Card Czar/));
         });
 
-        it('should update the player\'s pick if they\'ve already played');
-/*
-        it('should tell the player if they\'ve already played', function() {
-            player = _.cloneDeep(game.players[0]);
-
+        it('should update the player\'s pick if they\'ve already played', function() {
+            var stubNotice = sinon.stub(bot.client, 'notice');
+            game.table = {
+                question: new Cards(cards.cards.calls).cards[0],
+                answer:   []
+            };
+            player.cards = new Cards(cards.cards.repick);
             game.playCard([ 0 ], player);
 
-            stubSay.should.have.been.calledWithExactly(
-                '#test',
-                'Frederick: You have already played on this round.');
+            game.table.answer.length.should.equal(1);
+            game.table.answer[0].cards[0].text.should.equal('one');
+            stubNotice.should.have.been.called;
+
+            game.playCard([ 1 ], player);
+
+            game.table.answer.length.should.equal(1);
+            game.table.answer[0].cards[0].text.should.equal('two');
+            stubNotice.should.have.been.calledWith('Vladimir', 'Changing your pick...');
         });
-*/
+
+        it('should correctly handle repicks with multiple cards', function() {
+            var stubNotice = sinon.stub(bot.client, 'notice');
+            player.cards = new Cards(cards.cards.repick);
+            game.playCard([ 5, 1 ], player);
+
+            game.table.answer.length.should.equal(1);
+            game.table.answer[0].cards[0].text.should.equal('six');
+            game.table.answer[0].cards[1].text.should.equal('two');
+            stubNotice.should.have.been.called;
+
+            game.playCard([ 1, 5 ], player);
+
+            game.table.answer.length.should.equal(1);
+            game.table.answer[0].cards[0].text.should.equal('two');
+            game.table.answer[0].cards[1].text.should.equal('six');
+            stubNotice.should.have.been.calledWith('Vladimir', 'Changing your pick...');
+
+            game.playCard([ 1, 2 ], player);
+
+            game.table.answer[0].cards[0].text.should.equal('two');
+            game.table.answer[0].cards[1].text.should.equal('three');
+        });
 
         it('should tell the player if they\'ve played the wrong number of cards', function() {
             game.playCard([ 0 ], player);
