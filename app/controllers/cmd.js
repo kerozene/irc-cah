@@ -622,6 +622,19 @@ var Cmd = function Cmd(bot) {
         if (!needed)
             return false;
 
+        if (bot.lastUseOfPing) {
+            var ready = moment(bot.lastUseOfPing).add(config.pingInterval, 'minutes');
+            var wait = ready.diff(moment());
+            if (wait > 0) {
+                var waitRounded = Math.ceil(moment.duration(wait).asMinutes());
+                var lastPingAgo = config.pingInterval - waitRounded;
+                self.say(util.format('Last %sping was about %s minute%s ago. Wait %s more minute%s to use it again.',
+                    p, lastPingAgo, (lastPingAgo == '1') ? '' : 's', waitRounded, (waitRounded == 1) ? '': 's'));
+                return false;
+            }
+        }
+        bot.lastUseOfPing = moment();
+
         var nicks = bot.client.nicksInChannel(bot.channel);
         nicks = _.filter(nicks, function(nick) {
             if (nick == bot.client.nick || nick == message.nick)
@@ -639,17 +652,6 @@ var Cmd = function Cmd(bot) {
             self.say('There is no-one else available to play right now.');
             return false;
         }
-
-        if (bot.lastUseOfPing) {
-            var ready = moment(bot.lastUseOfPing).add(config.pingInterval, 'minutes');
-            var wait = ready.diff(moment());
-            if (wait > 0) {
-                self.say(util.format('You can use %sping again in %s minutes.',
-                    p, Math.ceil(moment.duration(wait).asMinutes())));
-                return false;
-            }
-        }
-        bot.lastUseOfPing = moment();
 
         self.say(util.format('%s is looking for players - %s more needed. Pinging %s (\'%shelp away\' to turn this off)',
                                 message.nick, needed, nicks.join(', '), p));
