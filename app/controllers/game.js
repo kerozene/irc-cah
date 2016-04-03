@@ -974,6 +974,7 @@ var Game = function Game(bot, options) {
                 _.contains([ self.STATES.PLAYABLE, self.STATES.PLAYED ], self.state)
             );
             player.hasPlayed = (player.hasPlayed && player.roundLeft === self.round);
+            player.inactiveRounds = 0;
             pointsPlayer.player = player;
             player.points = pointsPlayer.points;
             player.roundJoined = self.round;
