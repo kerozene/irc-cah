@@ -640,7 +640,10 @@ var Cmd = function Cmd(bot) {
             if (nick == bot.client.nick || nick == message.nick)
                 return false;
             if ( bot.game && _.includes(bot.game.getPlayerNicks(), nick) )
-                    return false;
+                return false;
+
+            if (nick.match(/(away|afk)[^\w]*$/i))
+                return false;
 
             var user = bot.controller.users.updateUserFromNick(nick);
             if (!user)
