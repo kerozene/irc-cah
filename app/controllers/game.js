@@ -631,7 +631,7 @@ var Game = function Game(bot, options) {
             self.say(i + ": " + self.getFullEntry(self.table.question, cards.getCards()));
         }, this);
 
-        var command = (config.enableFastPick) ? '' : util.format('%swinner ');
+        var command = (config.enableFastPick) ? '' : util.format('%swinner ', p);
 
         if (self.noCzar) {
             self.say(util.format('Vote for the winner (%s<entry number>)', command));
