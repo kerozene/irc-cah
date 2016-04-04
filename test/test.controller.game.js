@@ -81,16 +81,11 @@ describe('GameController', function() {
         var stubDestroy;
 
         before(function() {
-            stubDestroy = sinon.stub(game, 'destroy');
             bot.config.topic = {
                 messages: {
                     off: ''
                 }
             };
-        });
-
-        after(function() {
-            stubDestroy.restore();
         });
 
         it('should set the game state to STOPPED', function() {
@@ -188,22 +183,24 @@ describe('GameController', function() {
         });
 
         it('should delete properties', function() {
-            stubDestroy.reset();
+            var clock = sinon.useFakeTimers();
+            sinon.spy(clock, 'setTimeout');
 
             game.stop();
 
-            stubDestroy.should.have.been.calledOnce;
+            clock.setTimeout.should.have.been.calledWith(game.destroy, 2000);
+
+            clock.setTimeout.restore();
+            clock.restore();
         });
 
         it('should unset the bot.game property', function() {
-            stubDestroy.restore();
             bot.game = game;
 
             game.stop();
 
             should.not.exist(bot.game);
 
-            stubDestroy = sinon.stub(game, 'destroy');
             initGame();
         });
 
@@ -531,7 +528,7 @@ describe('GameController', function() {
 
             stubs.say.should.have.been.calledWithExactly(
                 '#test',
-                'Round 2! Napoleon is the Card Czar.');
+                'Round \u00022\u0002! Napoleon is the Card Czar.');
         });
 
         it('should call playQuestion()', function() {
@@ -805,6 +802,7 @@ describe('GameController', function() {
         });
 
         it('should stop the game if there aren\'t enough cards', function() {
+            var stubLog = sinon.stub(bot, 'log');
             var stubStop = sinon.stub(game, 'stop');
 
             game.decks.answer.cards = game.decks.answer.cards.slice(0, 20);
@@ -814,6 +812,7 @@ describe('GameController', function() {
             stubStop.should.have.been.called;
 
             stubStop.restore();
+            stubLog.restore();
         });
 
     });
@@ -1032,7 +1031,7 @@ describe('GameController', function() {
 
     describe('#playCard()', function() {
 
-        var stubSay, player;
+        var stubSay, stubNotice, player;
 
         before(function() {
             game.table = {
@@ -1041,17 +1040,21 @@ describe('GameController', function() {
             };
             game.players = _.cloneDeep(fixtures.players);
             stubSay = sinon.stub(bot.client, 'say');
+            stubNotice = sinon.stub(bot.client, 'notice');
         });
 
         after(function() {
             stubSay.restore();
+            stubNotice.restore();
         });
 
         beforeEach(function() {
             game.state = game.STATES.PLAYABLE;
+            game.table.answer = [];
             player = _.cloneDeep(game.players[2]);
             player.cards = new Cards(cards.cards.responses);
             stubSay.reset();
+            stubNotice.reset();
         });
 
         it('should say if the game is paused', function() {
@@ -1102,7 +1105,6 @@ describe('GameController', function() {
         });
 
         it('should update the player\'s pick if they\'ve already played', function() {
-            var stubNotice = sinon.stub(bot.client, 'notice');
             game.table = {
                 question: new Cards(cards.cards.calls).cards[0],
                 answer:   []
@@ -1122,7 +1124,7 @@ describe('GameController', function() {
         });
 
         it('should correctly handle repicks with multiple cards', function() {
-            var stubNotice = sinon.stub(bot.client, 'notice');
+            game.table.question = new Cards(cards.cards.calls).cards[1];
             player.cards = new Cards(cards.cards.repick);
             game.playCard([ 5, 1 ], player);
 
@@ -1151,12 +1153,9 @@ describe('GameController', function() {
         });
 
         it('should send a notice to the player if the card number picked does not exist', function() {
-            var stubNotice = sinon.stub(bot.client, 'notice');
             game.playCard([ 0, 99 ], player);
 
             stubNotice.should.have.been.calledWithExactly('Vladimir', 'Invalid card index');
-
-            stubNotice.restore();
         });
 
         it('should add the played card to the table answers list', function() {
@@ -1175,13 +1174,10 @@ describe('GameController', function() {
         });
 
         it('should show the player their entry', function() {
-            var stubNotice = sinon.stub(bot.client, 'notice');
             game.playCard([ 0, 1 ], player);
 
             stubNotice.should.have.been.calledWithExactly('Vladimir',
                 'You played: I never truly understood \u0002switching to Geico®\u0002 until I encountered \u0002bling\u0002.');
-
-            stubNotice.restore();
         });
 
         it('should call showEntries() if everyone has played', function() {
@@ -1433,7 +1429,7 @@ describe('GameController', function() {
 
             game.winnerTimerCheck(now);
 
-            stubSay.should.have.been.calledWith('#test', 'Time is up. I will pick the winner on this round.');
+            stubSay.should.have.been.calledWith('#test', 'Time is up! I will pick the winner this round.');
             game.czar.inactiveRounds.should.equal(1);
 
             stubSay.restore();
@@ -1516,13 +1512,12 @@ describe('GameController', function() {
             game.points[0].points.should.equal(4);
         });
 
-        it('should announce the winning entry and its player\'s score', function() {
+        it('should announce the winning entry', function() {
             var saySpy = sinon.spy(bot.client, 'say');
 
             game.selectWinner(0, czar);
 
-            bot.client.say.should.have.been.calledWithMatch('#test', /^\u0002The winner is: /);
-            bot.client.say.should.have.been.calledWithMatch('#test', / has \u0002\d+\u0002 awesome point/);
+            bot.client.say.should.have.been.calledWithMatch('#test', /^Winner: /);
 
             bot.client.say.restore();
         });
@@ -2572,7 +2567,7 @@ describe('GameController', function() {
                             function() { return false; } );
             game.announce();
 
-            bot.client.say.should.have.been.calledOnce;
+            bot.client.say.should.have.been.calledTwice;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
                 '\u000304C\u0003\u000307a\u0003\u000308r\u0003\u000303d\u0003\u000312s\u0003 ' +
@@ -2589,7 +2584,7 @@ describe('GameController', function() {
                             function() { return true; } );
             game.announce();
 
-            bot.client.say.should.have.been.calledOnce;
+            bot.client.say.should.have.been.calledTwice;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
                 '\u000308*\u0003\u000304C\u0003\u000303a\u0003\u000304r\u0003\u000303d\u0003\u000304s\u0003 ' +
