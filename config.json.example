@@ -57,6 +57,8 @@
 
     "pingInterval": 10,     // - Cooldown time between uses of .ping.
 
+    "apiTimeout": 20000,    // - Time to wait for each deck to load from the CardCast API
+
     "topic": {
 
     // The bot can add/update a segment of the channel topic when games start and end.
