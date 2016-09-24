@@ -1,4 +1,5 @@
 var           _ = require('lodash'),
+             fs = require('fs'),
            util = require('util'),
           shush = require('shush'),
         Promise = require('bluebird'),
@@ -15,7 +16,7 @@ Promise.config({warnings: false});
 var Decks = function(bot) {
     var self = this;
     self.storage = storage.create({
-        dir: '../../../cards',
+        dir: fs.realpathSync('.') + '/cards',
         ttl: 7 * 24 * 60 * 60 * 1000
     });
     self._findCardState = {};

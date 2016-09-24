@@ -1,4 +1,5 @@
 var         _ = require('lodash'),
+             fs = require('fs'),
          util = require('util'),
       Promise = require('bluebird'),
       storage = require('node-persist'),
@@ -8,7 +9,7 @@ var         _ = require('lodash'),
 var Users = function Users(bot) {
     self = this;
     self.storage = storage.create({
-        dir: '../../../users'
+        dir: fs.realpathSync('.') + '/users',
     });
 
     /**
