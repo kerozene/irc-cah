@@ -10,7 +10,7 @@ var      _ = require('lodash'),
 
 var Cmd = function Cmd(bot) {
     var   self = this,
-     decksTool = new Decks(),
+     decksTool = new Decks(bot),
         client = bot.client,
         config = bot.config,
        channel = bot.channel,

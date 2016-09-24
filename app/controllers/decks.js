@@ -1,12 +1,10 @@
 var           _ = require('lodash'),
              fs = require('fs'),
            util = require('util'),
-          shush = require('shush'),
         Promise = require('bluebird'),
         storage = require('node-persist'),
     CardcastAPI = require('cardcast-api').CardcastAPI,
-      utilities = require('../../app/utilities'),
-         config = shush('../../config');
+      utilities = require('../../app/utilities');
 
 Promise.config({warnings: false});
 
@@ -14,7 +12,8 @@ Promise.config({warnings: false});
  * @param {Bot} bot
  */
 var Decks = function(bot) {
-    var self = this;
+    var self   = this,
+        config = bot.config;
     self.storage = storage.create({
         dir: fs.realpathSync('.') + '/cards',
         ttl: 7 * 24 * 60 * 60 * 1000

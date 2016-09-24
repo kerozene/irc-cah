@@ -23,7 +23,7 @@
     "moment": "latest",
     "moment-duration-format": "latest",
     "n_": "latest",
-    "shush": "latest"
+    "comment-json": "latest"
   },
   "devDependencies": {
     "chai": "latest",

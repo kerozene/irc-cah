@@ -1,191 +1,327 @@
+/*
+ * The bot can also write to this config file, which is why formatting is not ideal.
+ * TODO: .config command
+ */
 {
-    "server": "openirc.snt.utwente.nl",  // - Server to connect to.
-    "nick": "cah",                       // - The bot's nickname.
-    "channel": "#cah",                   // - The channel to join.
-
+    "server": "openirc.snt.utwente.nl", // - Server to connect to.
+    "nick": "cah", // - The bot's nickname.
+    "channel": "#cah", // - The channel to join.
     "notifyUsers": false,
-
-    // ^ Send a notice to everyone in the channel when a game is starting?
-    //   Users with ~ and & modes are not notified.
-
-    "startOnFirstJoin": true,       // - When no game is running, treat the first !join as !start?
-
-    "maxIdleRounds": 2,             // - Number of inactive game rounds causing a player to be removed.
-
-    "timeLimit": 120,               // - Seconds to allow for playing cards or picking winners.
-
-    "timeBetweenRounds": 10,        // - Seconds to pause after a round finishes.
-
-    "timeWaitForPlayers": 180,      // - Seconds to wait for enough players before stopping the game.
-
-    "waitFromLastJoin": true,       // - Restart the wait timer when a player joins.
-
-    "commandThrottle": [4, 30],     // - Number of commands to accept from a user per interval (seconds).
-
-    "voicePlayers": false,          // - Give current players +v on join? (Bot will assume it is opped.)
-
+    /* ^ Send a notice to everyone in the channel when a game is starting?
+     *   Users with ~ and & modes are not notified.
+     */
+    "startOnFirstJoin": true, // - When no game is running, treat the first !join as !start?
+    "maxIdleRounds": 2, // - Number of inactive game rounds causing a player to be removed.
+    "timeLimit": 120, // - Seconds to allow for playing cards or picking winners.
+    "timeBetweenRounds": 10, // - Seconds to pause after a round finishes.
+    "timeWaitForPlayers": 180, // - Seconds to wait for enough players before stopping the game.
+    "waitFromLastJoin": true, // - Restart the wait timer when a player joins.
+    "commandThrottle": [
+        4,
+        30
+    ],
+    /* ^ Number of commands to accept from a user per interval (seconds). */
+    "voicePlayers": false, // - Give current players +v on join? (Bot will assume it is opped.)
     "pointLimit": 10,
-
-    // ^ Default number of points needed to win the game. (!start # to override.)
-    //   0 or a negative number means the game continues until `!stop` command is issued.
-
+    /* ^ Default number of points needed to win the game. (!start # to override.)
+     *   0 or a negative number means the game continues until `!stop` command is issued.
+     */
     "exitOnError": false,
-
-    // ^ Allow the bot process to crash when there is an uncaught exception?
-    //   Otherwise, notify channel and log the stack trace.
-
-    "stopOnLastPlayerLeave": false,   // - Stop the game if there are no more players (playing or waiting).
-
+    /* ^ Allow the bot process to crash when there is an uncaught exception?
+     *   Otherwise, notify channel and log the stack trace.
+     */
+    "stopOnLastPlayerLeave": false, // - Stop the game if there are no more players (playing or waiting).
     "commandPrefixChars": ".!",
-
-    // ^ List of characters a command can start with, e.g. !join, .join
-    //   The first character is considered the default char and is used in help text.
-
+    /* ^ List of characters a command can start with, e.g. !join, .join
+     *   The first character is considered the default char and is used in help text.
+     */
     "enableFastPick": true,
-
-    // ^ Allow picking a card or winner by just typing the number(s) without an explict command.
-
-    "defaultWinMode": "czar",
-
-    // ^ When not specified with .start (or .vstart / .cstart), this specifies the default for how a round is won.
-    //   If set to 'czar' a Card Czar will pick the winner (and not be able to play for that round).
-    //   If set to 'vote' all players will vote for the winner at the end of the round.
-
-    "maxCoinUsesPerGame": 2,
-
-    // ^ Number of times a player can use .coin in a single game.
-
-    "pingInterval": 10,     // - Cooldown time between uses of .ping.
-
-    "apiTimeout": 20000,    // - Time to wait for each deck to load from the CardCast API
-
+    /* ^ Allow picking a card or winner by just typing the number(s) without an explict command. */
+    "defaultWinMode": "vote",
+    /* ^ When not specified with .start (or .vstart / .cstart), this specifies the default for how a round is won.
+     *   If set to 'czar' a Card Czar will pick the winner (and not be able to play for that round).
+     *   If set to 'vote' all players will vote for the winner at the end of the round.
+     */
+    "maxCoinUsesPerGame": 2, // - Number of times a player can use .coin in a single game.
+    "pingInterval": 10, // - Cooldown time between uses of .ping.
+    "apiTimeout": 20000, // - Time to wait for each deck to load from the CardCast API
     "topic": {
-
-    // The bot can add/update a segment of the channel topic when games start and end.
-
-        "position": "right",        // - Where to place the new segment relative to the main topic.
-
-        "separator": "::",          // - String separating the topic segments.
-
-        "messages": {               // - Set any of these to an empty string to disable.
-
-            "on":  ["A game is running. Type !join to get in on it!", "bold.yellow"],
-
-            // ^ Set when a game starts.
-            //   A message can be a list containing a string, and an optional formatting instruction.
-            //   For formatting options, see https://www.npmjs.com/package/irc-colors
+        /* ^ The bot can add/update a segment of the channel topic when games start and end. */
+        "position": "right", // - Where to place the new segment relative to the main topic.
+        "separator": "::", // - String separating the topic segments.
+        "messages": {
+            /* ^ Set any of these to an empty string to disable. */
+            "on": [
+                "A game is running. Type !join to get in on it!",
+                "bold.yellow"
+            ],
+            /* ^ Set when a game starts.
+             *   A message can be a list containing a string, and an optional formatting instruction.
+             *   For formatting options, see https://www.npmjs.com/package/irc-colors
+             */
             "off": "",
-
-            // ^ Set when a game ends. If 'winner' is set, this should probably be empty.
-
-            "winner": "reigning champion: <%= nick %>"
-
-            // ^ When the game ends, glorify the winner.
-            //   A message can be just a string.
-            //  'nick' is a valid template tag inside the "winner" message.
+            /* ^ Set when a game ends. If 'winner' is set, this should probably be empty. */
+            "winner": "reigning champion: <%= nick %>",
+            /* ^ When the game ends, glorify the winner.
+             *   A message can be just a string.
+             *  'nick' is a valid template tag inside the "winner" message.
+             */
+            "//": "comment parser needs a dummy entry (don't remove this)"
         }
     },
-
-    "connectCommands": [
-
-    // ^ Sent after connecting to server: for example, to identify with nickserv, as below.
-
-        {
-            "target": "nickserv",
-            "message": "identify cah-dev mypassword"
-        }
+    "connectCommands": [],
+    /* ^ Sent after connecting to server: for example, to identify with nickserv, as below. */
+    "joinCommands": {
+        /* ^ Sent after joining this channel. */
+        "#cah": [
+            {
+                "target": "#cah",
+                "message": "Hello guys"
+            },
+            {
+                "target": "yournick",
+                "message": "I just joined #cah"
+            }
+        ]
+    },
+    "userJoinCommands": {
+        /* ^ Sent after someone else joins this channel.
+         *   'nick' and 'channel' are valid template tags in userJoinCommands messages.
+         *   '%%' is the command prefix placeholder.
+         */
+        "#cah": [
+            {
+                "target": "#cah",
+                "message": "Hi <%= nick %>! Type %%join to play"
+            }
+        ]
+    },
+    "nonUsers": [
+        "ChanServ@*"
     ],
-
-    "joinCommands": [
-
-    // ^ Sent after joining the channel.
-
-        {
-            "target": "#cah",
-            "message": "Hello guys"
-        },
-        {
-            "target": "yournick",
-            "message": "I just joined #cah"
-        }
-    ],
-
-    "userJoinCommands": [
-
-    // ^ Sent after someone else joins the channel.
-    //   'nick' and 'channel' are valid template tags in userJoinCommands messages.
-    //   '%%' is the command prefix placeholder.
-
-        {
-            "target": "#cah",
-            "message": "Hi <%= nick %>! Type %%join to play"
-        }
-    ],
-
-    "nonUsers": ["ChanServ@*"],
-
-    // ^ These identities will not be added to the internal user list. (Uses standard irc masking: user@host)
-
+    /* ^ These identities will not be added to the internal user list. (Uses standard irc masking: user@host) */
     "clientOptions": {
-
-    // General IRC-related settings.
-    // See: https://node-irc.readthedocs.org/en/latest/API.html#client
-
+        /* ^ General IRC-related settings.
+         *   See: https://node-irc.readthedocs.org/en/latest/API.html#client
+         */
+        "secure": true,
+        "selfSigned": true,
+        "port": 6697,
+        "sasl": true,
         "userName": "cah",
+        "password": "blah",
+        "realName": "CAHbot",
         "debug": true,
-        "capabilities": ["account-notify", "extended-join"],
-        "messageSplit": 410,             // Split player card output into multiple notices if message is longer than this.
-        "retryCount": 2,                 // Number of connection retries to attempt.
-        "autoRejoin": false,             // Rejoin the channel if kicked?
+        "capabilities": [
+            "account-notify",
+            "extended-join"
+        ],
+        "channels": [
+            "#cah"
+        ],
+        "messageSplit": 410, // - Split player card output into multiple notices if message is longer than this.
+        "retryCount": 2, // - Number of connection retries to attempt.
+        "autoRejoin": false, // - Rejoin the channel if kicked?
         "floodProtection": true,
         "floodProtectionDelay": 2000
     },
-
     "decks": [
-        "CAHBS", "CAHE1", "CAHE2", "CAHE3", "CAHE4", "EU6CJ", "PEU3Q", "CWNUY", // Main deck + official expansions
-        "XMAS1", "XVMCS", "CANCK", "4MCMT", "CYAFZ", // Christmas 1 & 2, Canadian, Australian, UK
-        "GAWR5", "XMJP5", "2HJMW", // Doctor Who, The Simpsons, QI
-        "74JJ5", "XQ8X2", "MWCE5"  // Relentlessly Random, Big Stupid Deck, Crabs Against Humidity
+        "CAHBS",
+        "CAHE1",
+        "CAHE2",
+        "CAHE3",
+        "CAHE4",
+        "EU6CJ",
+        "PEU3Q",
+        "CWNUY",
+        "XMAS1",
+        "XVMCS",
+        "CANCK",
+        "4MCMT",
+        "CYAFZ",
+        "GAWR5",
+        "XMJP5",
+        "2HJMW",
+        "74JJ5",
+        "XQ8X2",
+        "MWCE5"
     ],
-
-    // ^ List of decks to enable from cardcastgame.com
-
+    /* ^ List of decks to enable from cardcastgame.com */
     "deckGroups": {
-        "~BASE":       ["CAHBS"],
-        "~EXPANSIONS": ["CAHE1", "CAHE2", "CAHE3", "CAHE4", "EU6CJ", "PEU3Q", "CWNUY"],
-        "~STANDARD":   ["~BASE", "~EXPANSIONS"],
-        "~CHRISTMAS":  ["XMAS1", "XVMCS"],
-        "~REGIONAL":   ["CANCK", "4MCMT", "CYAFZ"],
-        "~COMMUNITY":  ["74JJ5", "XQ8X2", "MWCE5"],
-        "~TV":         ["GAWR5", "XMJP5", "2HJMW"],
-        "~FULL":       ["~STANDARD", "~REGIONAL", "~COMMUNITY"],
-        "~DEFAULT":    ["~STANDARD"]
+        /* ^ Tagged deck groups - ~DEFAULT is what gets loaded when no decks are specified with .start (.join) */
+        "~BASE": [
+            "CAHBS"
+        ],
+        /* ^ [official] Base deck */
+        "~EXPANSIONS": [
+            "CAHE1",
+            "CAHE2",
+            "CAHE3",
+            "CAHE4",
+            "EU6CJ",
+            "PEU3Q",
+            "CWNUY"
+        ],
+        /* ^ [official] expansions 1-6
+         *   [official] Ten Days or Whatever of Kwanzaa
+         */
+        "~CHRISTMAS": [
+            "XMAS1",
+            "XVMCS"
+        ],
+        /* ^ [official] Holiday Pack 2012
+         *   [official] Holiday Pack 2013
+         */
+        "~REGIONAL": [
+            "CANCK",
+            "4MCMT",
+            "CYAFZ"
+        ],
+        /* ^ [official] Canadian Conversion Kit
+         *   [official] Australia
+         *   [official] UK
+         */
+        "~COMMUNITY": [
+            "74JJ5",
+            "XQ8X2",
+            "MWCE5"
+        ],
+        /* ^ Relentlessly Random
+         *   Big Stupid Deck
+         *   Crabs Adjust Humidity
+         */
+        "~TV": [
+            "GAWR5",
+            "XMJP5",
+            "2HJMW"
+        ],
+        /* ^ Doctor Who
+         *   The Simpsons
+         *   QI
+         */
+        "~STANDARD": [
+            "~BASE",
+            "~EXPANSIONS"
+        ],
+        "~FULL": [
+            "~STANDARD",
+            "~REGIONAL",
+            "~COMMUNITY"
+        ],
+        "~DEFAULT": [
+            "~STANDARD"
+        ]
     },
-
-    // ^ Tagged deck groups - ~DEFAULT is what gets loaded when no decks are specified with .start (.join)
-
     "gg": {
-        "adjectives":
-            ["galloping", "galvanized", "gamboling", "gaseous", "gelatinous", "generic", "generous",
-             "gentille", "gentle", "genuine", "geocentric", "germane", "germanic", "giant", "gifted",
-             "giggly", "gilded", "glacial", "glamorous", "gleaming", "gloomy", "glorious", "glossy",
-             "golfing", "gorey", "gorgeous", "graceful", "gracious", "graphic", "granite", "grazing",
-             "great", "gregarious", "grieving", "grinding", "grotesque", "grumpy", "gubernatorial",
-             "guilty", "gyrating"],
-        "nouns":
-            ["galahs", "gastrectomy", "gastropods", "gators", "geeks", "geese", "geckos", "gentiles",
-             "gentoos", "gerbils", "germans", "ghosts", "giblets", "giraffes", "gizzards", "glitterbombs",
-             "glockenspiels", "gloop", "gloryholes", "glowsticks", "glowworms", "glutes", "gluttons",
-             "goblins", "golfers", "gonads", "gonorrhea", "GOOOOOOON", "goons", "gophers", "gorillas",
-             "governator", "greeks", "gremlins", "gropers", "grouches", "guerrillas", "gumballs",
-             "gumbies", "gypsies"]
+        /* ^ Source dictionary for the 'gg' command. */
+        "adjectives": [
+            "galloping",
+            "galvanized",
+            "gamboling",
+            "gaseous",
+            "gelatinous",
+            "genderless",
+            "generic",
+            "generous",
+            "genteel",
+            "gentle",
+            "genuine",
+            "geocentric",
+            "germane",
+            "germanic",
+            "gesticulating",
+            "giant",
+            "giddy",
+            "gifted",
+            "giggly",
+            "gilded",
+            "glacial",
+            "glamorous",
+            "gleaming",
+            "gloomy",
+            "glorious",
+            "glossy",
+            "golfing",
+            "gorey",
+            "gorgeous",
+            "graceful",
+            "gracious",
+            "graphic",
+            "granite",
+            "grazing",
+            "great",
+            "gregarious",
+            "grieving",
+            "grinding",
+            "grotesque",
+            "grumpy",
+            "gubernatorial",
+            "guilty",
+            "gurgling",
+            "gyrating"
+        ],
+        "nouns": [
+            "galahs",
+            "gastrectomy",
+            "gastropods",
+            "gators",
+            "geeks",
+            "geese",
+            "geezers",
+            "geckos",
+            "gentiles",
+            "gentoos",
+            "gerbils",
+            "germans",
+            "geysers",
+            "ghosts",
+            "giblets",
+            "giraffes",
+            "gizzards",
+            "glitterbombs",
+            "glockenspiels",
+            "gloop",
+            "gloryholes",
+            "glowsticks",
+            "glowworms",
+            "glutes",
+            "gluttons",
+            "gnomes",
+            "goats",
+            "goblins",
+            "golfers",
+            "gonads",
+            "gonorrhea",
+            "goons",
+            "GOOOOOOON",
+            "gophers",
+            "gorillas",
+            "governator",
+            "greeks",
+            "gremlins",
+            "gropers",
+            "grouches",
+            "guerrillas",
+            "guillotine",
+            "gumballs",
+            "gumbies",
+            "gypsies"
+        ]
     },
-
-    // ^ 'gg'
-
     // When the !beer command is issued, a random beer is selected from this list.
-    "beers": [ "Blue Moon", "Pabst Blue Ribbon", "Yuengling", "Stella Artois",
-               "Modelo", "Fat Tire Amber Ale", "Magic Hat", "Samuel Adams",
-               "Sierra Nevada", "Leffe Blonde", "Duvel", "Warsteiner", "Erdinger Weiss"
+    "beers": [
+        "Blue Moon",
+        "Pabst Blue Ribbon",
+        "Yuengling",
+        "Stella Artois",
+        "Modelo",
+        "Fat Tire Amber Ale",
+        "Magic Hat",
+        "Samuel Adams",
+        "Sierra Nevada",
+        "Leffe Blonde",
+        "Duvel",
+        "Warsteiner",
+        "Erdinger Weiss"
     ]
 }
