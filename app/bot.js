@@ -241,6 +241,30 @@ var Bot = function Bot() {
         return (last[1] > throttle[0]);
     };
 
+    self.nickHasChanMode = function(nick, chan, flag)
+    {
+        switch (flag)
+        {
+            case "~":
+                return (client.chans[chan].users[nick] == "~");
+                break;
+            case "o":
+                return (client.chans[chan].users[nick] == "o");
+                break;
+            case "o+":
+                return (client.chans[chan].users[nick] == "o" || client.chans[chan].users[nick] == "~");
+                break;
+            case "v":
+                return (client.chans[chan].users[nick] == "+");
+                break;
+            case "v+":
+                return (client.chans[chan].users[nick] == "+" || client.chans[chan].users[nick] == "o" || client.chans[chan].users[nick] == "~");
+                break;
+            default:
+                return false;
+        }
+    };
+
     self.messageHandler = function (from, to, text, message) {
         // parse command
         var cmd, cmdArr, cmdArgs = [],
@@ -273,11 +297,11 @@ var Bot = function Bot() {
             }
         }
 
-        if ( cmd.flag && !client.nickHasChanMode(message.nick, cmd.flag, self.channel) )
+        if ( cmd.flag && !self.nickHasChanMode(message.nick, self.channel, cmd.flag) )
             return false;
 
         if ( !cmd.noThrottle &&
-             !client.nickHasOp(message.nick, self.channel) &&
+             !self.nickHasChanMode(message.nick, self.channel, "o+") &&
               self.throttleCommand(message)
         )
             return false;
