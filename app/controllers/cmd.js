@@ -14,7 +14,8 @@ var Cmd = function Cmd(bot) {
         client = bot.client,
         config = bot.config,
        channel = bot.channel,
-             p = config.commandPrefixChars[0];
+             p = config.commandPrefixChars,
+      prefixes = p.split("");
 
     /**
      * Test if no game is running
@@ -54,7 +55,22 @@ var Cmd = function Cmd(bot) {
      * Say there's no game running
      */
     self.sayNoGame = function () {
-        self.say(util.format('No game running. Start the game by typing %sstart', p));
+        var start;
+
+        if(prefixes.length > 1)
+        {
+            start = prefixes.map(function(prefix)
+                                 {
+                                     return prefix + "start";
+                                 });
+            start = start.join(" or ");
+        }
+        else
+        {
+            start = prefixes[0] + "start";
+        }
+
+        self.say(util.format('No game running. Start the game by typing %s', start));
     };
 
     /**
@@ -84,7 +100,24 @@ var Cmd = function Cmd(bot) {
             if (bot.game.getPlayer({nick: message.nick}))
                 self.say('You are already in the current game.');
             else
-                self.say(util.format('A game is already running. Type %sjoin to join the game.', p));
+            {
+                var join;
+
+                if(prefixes.length > 1)
+                {
+                    join = prefixes.map(function(prefix)
+                                         {
+                                             return prefix + "join";
+                                         })
+                    join = join.join(" or ");
+                }
+                else
+                {
+                    join = prefixes[0] + "start";
+                }
+
+                self.say(util.format('A game is already running. Type %s to join the game.', join));
+            }
             return false;
         }
 
@@ -311,7 +344,24 @@ var Cmd = function Cmd(bot) {
         else if (bot.game.state === Game.STATES.PLAYABLE)
             bot.game.playCard(cmdArgs, player, fastPick);
         else
-            fastPick || self.say(util.format('%spick command not available in current state.', p));
+        {
+            var pick;
+
+            if(prefixes.length > 1)
+            {
+                pick = prefixes.map(function(prefix)
+                                    {
+                                        return prefix + "pick";
+                                    });
+                pick = pick.join(" or ");
+            }
+            else
+            {
+                pick = prefixes[0] + "pick";
+            }
+
+            fastPick || self.say(util.format('%s command not available in current state.', pick));
+        }
     };
 
     /**
@@ -320,6 +370,21 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.coin = function(message, cmdArgs) {
+        var coinp;
+
+        if(prefixes.length > 1)
+        {
+            coinp = prefixes.map(function(prefix)
+                                 {
+                                     return prefix + "coin";
+                                 });
+            coinp = coinp.join(" / ");
+        }
+        else
+        {
+            coinp = prefixes[0] + "coin";
+        }
+
         if (self.noGame() || !bot.game.isRunning())
             return false;
 
@@ -329,19 +394,19 @@ var Cmd = function Cmd(bot) {
 
         var max = config.maxCoinUsesPerGame;
         if (max === 0) {
-            self.say(util.format('%scoin is disabled.', p));
+            self.say(util.format('%s is disabled.', coinp));
             return false;
         }
 
         if (player.coinUsed && player.coinUsed == max) {
-            self.say(util.format('%s: You can only use %scoin %s time%s per game.',
-                message.nick, p, max, (max > 1) ? 's' : ''));
+            self.say(util.format('%s: You can only use %s %s time%s per game.',
+                message.nick, coinp, max, (max > 1) ? 's' : ''));
             return false;
         }
 
         if (bot.game.state != bot.game.STATES.PLAYED && bot.game.table.question.pick > 1) {
-            self.say(util.format('%s: You can\'t use %scoin on multiple pick questions',
-                message.nick, p));
+            self.say(util.format('%s: You can\'t use %s on multiple pick questions',
+                message.nick, coinp));
             return false;
         }
 
