@@ -387,7 +387,7 @@ var Bot = function Bot() {
     client.addListener('message',  self.messageHandler);
 
     client.addListener('who' + self.channel, self.refreshUsers);
-    self.timers.refreshChannel = setInterval(self.refreshChanData, 5 * 60 * 1000);
+    //self.timers.refreshChannel = setInterval(self.refreshChanData, 5 * 60 * 1000);
 
 };
 
