@@ -108,7 +108,7 @@ var Cmd = function Cmd(bot) {
                     join = prefixes.map(function(prefix)
                                          {
                                              return prefix + "join";
-                                         })
+                                         });
                     join = join.join(" or ");
                 }
                 else
