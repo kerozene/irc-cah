@@ -13,7 +13,7 @@
     "lodash": "3.10.1",
     "grunt": "latest",
     "grunt-cli": "latest",
-    "irc": "~0.3.6",
+    "irc": "git+https://github.com/kerozene/node-irc.git#develop",
     "irc-colors": "~1.0.3",
     "grunt-nodemon": "~0.2.1",
     "nodemon": "~1.0.17",
