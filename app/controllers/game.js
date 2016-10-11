@@ -43,7 +43,7 @@ var HAIKU = new Card({
  */
 var Game = function Game(bot, options) {
     var    self = this,
-      decksTool = new Decks(),
+      decksTool = new Decks(bot),
         channel = bot.channel,
          client = bot.client,
          config = bot.config;
