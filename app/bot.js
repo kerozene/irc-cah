@@ -50,23 +50,7 @@ var Bot = function Bot() {
     self.controller.decks.init()
     .then(function(message) {
         self.log(message);
-        _.each(config.decks, function(deck) {
-            self.controller.decks.fetchDeck(deck)
-            .then(function(data) {
-                self.decks.push(data);
-                var pad = function(str, char, width) {
-                    var padded = new Array(width + 1).join(char) + str;
-                    return padded.slice(-width);
-                };
-                self.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
-                    _.map([ data.calls.length, data.responses.length ], function(el) { return pad(el, ' ', 4); })
-                )));
-            }, function(error) {
-                if (error.name === 'NotFoundError')
-                    error.message = error.message.split('/').reverse()[0];
-                self.log(error.name + ': ' + error.message);
-            });
-        });
+        self.controller.decks.loadDecks(config.decks);
     });
 
     self.controller.users = new Users(self);

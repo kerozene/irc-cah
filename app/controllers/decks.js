@@ -67,6 +67,22 @@ var Decks = function(bot) {
 
                 reject(error);
 
+    /**
+     * @param  {string[]} decksList - list of deck codes
+     * @return {Promise}
+     */
+    self.loadDecks = function(decksList) {
+        Promise.map(config.decks, function(deck) {
+            self.fetchDeck(deck)
+            .then(function(data) {
+                bot.decks.push(data);
+                bot.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
+                    _.map([ data.calls.length, data.responses.length ], function(el) { return utilities.padLeft(el, 4, ' '); })
+                )));
+            }, {concurrency: 2}, function(error) {
+                if (error.name === 'NotFoundError')
+                    error.message = error.message.split('/').reverse()[0];
+                bot.log(error.name + ': ' + error.message);
             });
         });
     };
