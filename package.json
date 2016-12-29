@@ -6,17 +6,12 @@
   "author": "Teemu Lahti <teemu.lahti@gmail.com>",
   "license": "Creative Commons BY-NC-SA 2.0",
   "scripts": {
-    "start": "node node_modules/grunt-cli/bin/grunt",
-    "test": "node node_modules/grunt-cli/bin/grunt test"
+    "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "dependencies": {
     "lodash": "3.10.1",
-    "grunt": "latest",
-    "grunt-cli": "latest",
     "irc": "git+https://github.com/kerozene/node-irc.git#develop",
     "irc-colors": "~1.0.3",
-    "grunt-nodemon": "~0.2.1",
-    "nodemon": "~1.0.17",
     "cardcast-api": "latest",
     "node-persist": "latest",
     "bluebird": "latest",
@@ -26,16 +21,10 @@
     "comment-json": "latest"
   },
   "devDependencies": {
+    "mocha": "latest",
     "chai": "latest",
     "chai-subset": "latest",
     "sinon": "latest",
-    "sinon-chai": "latest",
-    "grunt-contrib-watch": "latest",
-    "grunt-contrib-jshint": "latest",
-    "grunt-nodemon": "latest",
-    "grunt-concurrent": "latest",
-    "grunt-mocha-test": "latest",
-    "load-grunt-tasks": "~0.1.0",
-    "time-grunt": "~0.1.1"
+    "sinon-chai": "latest"
   }
 }
