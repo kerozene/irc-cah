@@ -46,26 +46,22 @@ var Decks = function(bot) {
     self.fetchDeck = function(deckCode) {
         var deckData, key = 'deck-' + deckCode;
 
-        return new Promise(function(resolve, reject) {
-
-            deckData = self.storage.getItemSync(key);
-
+        return self.storage.getItem(key)
+        .then(function(deckData) {
             if (deckData)
-                resolve(deckData);
+                return deckData;
 
-            self.api.deck(deckCode).then(function(deck) {
-
-                deck.populatedPromise.then(function() {
-                    var fields = ['name', 'code', 'description', 'category', 'created', 'updated',
-                                  'rating', 'author', 'baseURL', 'calls', 'responses'];
-                    deckData = _.pick(deck, fields);
-                    self.storage.setItemSync(key, deckData);
-                    resolve(deckData);
-                });
-
-            }, function(error) {
-
-                reject(error);
+            return self.api.deck(deckCode)
+            .then(function(deck) { return deck.populatedPromise; })
+            .then(function(populated) {
+                var fields = ['name', 'code', 'description', 'category', 'created', 'updated',
+                              'rating', 'author', 'baseURL', 'calls', 'responses'];
+                deckData = _.pick(populated, fields);
+                self.storage.setItemSync(key, deckData);
+                return deckData;
+            });
+        });
+    };
 
     /**
      * @param  {string[]} decksList - list of deck codes
