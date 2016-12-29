@@ -45,7 +45,7 @@ describe('CardsController', function() {
         it('should reset to specified cards list and return old cards', function() {
             var cards = new Cards(fixtures.cards.calls, 'q'),
                 oldCardsObj = _.clone(cards),
-                newCards = _.first(fixtures.cards.calls),
+                newCards = _.head(fixtures.cards.calls),
                 oldCards = cards.reset(newCards);
 
             cards.cards.should.deep.equal(newCards);
@@ -84,29 +84,29 @@ describe('CardsController', function() {
 
         it('should remove a single card by index and return it', function() {
             var cards = new Cards(fixtures.cards.responses, 'a'),
-                pickCard = _.first(fixtures.cards.responses),
+                pickCard = _.head(fixtures.cards.responses),
                 picked = cards.pickCards(0);
 
             picked.should.deep.equal(pickCard);
-            cards.cards.should.deep.equal(_.rest(fixtures.cards.responses));
+            cards.cards.should.deep.equal(_.tail(fixtures.cards.responses));
         });
 
         it('should remove multiple cards by index and return a Cards object containing them', function() {
             var cards = new Cards(fixtures.cards.responses, 'a'),
-                pickCards = fixtures.cards.responses,
+                pickCards = fixtures.cards.responses.slice(0, 2),
                 picked = cards.pickCards([ 0, 1 ]);
 
             picked.cards.should.deep.equal(pickCards);
-            cards.cards.should.be.empty;
+            cards.cards.length.should.equal(10);
         });
 
         it('should pick the first card in the list if none specified', function() {
             var cards = new Cards(fixtures.cards.responses, 'a'),
-                pickCard = _.first(fixtures.cards.responses),
+                pickCard = _.head(fixtures.cards.responses),
                 picked = cards.pickCards();
 
             picked.should.deep.equal(pickCard);
-            cards.cards.should.deep.equal(_.rest(fixtures.cards.responses));
+            cards.cards.should.deep.equal(_.tail(fixtures.cards.responses));
         });
 
     });

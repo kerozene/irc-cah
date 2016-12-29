@@ -101,18 +101,18 @@ var Cmd = function Cmd(bot) {
 
         if (cmdArgs[0] == '--noczar') {
             noCzar = true;
-            cmdArgs = _.rest(cmdArgs);
+            cmdArgs = _.tail(cmdArgs);
         }
 
         if (cmdArgs[0] == '--withczar') {
             noCzar = false;
-            cmdArgs = _.rest(cmdArgs);
+            cmdArgs = _.tail(cmdArgs);
         }
 
         // point limit
         if (cmdArgs[0] && !isNaN(cmdArgs[0])) {
             points = parseInt(cmdArgs[0]);
-            cmdArgs = _.rest(cmdArgs);
+            cmdArgs = _.tail(cmdArgs);
         }
 
         bot.game = new Game(bot, {points: points, decks: cmdArgs, init: true, noCzar: noCzar});
@@ -382,7 +382,7 @@ var Cmd = function Cmd(bot) {
                                 var result = p + cmd.commands[0];
                                 if (cmd.commands.length > 1) {
                                     var aliases =  _.chain(cmd.commands)
-                                                    .rest()
+                                                    .tail()
                                                     .map(function(a) { return p + a; })
                                                     .join(', ');
                                     result += util.format(' (%s)', aliases);
@@ -415,7 +415,7 @@ var Cmd = function Cmd(bot) {
             help += cmd.info.split('%%').join(p);
             if (cmd.commands.length > 1)
                 help += util.format(' (aliases: %s)', _.chain(cmd.commands)
-                                                        .rest()
+                                                        .tail()
                                                         .map(function(a) { return p + a; })
                                                         .join(', '));
         }
@@ -467,7 +467,7 @@ var Cmd = function Cmd(bot) {
         if (_.isEqual(nicks, [ client.nick ])) {
             reply = _.template('pours itself a tall, cold glass of <%= beer %>. cheers, <%= from %>!');
             client.action(channel, reply({
-                beer: _.sample(config.beers, 1)[0],
+                beer: _.sampleSize(config.beers, 1)[0],
                 from: message.nick,
                 nick: client.nick
             }));
@@ -485,7 +485,7 @@ var Cmd = function Cmd(bot) {
         }
         if (!nicks.length)
             return false;
-        action = _.sample(actions, 1)[0];
+        action = _.sampleSize(actions, 1)[0];
         if (nicks.length > 1) {
             _.each(plurals, function(one, many) { // value, key
                 action = action.split(one).join(many);
@@ -493,7 +493,7 @@ var Cmd = function Cmd(bot) {
         }
         reply = _.template(action);
         client.action(channel, reply({
-            beer: listToString(_.sample(config.beers, nicks.length)),
+            beer: listToString(_.sampleSize(config.beers, nicks.length)),
             nick: listToString(nicks)
         }));
         if (beerToBot) // pour for self last
@@ -600,7 +600,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.groupinfo = function(message, cmdArgs) {
-        var tag = '~' + _.trimLeft(cmdArgs[0], '~').toUpperCase();
+        var tag = '~' + _.trimStart(cmdArgs[0], '~').toUpperCase();
         var tagInfo = self.compileGroupTags([ tag ]);
         if (tagInfo === tag) {
             self.say(util.format('Group tag not found: %s', tag));
@@ -636,7 +636,7 @@ var Cmd = function Cmd(bot) {
         bot.lastUseOfPing = moment();
 
         var nicks = bot.client.nicksInChannel(bot.channel);
-        nicks = _.filter(nicks, function(nick) {
+        nicks = _.filter(nicks, _.bind(function(nick) {
             if (nick == bot.client.nick || nick == message.nick)
                 return false;
             if ( bot.game && _.includes(bot.game.getPlayerNicks(), nick) )
@@ -650,7 +650,7 @@ var Cmd = function Cmd(bot) {
                 return false;
 
             return (user.data.away !== true && !user.data.doNotPing);
-        }, self);
+        }, self));
         if (!nicks.length) {
             self.say('There is no-one else available to play right now.');
             return false;

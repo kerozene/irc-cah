@@ -73,14 +73,14 @@ var Cards = function Cards(cards, type) {
             // get multiple cards
             var pickedCards = new Cards();
             // first get all cards
-            _.each(index, function (i) {
+            _.each(index, _.bind(function (i) {
                 var c = self.cards[i];
                 if (typeof c === 'undefined') {
                     throw new Error('Invalid card index');
                 }
 //                cards.push();
                 pickedCards.addCard(c);
-            }, this);
+            }, this));
             // then remove them
             self.cards = _.without.apply(this, _.union([self.cards], pickedCards.cards));
 //            _.each(pickedCards, function(card) {
@@ -88,11 +88,11 @@ var Cards = function Cards(cards, type) {
 //            }, this);
 /*
             console.log('picked cards:');
-            console.log(_.pluck(pickedCards.cards, 'id'));
-            console.log(_.pluck(pickedCards.cards, 'value'));
+            console.log(_.map(pickedCards.cards, 'id'));
+            console.log(_.map(pickedCards.cards, 'value'));
             console.log('remaining cards:');
-            console.log(_.pluck(self.cards, 'id'));
-            console.log(_.pluck(self.cards, 'value'));
+            console.log(_.map(self.cards, 'id'));
+            console.log(_.map(self.cards, 'value'));
 */
             return pickedCards;
         } else {

@@ -116,7 +116,7 @@ var Game = function Game(bot, options) {
         if (args.length) {
             _.every(args, function(arg) {
                 if (arg[0] === '+' || arg.match(/^\w{5}$/)) {
-                    arg = _.trimLeft(arg, '+');
+                    arg = _.trimStart(arg, '+');
                     if (_.includes(config.decks, arg)) {
                         decks.push(arg);
                     }
@@ -131,7 +131,7 @@ var Game = function Game(bot, options) {
         if (args.length) {
             _.every(args, function(arg) {
                 if (arg[0] === '-') {
-                    arg = _.trimLeft(arg, '-');
+                    arg = _.trimStart(arg, '-');
                     if (_.includes(config.decks, arg)) {
                         removeDecks.push(arg);
                     }
@@ -160,9 +160,9 @@ var Game = function Game(bot, options) {
         var loadDecks = _.filter(bot.decks, function(loadDeck) {
             return _.includes(decks, loadDeck.code);
         });
-        var questions = Array.prototype.concat.apply([], _.pluck(loadDecks, 'calls'));
-        var answers   = Array.prototype.concat.apply([], _.pluck(loadDecks, 'responses'));
-        self.deckCodes = Array.prototype.concat.apply([], _.pluck(loadDecks, 'code'));
+        var questions = Array.prototype.concat.apply([], _.map(loadDecks, 'calls'));
+        var answers   = Array.prototype.concat.apply([], _.map(loadDecks, 'responses'));
+        self.deckCodes = Array.prototype.concat.apply([], _.map(loadDecks, 'code'));
 
         if (!questions.length || !answers.length) {
             self.say('No decks loaded. Stopping...');
@@ -192,7 +192,7 @@ var Game = function Game(bot, options) {
 
         bot.log(util.format('Loaded %d decks (%s): %d questions, %d answers',
             loadDecks.length,
-            _.pluck(loadDecks, 'code').join(', '),
+            _.map(loadDecks, 'code').join(', '),
             questions.length,
             answers.length
         ));
@@ -377,7 +377,7 @@ var Game = function Game(bot, options) {
         if (self.pointLimit <= 0)
             return false;
 
-        var winner = _.findWhere(self.players, {points: self.pointLimit});
+        var winner = _.find(self.players, {points: self.pointLimit});
         if (!winner)
             return false;
 
@@ -446,23 +446,23 @@ var Game = function Game(bot, options) {
      * Deal cards to fill players' hands
      */
     self.deal = function () {
-        _.each(self.players, function (player) {
+        _.each(self.players, _.bind(function (player) {
             for (var i = player.cards.numCards(); i < 10; i++) {
                 self.dealCard(player);
             }
-        }, this);
+        }, this));
     };
 
     /**
      * Discard cards and unset owner
      */
     self.cleanCards = function (cards) {
-        _.each(cards.getCards(), function (card) {
+        _.each(cards.getCards(), _.bind(function (card) {
             delete card.owner;
             delete card.votes;
             self.discards.answer.addCard(card);
             cards.removeCard(card);
-        }, this);
+        }, this));
         return cards;
     };
 
@@ -474,9 +474,9 @@ var Game = function Game(bot, options) {
         self.discards.question.addCard(self.table.question);
         self.table.question = null;
 //        var count = self.table.answer.length;
-        _.each(self.table.answer, function (cards) {
+        _.each(self.table.answer, _.bind(function (cards) {
             self.cleanCards(cards);
-        }, this);
+        }, this));
         self.table.answer = [];
 
         // reset players
@@ -504,7 +504,7 @@ var Game = function Game(bot, options) {
      */
     self.drawCards = function(draw) {
         draw = draw || self.table.question.draw;
-        _.each(_.where(self.players, {isCzar: false}), function (player) {
+        _.each(_.filter(self.players, {isCzar: false}), function (player) {
             for (var i = 0; i < draw; i++) {
                 self.checkDecks();
                 var card = self.decks.answer.pickCards();
@@ -627,9 +627,9 @@ var Game = function Game(bot, options) {
         self.say('Everyone has played. Here are the entries:');
         // shuffle the entries
         self.table.answer = _.shuffle(self.table.answer);
-        _.each(self.table.answer, function (cards, i) {
+        _.each(self.table.answer, _.bind(function (cards, i) {
             self.say(i + ": " + self.getFullEntry(self.table.question, cards.getCards()));
-        }, this);
+        }, this));
 
         var command = (config.enableFastPick) ? '' : util.format('%swinner ', p);
 
@@ -637,7 +637,7 @@ var Game = function Game(bot, options) {
             self.say(util.format('Vote for the winner (%s<entry number>)', command));
         } else {
             // check that czar still exists
-            var currentCzar = _.findWhere(this.players, {isCzar: true});
+            var currentCzar = _.find(this.players, {isCzar: true});
             if (typeof currentCzar === 'undefined') {
                 // no czar, random winner (TODO: Voting?)
                 self.say('The Card Czar has fled the scene. So I will pick the winner on this round.');
@@ -751,7 +751,7 @@ var Game = function Game(bot, options) {
         var owner = winner.cards[0].owner;
         owner.points++;
         // update points object
-        var playerPoints = _.findWhere(self.points, {player: owner});
+        var playerPoints = _.find(self.points, {player: owner});
         if (playerPoints)
             playerPoints.points = owner.points; // player may have quit
 
@@ -900,7 +900,7 @@ var Game = function Game(bot, options) {
      */
     self.getFullEntry = function (question, answers) {
         var args = [];
-        _.each(answers, function (card, index) {
+        _.each(answers, _.bind(function (card, index) {
             var text = card.text;
             if (
                 ( index === 0 && question.text[index] === '' ) || // if at the start
@@ -911,7 +911,7 @@ var Game = function Game(bot, options) {
 
             args.push(c.bold(text));
 
-        }, this);
+        }, this));
         return util.format.apply(null, [ question.text.join('%s') ].concat(args));
     };
 
@@ -963,15 +963,15 @@ var Game = function Game(bot, options) {
             return false;
         }
 
-        var returningPlayer = _.findWhere(self.left, {user: player.user, hostname: player.hostname});
-        var pointsPlayer =    _.findWhere(self.points, {user: player.user, hostname: player.hostname});
+        var returningPlayer = _.find(self.left, {user: player.user, hostname: player.hostname});
+        var pointsPlayer =    _.find(self.points, {user: player.user, hostname: player.hostname});
 
         if (returningPlayer) {
             player = returningPlayer;
             player.isCzar = (
                 player === self.czar &&
                 player.roundLeft === self.round &&
-                _.contains([ self.STATES.PLAYABLE, self.STATES.PLAYED ], self.state)
+                _.includes([ self.STATES.PLAYABLE, self.STATES.PLAYED ], self.state)
             );
             player.hasPlayed = (player.hasPlayed && player.roundLeft === self.round);
             player.inactiveRounds = 0;
@@ -1022,7 +1022,7 @@ var Game = function Game(bot, options) {
      * @returns {*}
      */
     self.getPlayer = function (search) {
-        return _.findWhere(self.players, search);
+        return _.find(self.players, search);
     };
 
     /**
@@ -1101,10 +1101,10 @@ var Game = function Game(bot, options) {
      * Check for inactive players
      */
     self.markInactivePlayers = function () {
-        _.each(self.getNotPlayed(), function (player) {
+        _.each(self.getNotPlayed(), _.bind(function (player) {
             if (player.roundJoined !== self.round)
                 player.inactiveRounds++;
-        }, this);
+        }, this));
     };
 
     /**
@@ -1119,9 +1119,9 @@ var Game = function Game(bot, options) {
             currentCard,
             message = 'Your cards are:',
             newMessage;
-        _.each(cards, function (card, index) {
+        _.each(cards, _.bind(function (card, index) {
              remainingCards.push(c.bold(' [' + index + '] ') + card.displayText);
-        }, this);
+        }, this));
         // split output if longer than allowed message length
         while (remainingCards.length) {
             currentCard = remainingCards.shift();
@@ -1181,12 +1181,12 @@ var Game = function Game(bot, options) {
 
         switch (self.state) {
             case STATES.PLAYABLE:
-                message = util.format('Waiting for players to play: %s', _.pluck(notPlayed, 'nick').join(', '));
+                message = util.format('Waiting for players to play: %s', _.map(notPlayed, 'nick').join(', '));
                 if (!self.noCzar)
                     message = util.format('%s is the Card Czar. ', self.czar.nick) + message;
                 break;
             case STATES.PLAYED:
-                message = (self.noCzar) ? util.format('Waiting for players to vote: %s', _.pluck(notVoted, 'nick').join(', '))
+                message = (self.noCzar) ? util.format('Waiting for players to vote: %s', _.map(notVoted, 'nick').join(', '))
                                         : util.format('Waiting for %s to select the winner.', self.czar.nick);
                 break;
             case STATES.ROUND_END:
@@ -1209,7 +1209,7 @@ var Game = function Game(bot, options) {
      * Get all player nicks in the current game
      */
     self.getPlayerNicks = function () {
-        return _.pluck(self.players, 'nick');
+        return _.map(self.players, 'nick');
     };
 
     /**

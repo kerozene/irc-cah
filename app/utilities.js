@@ -87,7 +87,7 @@ exports.getUserKey = function getUserKey(ircUser) {
  * @return {object[]}       - array of objects with max
  */
 exports.multipleMax = function multipleMax(list, field){
-    var max = _.max(list, function(item){
+    var max = _.maxBy(list, function(item){
         return item[field];
     });
 

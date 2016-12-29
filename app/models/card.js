@@ -33,8 +33,8 @@ Card.fixQuestion = function(card) {
     var data = {}, lastIndex = card.text.length - 1;
     data.text = _.map(card.text, function(str, index) {
         str = str.replace(/ {2,}/g, ' '); // double-spacing is the devil
-        str = _.trimRight(str, '('); // some deck authors put parentheses around the blanks
-        str =  _.trimLeft(str, ')');
+        str =   _.trimEnd(str, '('); // some deck authors put parentheses around the blanks
+        str = _.trimStart(str, ')');
         str = str.trim();
         if ( index !== 0 && !str.match(/^[,.!?"':]/) ) // no space leading or before punctuation
             str = ' ' + str;

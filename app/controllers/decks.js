@@ -73,7 +73,7 @@ var Decks = function(bot) {
             .then(function(data) {
                 bot.decks.push(data);
                 bot.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
-                    _.map([ data.calls.length, data.responses.length ], function(el) { return utilities.padLeft(el, 4, ' '); })
+                    _.map([ data.calls.length, data.responses.length ], function(el) { return _.padStart(el, 4, ' '); })
                 )));
             }, {concurrency: 2}, function(error) {
                 if (error.name === 'NotFoundError')
@@ -128,7 +128,7 @@ var Decks = function(bot) {
 
     self._searchDeck = function(deck) {
         self._findCardState.deck = deck;
-        return _.some(self._findCardState.checkCardTypes, self._searchCollection, self);
+        return _.some(self._findCardState.checkCardTypes, _.bind(self._searchCollection, self));
     };
 
     /**

@@ -869,7 +869,7 @@ describe('GameController', function() {
 
             game.clean();
 
-            game.discards.answer.cards.length.should.equal(4);
+            game.discards.answer.cards.length.should.equal(24);
 
             game.cleanCards.restore();
         });
@@ -928,7 +928,7 @@ describe('GameController', function() {
         beforeEach(function() {
             answerCards = _.cloneDeep(cards.cards.responses);
             game.decks = {
-                answer: new Cards(answerCards.concat(answerCards, answerCards, answerCards), 'a')
+                answer: new Cards(answerCards.concat(answerCards), 'a')
             };
             game.players = _.map(game.players, function(player) {
                 player.cards = new Cards([ cards.cards.responses[0] ], 'a');
@@ -1492,7 +1492,7 @@ describe('GameController', function() {
                 answer: new Cards(),
                 question: new Cards()
             };
-            winner = _.cloneDeep(_.first(fixtures.players));
+            winner = _.cloneDeep(_.head(fixtures.players));
             czar = _.cloneDeep(fixtures.players[1]);
             game.czar = czar;
             game.points = [
@@ -1617,7 +1617,7 @@ describe('GameController', function() {
         var player;
 
         before(function() {
-            player = _.first(fixtures.players);
+            player = _.head(fixtures.players);
             game.lastWinner = {uhost:'~freddy@unaffiliated/fredd', count:1};
         });
 
@@ -1652,8 +1652,8 @@ describe('GameController', function() {
     describe('#getFullEntry()', function() {
 
         it('should return an entry with the question blanks filled in', function() {
-            var question = _.first(cards.cards.calls);
-            var answers = [ _.first(cards.cards.responses) ];
+            var question = _.head(cards.cards.calls);
+            var answers = [ _.head(cards.cards.responses) ];
 
             var entry = game.getFullEntry(question, answers);
 
@@ -1670,8 +1670,8 @@ describe('GameController', function() {
         });
 
         it('should use capitalized answers after certain punctuation', function() {
-            var question = _.first(cards.cards.calls);
-            var answers = [ _.first(cards.cards.responses) ];
+            var question = _.head(cards.cards.calls);
+            var answers = [ _.head(cards.cards.responses) ];
 
             var entry = game.getFullEntry(question, answers);
 
@@ -1745,7 +1745,7 @@ describe('GameController', function() {
         it('should add a player to the game', function() {
             game.addPlayer(player);
 
-            should.exist(_.findWhere(game.players, {nick: 'Frederick'}));
+            should.exist(_.find(game.players, {nick: 'Frederick'}));
         });
 
         it('should say the player was added', function() {
@@ -1898,7 +1898,7 @@ describe('GameController', function() {
                 answer:   new Cards()
             };
             game.players = _.cloneDeep(fixtures.players);
-            player = _.first(game.players);
+            player = _.head(game.players);
             player.cards.getCards = function() {
                 return _.cloneDeep(cards.cards.responses);
             };
@@ -2038,13 +2038,13 @@ describe('GameController', function() {
         });
 
         it('should ignore the czar', function() {
-            should.not.exist(_.findWhere(notPlayed, {nick: 'Napoleon'}));
+            should.not.exist(_.find(notPlayed, {nick: 'Napoleon'}));
         });
 
         it('should ignore players without cards', function() {
             notPlayed = game.getNotPlayed();
 
-            should.not.exist(_.findWhere(notPlayed, {nick: 'Julius'}));
+            should.not.exist(_.find(notPlayed, {nick: 'Julius'}));
         });
 
     });
@@ -2076,9 +2076,9 @@ describe('GameController', function() {
         var player, noticeSpy;
 
         before(function() {
-            player = _.cloneDeep(_.first(fixtures.players));
+            player = _.cloneDeep(_.head(fixtures.players));
             player.cards.getCards = function() {
-                return _.cloneDeep(cards.cards.responses);
+                return _.cloneDeep(cards.cards.responses.slice(0,2));
             };
             bot.client.opt = { messageSplit: 400};
         });
@@ -2134,7 +2134,7 @@ describe('GameController', function() {
         it('should call removePlayer with Player object', function() {
             initGame();
             sinon.spy(game, 'removePlayer');
-            var removed = _.first(game.players);
+            var removed = _.head(game.players);
 
             game.playerLeaveHandler('Frederick');
 

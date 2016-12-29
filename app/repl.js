@@ -25,7 +25,7 @@ module.exports = function(repl, bot) {
             cmdArgs = cmdArgs.split(' ');
             if (cmdArgs[0] && !isNaN(cmdArgs[0])) {
                 points = parseInt(cmdArgs[0]);
-                cmdArgs = _.rest(cmdArgs);
+                cmdArgs = _.tail(cmdArgs);
             }
             bot.game = new Game(bot, {points: points, decks: cmdArgs, init: true});
         }

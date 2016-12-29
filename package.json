@@ -9,7 +9,7 @@
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "dependencies": {
-    "lodash": "3.10.1",
+    "lodash": "latest",
     "irc": "git+https://github.com/kerozene/node-irc.git#develop",
     "irc-colors": "~1.0.3",
     "cardcast-api": "latest",

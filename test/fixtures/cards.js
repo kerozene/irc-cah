@@ -119,7 +119,87 @@ fixtures.cards = {
             draw: 0,
             text: 'bling',
             displayText: 'Bling'
-        })
+        }),
+        CardCreate({
+            id: '0064b920-a058-4a48-a16c-4396ef867101',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'switching to Geico®',
+            displayText: 'Switching to Geico®'
+        }),
+        CardCreate({
+            id: '0130dbe6-2517-430b-a8c8-1ef0d5d06921',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'bling',
+            displayText: 'Bling'
+        }),
+        CardCreate({
+            id: '0064b920-a058-4a48-a16c-4396ef867103',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'switching to Geico®',
+            displayText: 'Switching to Geico®'
+        }),
+        CardCreate({
+            id: '0130dbe6-2517-430b-a8c8-1ef0d5d06923',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'bling',
+            displayText: 'Bling'
+        }),
+        CardCreate({
+            id: '0064b920-a058-4a48-a16c-4396ef867104',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'switching to Geico®',
+            displayText: 'Switching to Geico®'
+        }),
+        CardCreate({
+            id: '0130dbe6-2517-430b-a8c8-1ef0d5d06924',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'bling',
+            displayText: 'Bling'
+        }),
+        CardCreate({
+            id: '0064b920-a058-4a48-a16c-4396ef867105',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'switching to Geico®',
+            displayText: 'Switching to Geico®'
+        }),
+        CardCreate({
+            id: '0130dbe6-2517-430b-a8c8-1ef0d5d06925',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'bling',
+            displayText: 'Bling'
+        }),
+        CardCreate({
+            id: '0064b920-a058-4a48-a16c-4396ef867106',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'switching to Geico®',
+            displayText: 'Switching to Geico®'
+        }),
+        CardCreate({
+            id: '0130dbe6-2517-430b-a8c8-1ef0d5d06926',
+            type: 'Answer',
+            pick: 1,
+            draw: 0,
+            text: 'bling',
+            displayText: 'Bling'
+        }),
     ],
     repick: [
         CardCreate({
