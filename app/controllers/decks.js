@@ -30,7 +30,7 @@ var Decks = function(bot) {
 
                 setTimeout(function() { // promise is fulfilled even though data isn't loaded yet
                     self.api = new CardcastAPI({timeout: config.apiTimeout});
-                    resolve(util.format('Card storage: %s keys loaded', self.storage.length()));
+                    resolve(util.format('Card storage: %s keys found', self.storage.length()));
                 }, 1000);
 
             }).catch(function(error) {
