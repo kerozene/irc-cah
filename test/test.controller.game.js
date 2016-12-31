@@ -208,16 +208,7 @@ describe('GameController', function() {
 
     describe('#pause()', function() {
 
-        before(function() {
-            stubSay = sinon.stub(bot.client, 'say');
-        });
-
-        after(function() {
-            stubSay.restore();
-        });
-
         beforeEach(function() {
-            stubSay.reset();
             game.roundStarted = new Date();
             game.state = game.STATES.PLAYED;
         });
@@ -225,21 +216,17 @@ describe('GameController', function() {
         it('should say if the game was already paused', function() {
             game.state = game.STATES.PAUSED;
 
-            game.pause();
+            var response = game.pause();
 
-            stubSay.should.have.been.calledWithExactly(
-                '#test',
-                'Game is already paused. Type .resume to begin playing again.');
+            response.should.equal('Game is already paused. Type .resume to begin playing again.');
         });
 
         it('should say if the game is not in a pausable state', function() {
             game.state = game.STATES.WAITING;
 
-            game.pause();
+            var response = game.pause();
 
-            stubSay.should.have.been.calledWithExactly(
-                '#test',
-                'The game cannot be paused right now.');
+            response.should.equal('The game cannot be paused right now.');
         });
 
         it('should store the current game state and replace it with PAUSED', function() {
@@ -250,11 +237,15 @@ describe('GameController', function() {
         });
 
         it('should say that the game is paused', function() {
+            var stubSay = sinon.stub(bot.client, 'say');
+
             game.pause();
 
             stubSay.should.have.been.calledWithExactly(
                 '#test',
                 'Game is now paused. Type .resume to begin playing again.');
+
+            stubSay.restore();
         });
 
         it('should clear the turn and winner timeouts', function() {
@@ -291,9 +282,9 @@ describe('GameController', function() {
         it('should say if the game was not paused', function() {
             game.state = game.STATES.WAITING;
 
-            game.resume();
+            var response = game.resume();
 
-            stubs.say.should.have.been.calledWithExactly('#test', 'The game is not paused.');
+            response.should.equal('The game is not paused.');
         });
 
         it('should announce that the game has been resumed', function() {
@@ -1031,7 +1022,7 @@ describe('GameController', function() {
 
     describe('#playCard()', function() {
 
-        var stubSay, stubNotice, player;
+        var stubNotice, player;
 
         before(function() {
             game.table = {
@@ -1039,12 +1030,10 @@ describe('GameController', function() {
                 answer:   []
             };
             game.players = _.cloneDeep(fixtures.players);
-            stubSay = sinon.stub(bot.client, 'say');
             stubNotice = sinon.stub(bot.client, 'notice');
         });
 
         after(function() {
-            stubSay.restore();
             stubNotice.restore();
         });
 
@@ -1053,16 +1042,15 @@ describe('GameController', function() {
             game.table.answer = [];
             player = _.cloneDeep(game.players[2]);
             player.cards = new Cards(cards.cards.responses);
-            stubSay.reset();
             stubNotice.reset();
         });
 
         it('should say if the game is paused', function() {
             game.state = game.STATES.PAUSED;
 
-            game.playCard([ 0 ], player);
+            var response = game.playCard([ 0 ], player);
 
-            stubSay.should.have.been.calledWithExactly('#test', 'Game is currently paused.');
+            response.should.equal('Game is currently paused.');
         });
 
         it('should fail if player is not set', function() {
@@ -1079,29 +1067,25 @@ describe('GameController', function() {
         it('should tell the player if the game isn\'t in playable state', function() {
             game.state = game.STATES.PLAYED;
 
-            game.playCard([ 0 ], player);
+            var response = game.playCard([ 0 ], player);
 
-            stubSay.should.have.been.calledWithExactly(
-                '#test',
-                'Vladimir: Can\'t play at the moment.');
+            response.should.equal('Can\'t play at the moment.');
         });
 
         it('should tell the player if they don\'t have cards to play', function() {
             player = _.cloneDeep(game.players[3]);
 
-            game.playCard([ 0 ], player);
+            var response = game.playCard([ 0 ], player);
 
-            stubSay.should.have.been.calledWithExactly(
-                '#test',
-                'Julius: Can\'t play at the moment.');
+            response.should.equal('Can\'t play at the moment.');
         });
 
         it('should tell the player if they can\'t play because czar', function() {
             player = _.cloneDeep(game.players[1]);
 
-            game.playCard([ 0 ], player);
+            var response = game.playCard([ 0 ], player);
 
-            stubSay.should.have.been.calledWith('#test', sinon.match(/^Napoleon: You are the Card Czar/));
+            response.should.match(/^You are the Card Czar/);
         });
 
         it('should update the player\'s pick if they\'ve already played', function() {
@@ -1147,9 +1131,9 @@ describe('GameController', function() {
         });
 
         it('should tell the player if they\'ve played the wrong number of cards', function() {
-            game.playCard([ 0 ], player);
+            var response = game.playCard([ 0 ], player);
 
-            stubSay.should.have.been.calledWithExactly('#test', 'Vladimir: You must pick 2 different cards.');
+            response.should.equal('You must pick 2 different cards.');
         });
 
         it('should send a notice to the player if the card number picked does not exist', function() {
@@ -1570,44 +1554,31 @@ describe('GameController', function() {
         });
 
         it('should fail and warn if the card number picked is not in the list', function() {
-            var saySpy = sinon.spy(bot.client, 'say');
-
-            game.selectWinner(99, czar);
+            var response = game.selectWinner(99, czar);
 
             game.points[0].points.should.equal(3);
-            bot.client.say.should.have.been.calledWith('#test', 'Invalid winner');
-
-            bot.client.say.restore();
+            response.should.equal('Invalid winner.');
         });
 
         it('should fail if the player picking is not czar and, if fastPick was *not* used, warn', function() {
-            var saySpy = sinon.spy(bot.client, 'say');
-
-            game.selectWinner(0, winner);
+            var response = game.selectWinner(0, winner);
 
             game.points[0].points.should.equal(3);
-            bot.client.say.should.have.been.calledWithMatch('#test', /^Frederick: You are not the Card Czar/);
+            response.should.match(/^You are not the Card Czar/);
 
-            bot.client.say.reset();
-
-            game.selectWinner(0, winner, true); // fastPick
+            response = game.selectWinner(0, winner, true); // fastPick
 
             game.points[0].points.should.equal(3);
-            bot.client.say.should.not.have.been.called;
-
-            bot.client.say.restore();
+            response.should.be.false;
         });
 
         it('should fail and warn if the game is paused', function() {
-            var saySpy = sinon.spy(bot.client, 'say');
             game.state = game.STATES.PAUSED;
 
-            game.selectWinner(0, czar);
+            var response = game.selectWinner(0, czar);
 
             game.points[0].points.should.equal(3);
-            bot.client.say.should.have.been.calledWith('#test', 'Game is currently paused.');
-
-            bot.client.say.restore();
+            response.should.equal('Game is currently paused.');
         });
 
     });

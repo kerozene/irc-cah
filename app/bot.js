@@ -266,14 +266,19 @@ var Bot = function Bot() {
         )
             return false;
 
-        if (cmd.private && to.toLowerCase() == self.channel.toLowerCase()) {
-            self.client.notice(from, 'That command can only be used by private message.');
-            return false;
-        }
-        if (cmd.public  && to.toLowerCase() != self.channel.toLowerCase()) {
-            self.log(util.format('%s tried to use public command "%s" in private', from, cmd.commands[0]));
-            self.client.notice(from, 'That command can only be used in the channel.');
-            return false;
+        if (to.toLowerCase() == self.channel.toLowerCase()) {
+            if (cmd.private) {
+                self.client.notice(from, 'That command can only be used by private message.');
+                return false;
+            }
+            message.private = false;
+        } else {
+            if (cmd.public) {
+                self.log(util.format('%s tried to use public command "%s" in private', from, cmd.commands[0]));
+                self.client.notice(from, 'That command can only be used in the channel.');
+                return false;
+            }
+            message.private = true;
         }
 
         callback = function() { self.controller.cmd[cmd.handler](message, cmdArgs); };

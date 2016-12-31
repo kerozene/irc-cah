@@ -17,26 +17,6 @@ var Cmd = function Cmd(bot) {
              p = config.commandPrefixChars[0];
 
     /**
-     * Test if no game is running
-     * @param silent - don't warn in the channel
-     */
-    self.noGame = function(silent) {
-        if (bot.game)
-            return false;
-        if (!silent)
-            self.sayNoGame();
-        return true;
-    };
-
-    /**
-     * Get the command data associated with 'alias'
-     * @param alias
-     */
-    self.findCommand = function(alias) {
-        return _.find(bot.commands, function(cmd) { return (_.includes(cmd.commands, alias)); });
-    };
-
-    /**
      * Say something in the game channel
      */
     self.say = function(message) {
@@ -51,19 +31,99 @@ var Cmd = function Cmd(bot) {
     };
 
     /**
-     * Say there's no game running
+     * Allowed values for withprefix option
+     * @readonly
+     * @enum {string}
      */
-    self.sayNoGame = function () {
-        self.say(util.format('No game running. Start the game by typing %sstart', p));
+    Withprefix = {
+        yes:    'yes',
+        no:     'no',
+        /** only when the response is in public */
+        public: 'public'
+    };
+
+    /**
+     * Get a responder function that replies publicly or privately depending on origin
+     * @param  {Object}     inbound - the incoming message object with nick and private flag
+     * @param  {Object}     [options]
+     * @param  {boolean}    [options.byNotice=false] - private response is via NOTICE (defaults to msg)
+     * @param  {Withprefix} [options.withPrefix]  - response is prefixed with the incoming message's nick
+     * @return {function}
+     */
+    self.getResponder = function(inbound, options) {
+        var responder, prefix = false;
+        options = options || {};
+
+        if (!options.withPrefix)
+            options.withPrefix = 'public';
+
+        if (options.withPrefix == 'yes' || (options.withPrefix == 'public' && !inbound.private))
+            prefix = true;
+
+        var getMessage = prefix ? function(message) { return util.format('%s: %s', inbound.nick, message); }
+                                : function(message) { return message; };
+
+        if (inbound.private) {
+            if (options.byNotice)
+                responder = function(message) { self.notice(inbound.nick, getMessage(message)); };
+            else
+                responder = function(message) { client.say(inbound.nick, getMessage(message)); };
+        } else
+            responder = function(message) { self.say(getMessage(message)); };
+
+        return responder;
+    };
+
+    /**
+     * Send a reply by NOTICE, msg or game channel depending on origin
+     * @param  {Object}     inbound   - the incoming message object with nick and private flag
+     * @param  {Object}     [options]
+     * @param  {boolean}    [options.byNotice=false] - private response is via NOTICE (defaults to msg)
+     * @param  {Withprefix} [options.withprefix]  - response is prefixed with the incoming message's nick
+     * @param  {string}     outbound  - the message to send
+     */
+    self.reply = function(inbound, outbound, options) {
+        self.getResponder(inbound, options)(outbound);
+    };
+
+    /**
+     * Get the command data associated with 'alias'
+     * @param alias
+     */
+    self.findCommand = function(alias) {
+        return _.find(bot.commands, function(cmd) { return (_.includes(cmd.commands, alias)); });
+    };
+
+    /**
+     * Test if no game is running
+     * @param silent - don't warn in the channel
+     */
+    self.noGame = function(responder, silent) {
+        if (bot.game)
+            return false;
+        if (!silent)
+            self.sayNoGame(responder);
+        return true;
+    };
+
+    /**
+     * Say there's no game running
+     * @param {function} [responder] - from self.getResponder()
+     */
+    self.sayNoGame = function (responder) {
+        if (!responder)
+            responder = function(message) { self.say(message); };
+
+        responder(util.format('No game running. Start the game by typing %sstart', p));
     };
 
     /**
      * Warn or return valid user
      */
-    self.mustBeUser = function(nick) {
+    self.mustBeUser = function(responder, nick) {
         var user = bot.controller.users.updateUserFromNick(nick);
         if (!user) {
-            self.say('Only known users can use this command.');
+            responder('Only known users can use this command.');
             return undefined;
         }
         return user;
@@ -82,9 +142,9 @@ var Cmd = function Cmd(bot) {
 
         if (bot.game) {
             if (bot.game.getPlayer({nick: message.nick}))
-                self.say('You are already in the current game.');
+                self.reply(message, 'You are already in the current game.');
             else
-                self.say(util.format('A game is already running. Type %sjoin to join the game.', p));
+                self.reply(message, util.format('A game is already running. Type %sjoin to join the game.', p));
             return false;
         }
 
@@ -148,7 +208,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.stop = function (message, cmdArgs) {
-        if (self.noGame()) return;
+        if (self.noGame(self.getResponder(message))) return;
         bot.game.stop(bot.game.getPlayer({user: message.user, hostname: message.host}));
         bot.game = undefined;
     };
@@ -159,8 +219,13 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
      self.pause = function(message, cmdArgs) {
-        if (self.noGame()) return;
-        bot.game.pause();
+        var responder = self.getResponder(message);
+
+        if (self.noGame(responder)) return;
+
+        var response = bot.game.pause();
+        if (response)
+            responder(response);
      };
 
     /**
@@ -169,8 +234,13 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
      self.resume = function(message, cmdArgs) {
-        if (self.noGame()) return;
-        bot.game.resume();
+        var responder = self.getResponder(message);
+
+        if (self.noGame(responder)) return;
+
+        var response = bot.game.resume();
+        if (response)
+            responder(response);
      };
 
     /**
@@ -183,7 +253,7 @@ var Cmd = function Cmd(bot) {
                 user = message.user,
             hostname = message.host;
 
-        if (self.noGame(config.startOnFirstJoin)) {
+        if (self.noGame(self.getResponder(message), config.startOnFirstJoin)) {
             if (config.startOnFirstJoin)
                 self.start(message, cmdArgs);
             return;
@@ -198,7 +268,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.quit = function (message, cmdArgs) {
-        if (self.noGame()) return;
+        if (self.noGame(self.getResponder(message))) return;
         bot.game.removePlayer(bot.game.getPlayer({user: message.user, hostname: message.host}));
     };
 
@@ -209,11 +279,11 @@ var Cmd = function Cmd(bot) {
      */
     self.remove = function (message, cmdArgs) {
         var target = cmdArgs[0];
-        if (self.noGame()) return;
+        if (self.noGame(self.getResponder(message))) return;
 
         var player = bot.game.getPlayer({nick: target});
         if (typeof(player) === 'undefined')
-            self.say(target + ' is not currently playing.');
+            self.reply(message, util.format('%s is not currently playing.', target));
         else {
             bot.game.removed.push(bot.utilities.getUhost(player));
             bot.game.removePlayer(player);
@@ -226,7 +296,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.cards = function (message, cmdArgs) {
-        if (self.noGame()) return;
+        if (self.noGame(self.getResponder(message))) return;
         var player = bot.game.getPlayer({user: message.user, hostname: message.host});
         bot.game.showCards(player);
     };
@@ -237,10 +307,16 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.play = function (message, cmdArgs) {
-        if (self.noGame()) return;
+        var responder = self.getResponder(message);
+
+        if (self.noGame(responder)) return;
+
         var player = bot.game.getPlayer({user: message.user, hostname: message.host});
-        if (player)
-            bot.game.playCard(cmdArgs, player);
+        if (player) {
+            var response = bot.game.playCard(cmdArgs, player);
+            if (response)
+                responder(response);
+        }
     };
 
     /**
@@ -250,7 +326,8 @@ var Cmd = function Cmd(bot) {
      */
     self.list = function (message, cmdArgs) {
         if (self.noGame()) return;
-        bot.game.listPlayers();
+
+        self.reply(message, bot.game.listPlayers());
     };
 
     /**
@@ -259,10 +336,16 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.winner = function (message, cmdArgs) {
-        if (self.noGame()) return;
+        var responder = self.getResponder(message);
+
+        if (self.noGame(responder)) return;
+
         var player = bot.game.getPlayer({user: message.user, hostname: message.host});
-        if (player)
-            bot.game.selectWinner(cmdArgs[0], player);
+        if (player) {
+            var response = bot.game.selectWinner(cmdArgs[0], player);
+            if (response)
+                responder(response);
+        }
     };
 
     /**
@@ -271,7 +354,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.points = function (message, cmdArgs) {
-        if (self.noGame()) return;
+        if (self.noGame(self.getResponder(message))) return;
         bot.game.showPoints();
     };
 
@@ -281,7 +364,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.status = function(message, cmdArgs) {
-        if (self.noGame()) return;
+        if (self.noGame(self.getResponder(message))) return;
         bot.game.showStatus();
     };
 
@@ -299,7 +382,7 @@ var Cmd = function Cmd(bot) {
             if (fastPick === true)
                 cmdArgs = cmdArgs[0];
         }
-        if (self.noGame(fastPick))
+        if (self.noGame(self.getResponder(message), fastPick))
             return;
 
         var player = bot.game.getPlayer({user: user, hostname: hostname});
@@ -309,9 +392,9 @@ var Cmd = function Cmd(bot) {
         if (bot.game.state === Game.STATES.PLAYED)
             bot.game.selectWinner(cmdArgs[0], player, fastPick);
         else if (bot.game.state === Game.STATES.PLAYABLE)
-            bot.game.playCard(cmdArgs, player, fastPick);
+            bot.game.playCard(cmdArgs, player, self.getResponder(message), fastPick);
         else
-            fastPick || self.say(util.format('%spick command not available in current state.', p));
+            fastPick || self.reply(message, util.format('%spick command not available in current state.', p));
     };
 
     /**
@@ -320,7 +403,7 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.coin = function(message, cmdArgs) {
-        if (self.noGame() || !bot.game.isRunning())
+        if (self.noGame(self.getResponder(message)) || !bot.game.isRunning())
             return false;
 
         var player = bot.game.getPlayer({user: message.user, hostname: message.host});
@@ -329,18 +412,18 @@ var Cmd = function Cmd(bot) {
 
         var max = config.maxCoinUsesPerGame;
         if (max === 0) {
-            self.say(util.format('%scoin is disabled.', p));
+            self.reply(message, util.format('%scoin is disabled.', p));
             return false;
         }
 
         if (player.coinUsed && player.coinUsed == max) {
-            self.say(util.format('%s: You can only use %scoin %s time%s per game.',
+            self.reply(message, util.format('%s: You can only use %scoin %s time%s per game.',
                 message.nick, p, max, (max > 1) ? 's' : ''));
             return false;
         }
 
         if (bot.game.state != bot.game.STATES.PLAYED && bot.game.table.question.pick > 1) {
-            self.say(util.format('%s: You can\'t use %scoin on multiple pick questions',
+            self.reply(message, util.format('%s: You can\'t use %scoin on multiple pick questions',
                 message.nick, p));
             return false;
         }
@@ -349,7 +432,7 @@ var Cmd = function Cmd(bot) {
              _.some(cmdArgs, isNaN) ||
              cmdArgs[0] === cmdArgs[1]
         ) {
-            self.say(util.format('%s: You must specify two different numbers.', message.nick));
+            self.reply(message, util.format('%s: You must specify two different numbers.', message.nick));
             return false;
         }
 
@@ -357,7 +440,7 @@ var Cmd = function Cmd(bot) {
 
         var coin = _.sample([0, 1]);
         var pick = cmdArgs[coin];
-        self.say(util.format('%s: Flipping a coin - heads: %s, tails: %s ...it\'s %s! You picked %s',
+        self.reply(message, util.format('%s: Flipping a coin - heads: %s, tails: %s ...it\'s %s! You picked %s',
             message.nick,
             cmdArgs[0],
             cmdArgs[1],
@@ -395,7 +478,7 @@ var Cmd = function Cmd(bot) {
             var alias = cmdArgs[0].toLowerCase();
             var cmd = self.findCommand(alias);
             if (!cmd || cmd.hidden) {
-                self.say(util.format('No command "%s%s"', p, alias));
+                self.reply(message, util.format('No command "%s%s"', p, alias));
                 return;
             }
             help = p + cmd.commands[0];
@@ -419,7 +502,7 @@ var Cmd = function Cmd(bot) {
                                                         .map(function(a) { return p + a; })
                                                         .join(', '));
         }
-        self.say(help);
+        self.reply(message, help);
     };
 
     /**
@@ -428,7 +511,8 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.test = function(message, cmdArgs) {
-        client.notice(message.nick, 'Can you hear me now?');
+        self.reply(message, 'Sending you a test NOTICE...');
+        self.notice(message.nick, 'Can you hear me now?');
     };
 
     /**
@@ -480,7 +564,7 @@ var Cmd = function Cmd(bot) {
                 return nick;
         }).compact().value();
         if (nicks.length > maxNicks) {
-            self.say("There's not enough beer!");
+            self.reply(message, "There's not enough beer!");
             return false;
         }
         if (!nicks.length)
@@ -508,7 +592,7 @@ var Cmd = function Cmd(bot) {
     self.decks = function(message, cmdArgs) {
 
         if (bot.game)
-            return self.say(util.format('Current game decks (%sdeckinfo <code>): %s',
+            return self.reply(message, util.format('Current game decks (%sdeckinfo <code>): %s',
                                     p, bot.game.deckCodes.join(', ')));
         var defaultDecks = decksTool.getDecksFromGroup('~DEFAULT');
         var decks = _.map(config.decks, function(deck) {
@@ -518,7 +602,7 @@ var Cmd = function Cmd(bot) {
                                     c.bold('default'), p, decks.join(', '));
         var groups = _.keys(config.deckGroups);
         reply += util.format(' :: Groups (%sgroupinfo <tag>): %s', p, groups.join(', '));
-        self.say(reply);
+        self.reply(message, reply);
     };
 
     /**
@@ -530,13 +614,13 @@ var Cmd = function Cmd(bot) {
         var data, deckCode = cmdArgs[0];
 
         if (!deckCode || !deckCode.match(/^\w{5}$/)) {
-            self.say('Invalid deck code format: ' + cmdArgs[0]);
+            self.reply(message, 'Invalid deck code format: ' + cmdArgs[0]);
             return false;
         }
         else {
             deckCode = deckCode.toUpperCase();
             if (!_.includes(config.decks, deckCode)) {
-                self.say('Deck ' + deckCode + ' is not enabled. If you really want it, yell about it.');
+                self.reply(message, 'Deck ' + deckCode + ' is not enabled. If you really want it, yell about it.');
                 return false;
             }
         }
@@ -560,13 +644,13 @@ var Cmd = function Cmd(bot) {
                             data.url,
                             data.description.split('\n')[0]
                         ).substring(0, 400);
-            self.say(reply);
+            self.reply(message, reply);
             return true;
         }, function(error) {
             if (error.name === 'NotFoundError')
                 error.message = error.message.split('/').reverse()[0];
             util.log(error.name + ': ' + error.message);
-            self.say('Error ' + error.name + ': ' + error.message);
+            self.reply(message, 'Error ' + error.name + ': ' + error.message);
             return false;
         });
     };
@@ -603,10 +687,10 @@ var Cmd = function Cmd(bot) {
         var tag = '~' + _.trimStart(cmdArgs[0], '~').toUpperCase();
         var tagInfo = self.compileGroupTags([ tag ]);
         if (tagInfo === tag) {
-            self.say(util.format('Group tag not found: %s', tag));
+            self.reply(message, util.format('Group tag not found: %s', tag));
             return false;
         }
-        self.say(tagInfo);
+        self.reply(message, tagInfo);
     };
 
     /**
@@ -628,7 +712,7 @@ var Cmd = function Cmd(bot) {
             if (wait > 0) {
                 var waitRounded = Math.ceil(moment.duration(wait).asMinutes());
                 var lastPingAgo = config.pingInterval - waitRounded;
-                self.say(util.format('Last %sping was about %s minute%s ago. Wait %s more minute%s to use it again.',
+                self.reply(message, util.format('Last %sping was about %s minute%s ago. Wait %s more minute%s to use it again.',
                     p, lastPingAgo, (lastPingAgo == '1') ? '' : 's', waitRounded, (waitRounded == 1) ? '': 's'));
                 return false;
             }
@@ -652,7 +736,7 @@ var Cmd = function Cmd(bot) {
             return (user.data.away !== true && !user.data.doNotPing);
         }, self));
         if (!nicks.length) {
-            self.say('There is no-one else available to play right now.');
+            self.reply(message, 'There is no-one else available to play right now.');
             return false;
         }
 
@@ -668,7 +752,7 @@ var Cmd = function Cmd(bot) {
      */
     self.away = function(message, cmdArgs) {
         var setting = (cmdArgs[0] && cmdArgs[0].toLowerCase() == 'forever') ? 'forever' : true;
-        var user = self.mustBeUser(message.nick);
+        var user = self.mustBeUser(self.getResponder(message), message.nick);
         if (user)
             user.data.doNotPing = setting;
 
@@ -686,7 +770,7 @@ var Cmd = function Cmd(bot) {
      * @param  cmdArgs
      */
     self.back = function(message, cmdArgs) {
-        var user = self.mustBeUser(message.nick);
+        var user = self.mustBeUser(self.getResponder(message), message.nick);
         if (user)
             delete user.data.doNotPing;
         self.notice(message.nick, util.format('You have now been marked as back and will be included in pings by the bot. ' +

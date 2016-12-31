@@ -269,14 +269,12 @@ var Game = function Game(bot, options) {
     self.pause = function () {
         // check if game is already paused
         if (self.isPaused()) {
-            self.say(util.format('Game is already paused. Type %sresume to begin playing again.', p));
-            return false;
+            return util.format('Game is already paused. Type %sresume to begin playing again.', p);
         }
 
         // only allow pause if game is in PLAYABLE or PLAYED state
         if (!self.isRunning()) {
-            self.say('The game cannot be paused right now.');
-            return false;
+            return 'The game cannot be paused right now.';
         }
 
         // store state and pause game
@@ -290,6 +288,8 @@ var Game = function Game(bot, options) {
         // clear turn timers
         clearTimeout(self.timers.turn);
         clearTimeout(self.timers.winner);
+
+        return '';
     };
 
     /**
@@ -297,8 +297,7 @@ var Game = function Game(bot, options) {
      */
     self.resume = function () {
         if (!self.isPaused()) {
-            self.say('The game is not paused.');
-            return false;
+            return 'The game is not paused.';
         }
 
         // resume game
@@ -550,22 +549,23 @@ var Game = function Game(bot, options) {
         cards = _.uniq(cards);
 
         if (self.isPaused())
-            return fastPick || self.say('Game is currently paused.');
+            return (fastPick) ? false : 'Game is currently paused.';
 
-        if (typeof player === 'undefined')
-            return bot.warn('Invalid player tried to play a card');
+        if (typeof player === 'undefined') {
+            bot.warn('Invalid player tried to play a card');
+            return util.format('You are not in the game. Do %sjoin to play.', p);
+        }
 
         if (self.state !== STATES.PLAYABLE || player.cards.numCards() === 0)
-            return fastPick || self.say(player.nick + ': Can\'t play at the moment.');
+            return (fastPick) ? false : 'Can\'t play at the moment.';
 
         if (player.isCzar)
-            return fastPick || self.say(player.nick +
-                        ': You are the Card Czar. The Czar does not play. The Czar makes other people do their dirty work.');
+            return 'You are the Card Czar. The Czar does not play. The Czar makes other people do their dirty work.';
 
         if (cards.length != self.table.question.pick) {
             // invalid card count
             var multi = (self.table.question.pick > 1) ? 'different cards' : 'card';
-            return self.say(util.format('%s: You must pick %s %s.', player.nick, self.table.question.pick, multi));
+            return util.format('You must pick %s %s.', self.table.question.pick, multi);
         }
         if (player.picked) {
             self.notice(player.nick, 'Changing your pick...');
@@ -731,7 +731,7 @@ var Game = function Game(bot, options) {
     self.pickRandomWinner = function() {
         var message = 'I will pick the winner this round.';
         if (!self.noCzar)
-            message = 'Time is up! ' + message;
+            message = util.format('Time is up! %s', message);
         self.say(message);
 
         if (!self.noCzar)
@@ -779,8 +779,7 @@ var Game = function Game(bot, options) {
      */
     self.selectWinner = function (index, player, fastPick) {
         if (self.isPaused()) {
-            self.say('Game is currently paused.');
-            return false;
+            return 'Game is currently paused.';
         }
 
         if (self.state !== STATES.PLAYED)
@@ -789,15 +788,18 @@ var Game = function Game(bot, options) {
         var winner = self.table.answer[index];
 
         if (!winner)
-            return self.say('Invalid winner');
+            return 'Invalid winner.';
 
         if (self.noCzar && player) { // continue if voting timer ended without a vote (and called this without player arg)
             self.voteWinner(index, winner, player, fastPick);
             return;
         }
 
-        if (player && player !== self.czar)
-            return fastPick || self.say(player.nick + ': You are not the Card Czar. Only the Card Czar can select the winner');
+        if (player && player !== self.czar) {
+            if (fastPick)
+                return false;
+            return 'You are not the Card Czar. Only the Card Czar can select the winner.';
+        }
 
         if (!self.noCzar)
             clearInterval(self.timers.winner);
@@ -1216,7 +1218,7 @@ var Game = function Game(bot, options) {
      * List all players in the current game
      */
     self.listPlayers = function () {
-        self.say('Players currently in the game: ' + self.getPlayerNicks().join(', '));
+        return 'Players currently in the game: ' + self.getPlayerNicks().join(', ');
     };
 
     /**
