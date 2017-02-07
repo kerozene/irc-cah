@@ -341,11 +341,16 @@ var Cmd = function Cmd(bot) {
         if (self.noGame(responder)) return;
 
         var player = bot.game.getPlayer({user: message.user, hostname: message.host});
-        if (player) {
-            var response = bot.game.selectWinner(cmdArgs[0], player);
-            if (response)
-                responder(response);
+        if (!player) return;
+
+        if (bot.game.noCzar && !message.private) {
+            responder(util.format('You must vote privately: /msg %s %s', bot.client.nick, cmdArgs[0]));
+            return;
         }
+
+        var response = bot.game.selectWinner(cmdArgs[0], player);
+        if (response)
+            responder(response);
     };
 
     /**

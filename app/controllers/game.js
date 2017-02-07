@@ -634,7 +634,7 @@ var Game = function Game(bot, options) {
         var command = (config.enableFastPick) ? '' : util.format('%swinner ', p);
 
         if (self.noCzar) {
-            self.say(util.format('Vote for the winner (%s<entry number>)', command));
+            self.say(util.format('Vote for the winner (/msg %s %s<entry number>)', bot.client.nick, command));
         } else {
             // check that czar still exists
             var currentCzar = _.find(this.players, {isCzar: true});
