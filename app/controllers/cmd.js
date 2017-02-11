@@ -707,7 +707,7 @@ var Cmd = function Cmd(bot) {
         if (bot.game && bot.game.isRunning())
             return false;
 
-        var needed = (bot.game) ? bot.game.needPlayers(true) : 2;
+        var needed = (bot.game) ? bot.game.needPlayers(true) : (config.minPlayers - 1);
         if (!needed)
             return false;
 

@@ -395,9 +395,11 @@ var Game = function Game(bot, options) {
      */
     self.needPlayers = function(silent) {
         // check that there's enough players in the game
-        if (self.players.length >= 3)
+        if (self.players.length >= config.minPlayers)
             return 0;
-        var needed = 3 - self.players.length;
+
+        var needed = config.minPlayers - self.players.length;
+
         // stop game if not enough players
         if (silent)
             return needed;
@@ -999,7 +1001,7 @@ var Game = function Game(bot, options) {
 
         self.say(util.format('%s has %sjoined the game.', player.nick, (returningPlayer) ? 're' : ''));
 
-        var needed = (3 - self.players.length);
+        var needed = (config.minPlayers - self.players.length);
         if ( needed > 0 &&
              ( self.round > 0 ||  _.now() > self.startTime.getTime() + 30 * 1000 )
         )
@@ -1177,7 +1179,7 @@ var Game = function Game(bot, options) {
      */
     self.showStatus = function () {
         var message,
-            playersNeeded = Math.max(0, 3 - self.players.length), // amount of player needed to start the game
+            playersNeeded = Math.max(0, config.minPlayers - self.players.length),
             notPlayed = self.getNotPlayed(),
             notVoted  = self.getNotVoted();
 
@@ -1412,7 +1414,7 @@ var Game = function Game(bot, options) {
         var title = 'Cards Against Humanity';
         title = (self.isChristmas()) ? c.christmas(title)
                                      : c.rainbow(title);
-        self.say(util.format('%s is starting! Type %sjoin to join the game any time. (3 players needed)', title, p));
+        self.say(util.format('%s is starting! Type %sjoin to join the game any time. (%s players needed)', title, p, config.minPlayers));
         self.announceWinMode();
 
         if (config.notifyUsers)

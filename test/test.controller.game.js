@@ -627,6 +627,7 @@ describe('GameController', function() {
     describe('#needPlayers()', function() {
 
         beforeEach(function() {
+            bot.config.minPlayers = 3;
             game.round = 0;
             game.players = _.cloneDeep(fixtures.players).slice(0, 2);
         });

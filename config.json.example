@@ -22,6 +22,7 @@
     ],
     /* ^ Number of commands to accept from a user per interval (seconds). */
     "voicePlayers": false, // - Give current players +v on join? (Bot will assume it is opped.)
+    "minPlayers": 3, // - Number of joins needed to start the game
     "pointLimit": 10,
     /* ^ Default number of points needed to win the game. (!start # to override.)
      *   0 or a negative number means the game continues until `!stop` command is issued.
