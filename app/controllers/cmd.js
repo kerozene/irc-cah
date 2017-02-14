@@ -477,7 +477,7 @@ var Cmd = function Cmd(bot) {
                                 }
                                 return result;
                             });
-            help = 'Commands: ' + commands.join('; ') + util.format(' [%shelp <command> for details]', p);
+            help = util.format('Commands: %s [%shelp <command> for details]', commands.join('; '), p);
         } else {
             // single command details
             var alias = cmdArgs[0].toLowerCase();
@@ -527,9 +527,13 @@ var Cmd = function Cmd(bot) {
      */
     self.beer = function (message, cmdArgs)
     {
-        var nicks     = [ message.nick ],
-            beer = [], action = '', beerToBot = false, reply = '',
+        var     nicks = [ message.nick ],
+                 beer = [],
+               action = '',
+            beerToBot = false,
+                reply = '',
             maxNicks  = _.min([config.beers.length, 7]);
+
         var actions = [
             'pours a tall, cold glass of <%= beer %> and slides it down the bar to <%= nick %>',
             'cracks open a bottle of <%= beer %> for <%= nick %>',
@@ -545,7 +549,7 @@ var Cmd = function Cmd(bot) {
         };
         var listToString = function(list) {
             var last = list.pop();
-            return (list.length) ? list.join(', ') + ' and ' + last : last;
+            return (list.length) ? util.format('%s and %s', list.join(', '), last) : last;
         };
 
         if (cmdArgs[0] == 'all' && bot.game)
@@ -598,15 +602,15 @@ var Cmd = function Cmd(bot) {
 
         if (bot.game)
             return self.reply(message, util.format('Current game decks (%sdeckinfo <code>): %s',
-                                    p, bot.game.deckCodes.join(', ')));
+                                    p, bot.game.deckCodes.join(', ')
+                   ));
         var defaultDecks = decksTool.getDecksFromGroup('~DEFAULT');
         var decks = _.map(config.decks, function(deck) {
             return (_.includes(defaultDecks, deck)) ? c.bold(deck) : deck;
         });
-        var reply = util.format('Card decks available/%s (%sdeckinfo <code>): %s',
-                                    c.bold('default'), p, decks.join(', '));
         var groups = _.keys(config.deckGroups);
-        reply += util.format(' :: Groups (%sgroupinfo <tag>): %s', p, groups.join(', '));
+        var reply = util.format('Card decks available/%s (%sdeckinfo <code>): %s :: Groups (%sgroupinfo <tag>): %s',
+                                    c.bold('default'), p, decks.join(', '), p, groups.join(', '));
         self.reply(message, reply);
     };
 
@@ -619,13 +623,13 @@ var Cmd = function Cmd(bot) {
         var data, deckCode = cmdArgs[0];
 
         if (!deckCode || !deckCode.match(/^\w{5}$/)) {
-            self.reply(message, 'Invalid deck code format: ' + cmdArgs[0]);
+            self.reply(message, util.format('Invalid deck code format: %s', cmdArgs[0]));
             return false;
         }
         else {
             deckCode = deckCode.toUpperCase();
             if (!_.includes(config.decks, deckCode)) {
-                self.reply(message, 'Deck ' + deckCode + ' is not enabled. If you really want it, yell about it.');
+                self.reply(message, util.format('Deck %s is not enabled. If you really want it, yell about it.', deckCode));
                 return false;
             }
         }
@@ -634,7 +638,7 @@ var Cmd = function Cmd(bot) {
             data.q = data.calls.length;
             data.a = data.responses.length;
             data = _.pick(data, 'name', 'description', 'created', 'author', 'q', 'a');
-            data.url = 'https://www.cardcastgame.com/browse/deck/' + deckCode;
+            data.url = util.format('https://www.cardcastgame.com/browse/deck/%s', deckCode);
             if (typeof data.created === 'object')
                 data.created = moment(data.created).format('YYYY-MM-DD');
             else if (typeof data.created == 'string')
@@ -654,8 +658,8 @@ var Cmd = function Cmd(bot) {
         }, function(error) {
             if (error.name === 'NotFoundError')
                 error.message = error.message.split('/').reverse()[0];
-            util.log(error.name + ': ' + error.message);
-            self.reply(message, 'Error ' + error.name + ': ' + error.message);
+            util.log(util.format('%s: %s', error.name, error.message));
+            self.reply(message, util.format('Error %s: %s', error.name, error.message));
             return false;
         });
     };

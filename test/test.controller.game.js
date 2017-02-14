@@ -987,7 +987,7 @@ describe('GameController', function() {
 
             stubSay.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002CARD: \u0002I never truly understood ___ until I encountered ___.' +
+                '\u0002CARD:\u0002 I never truly understood ___ until I encountered ___.' +
                 '\u0002 [PICK 2]\u0002');
 
             stubSay.restore();
@@ -2212,7 +2212,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Game has been stopped.');
+                '\u0002Status:\u0002 Game has been stopped.');
         });
 
         it('should say if the game is paused', function() {
@@ -2223,7 +2223,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Game is paused.');
+                '\u0002Status:\u0002 Game is paused.');
         });
 
         it('should say if the game is between rounds', function() {
@@ -2234,7 +2234,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Round has ended and next one is starting.');
+                '\u0002Status:\u0002 Round has ended and next one is starting.');
         });
 
         it('should say how many players are needed to continue', function() {
@@ -2246,7 +2246,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Waiting for 1 players to join.');
+                '\u0002Status:\u0002 Waiting for 1 players to join.');
 
             game.players = _.cloneDeep(fixtures.players);
         });
@@ -2259,7 +2259,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Waiting for Napoleon to select the winner.');
+                '\u0002Status:\u0002 Waiting for Napoleon to select the winner.');
         });
 
         it('should say if waiting for players to play', function() {
@@ -2270,7 +2270,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                '\u0002Status: \u0002Napoleon is the Card Czar. Waiting for players to play: Vladimir');
+                '\u0002Status:\u0002 Napoleon is the Card Czar. Waiting for players to play: Vladimir');
         });
 
     });

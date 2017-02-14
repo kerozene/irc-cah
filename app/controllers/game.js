@@ -226,7 +226,7 @@ var Game = function Game(bot, options) {
         self.state = STATES.STOPPED;
 
         if (player)
-            self.say(player.nick + ' stopped the game.');
+            self.say(util.format('%s stopped the game.', player.nick));
         else if (pointLimitReached !== true) {
             self.say('Game has been stopped.');
             self.setTopic(config.topic.messages.off);
@@ -406,7 +406,7 @@ var Game = function Game(bot, options) {
 
         self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
         if (self.round !== 0) {
-            self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's'));
+            self.say(util.format('Need %s more player%s', needed, (needed == 1 ? '' : 's')));
             self.showPoints('round');
             self.state = STATES.WAITING;
         }
@@ -494,7 +494,7 @@ var Game = function Game(bot, options) {
             }
         });
         if (removedNicks.length > 0) {
-            self.say('Removed inactive players: ' + removedNicks.join(', '));
+            self.say(util.format('Removed inactive players: %s', removedNicks.join(', ')));
         }
         // reset state
         self.state = STATES.WAITING;
@@ -525,13 +525,13 @@ var Game = function Game(bot, options) {
         var value = card.displayText;
         // check if special pick & draw rules
         if (card.pick > 1)
-            value += c.bold(' [PICK ' + card.pick + ']');
+            value += c.bold(util.format(' [PICK %s]', card.pick));
 /*
         if (card.draw > 0)
-            value += c.bold(' [DRAW ' + card.draw + ']');
+            value += c.bold(util.format(' [DRAW %s]', card.draw));
 */
 
-        self.say(c.bold('CARD: ') + value);
+        self.say(util.format('%s %s', c.bold('CARD:'), value));
         self.table.question = card;
         self.drawCards();
 
@@ -597,7 +597,10 @@ var Game = function Game(bot, options) {
         player.hasPlayed = true;
         player.inactiveRounds = 0;
         player.picked = picked;
-        self.notice(player.nick, 'You played: ' + self.getFullEntry(self.table.question, picked.cards.getCards()));
+        self.notice(player.nick, util.format(
+            'You played: %s',
+            self.getFullEntry(self.table.question, picked.cards.getCards())
+        ));
         // show entries if all players have played
         if (self.checkAllPlayed())
             self.showEntries();
@@ -630,7 +633,9 @@ var Game = function Game(bot, options) {
         // shuffle the entries
         self.table.answer = _.shuffle(self.table.answer);
         _.each(self.table.answer, _.bind(function (cards, i) {
-            self.say(i + ": " + self.getFullEntry(self.table.question, cards.getCards()));
+            self.say(util.format('%s: %s',
+                i, self.getFullEntry(self.table.question, cards.getCards())
+            ));
         }, this));
 
         var command = (config.enableFastPick) ? '' : util.format('%swinner ', p);
@@ -664,17 +669,17 @@ var Game = function Game(bot, options) {
         var started = self.roundStarted.getTime();
         var elapsed = (now.getTime() - started);
         if (elapsed >= timeLimit) {
-            bot.log('Timeout: ' + (elapsed/1000) + 's since ' + started);
+            bot.log(util.format('Timeout: %ss since %s', (elapsed/1000), started));
             callback();
         } else if (elapsed >= timeLimit - (10 * 1000) && elapsed < timeLimit) {
             // 10s ... 0s left
-            self.say(prefix + '10 seconds left!');
+            self.say(util.format('%s10 seconds left!', prefix));
         } else if (elapsed >= timeLimit - (30 * 1000) && elapsed < timeLimit - (20 * 1000)) {
             // 30s ... 20s left
-            self.say(prefix + '30 seconds left!');
+            self.say(util.format('%s30 seconds left!', prefix));
         } else if (elapsed >= timeLimit - (60 * 1000) && elapsed < timeLimit - (50 * 1000)) {
             // 60s ... 50s left
-            self.say(prefix + 'Hurry up, 1 minute left!');
+            self.say(util.format('%sHurry up, 1 minute left!', prefix));
             warnCallback();
         }
     };
@@ -1005,7 +1010,7 @@ var Game = function Game(bot, options) {
         if ( needed > 0 &&
              ( self.round > 0 ||  _.now() > self.startTime.getTime() + 30 * 1000 )
         )
-            self.say('Need ' + needed + ' more player' + (needed == 1 ? '' : 's'));
+            self.say(util.format('Need %s more player%s', needed, (needed == 1 ? '' : 's')));
         // check if waiting for players
         if (self.state === STATES.WAITING && self.players.length >= 3) {
             // enough players, start the game
@@ -1056,7 +1061,7 @@ var Game = function Game(bot, options) {
         }
 
         if (!options.silent)
-            self.say(player.nick + ' has left the game');
+            self.say(util.format('%s has left the game', player.nick));
 
         if (self.config.voicePlayers === true && !options.left)
             self.client.setChanMode(channel, '-v', player.nick);
@@ -1124,14 +1129,14 @@ var Game = function Game(bot, options) {
             message = 'Your cards are:',
             newMessage;
         _.each(cards, _.bind(function (card, index) {
-             remainingCards.push(c.bold(' [' + index + '] ') + card.displayText);
+             remainingCards.push(c.bold(util.format(' [%s] ', index)) + card.displayText);
         }, this));
         // split output if longer than allowed message length
         while (remainingCards.length) {
             currentCard = remainingCards.shift();
             newMessage = message + currentCard;
             if (newMessage.length > (self.client.opt.messageSplit - 4)) {
-                self.notice(player.nick, message + ' ...');
+                self.notice(player.nick, util.format('%s ...', message));
                 message = currentCard;
             } else {
                 message = newMessage;
@@ -1150,27 +1155,28 @@ var Game = function Game(bot, options) {
         var output = "";
         _.each(sortedPlayers, function (point) {
             if (self.getPlayer({nick: point.player.nick}))
-                output += c.bold(point.player.nick) + ": " + c.bold(point.points) + ", ";
+                output += util.format('%s: %s, ', c.bold(point.player.nick), c.bold(point.points));
         });
+        output = output.slice(0, -2);
 
         switch (stage) {
 
             case 'round':
                 if (self.players.length)
-                    self.say('Current scores: ' + output.slice(0, -2));
+                    self.say(util.format('Current scores: %s', output));
 
                 if (self.pointLimit > 0)
-                    self.say('Needed to win: ' + c.bold(self.pointLimit));
+                    self.say(util.format('Needed to win: %s', c.bold(self.pointLimit)));
                 break;
 
             case 'start':
                 if (self.pointLimit > 0)
-                    self.say('Needed to win: ' + c.bold(self.pointLimit));
+                    self.say(util.format('Needed to win: %s', c.bold(self.pointLimit)));
                 break;
 
             default:
                 if (self.players.length)
-                    self.say('The most horrible people: ' + output.slice(0, -2));
+                    self.say(util.format('The most horrible people: %s', output));
         }
     };
 
@@ -1206,7 +1212,7 @@ var Game = function Game(bot, options) {
                 message = 'Game is paused.';
                 break;
         }
-        self.say(c.bold('Status: ') + message);
+        self.say(util.format('%s %s', c.bold('Status:'), message));
     };
 
     /**
@@ -1220,7 +1226,7 @@ var Game = function Game(bot, options) {
      * List all players in the current game
      */
     self.listPlayers = function () {
-        return 'Players currently in the game: ' + self.getPlayerNicks().join(', ');
+        return util.format('Players currently in the game: %s', self.getPlayerNicks().join(', '));
     };
 
     /**
@@ -1273,7 +1279,7 @@ var Game = function Game(bot, options) {
      */
     self.channelLeaveHandler = function() {
         if (self.isRunning()) {
-            bot.warn('Left channel ' + channel + ' while game in progress. Pausing...');
+            bot.warn(util.format('Left channel %s while game in progress. Pausing...', channel));
             self.pause();
         }
     };
@@ -1283,17 +1289,17 @@ var Game = function Game(bot, options) {
      */
     self.channelRejoinHandler = function() {
         if (self.isPaused()) {
-            bot.log('Rejoined ' + channel + ' where game is paused.');
+            bot.log(util.format('Rejoined %s where game is paused.', channel));
             self.say(util.format('Card bot is back! Type %sresume to continue the current game.', p));
             return true;
         }
         if (self.isRunning()) {
-            bot.warn('Error: Joined ' + channel + ' while game in progress');
+            bot.warn(util.format('Error: Joined %s while game in progress', channel));
             self.say('Error: Joined while game in progress. Pausing...');
             self.pause();
             return false;
         }
-        bot.warn('Error: Joined ' + channel + ' while game in state: ' + self.state);
+        bot.warn(util.format('Error: Joined %s while game in state: %s', channel, self.state));
         return false;
     };
 
@@ -1350,7 +1356,7 @@ var Game = function Game(bot, options) {
             var cformat = c;
             var doFormat = _.every(format.split('.'), function(f) {
                 if (typeof cformat[f] !== 'function') {
-                    bot.log("Invalid format: " + format);
+                    bot.log(util.format('Invalid format: %s', format));
                     return false;
                 }
                 cformat = cformat[f];
@@ -1437,7 +1443,7 @@ var Game = function Game(bot, options) {
             }
             return char;
         });
-        str = (c.yellow('*') + str.join('') + c.yellow('*'));
+        str = util.format('%s%s%s', c.yellow('*'), str.join(''), c.yellow('*'));
         return str;
     };
 

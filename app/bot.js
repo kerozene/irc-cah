@@ -77,10 +77,10 @@ var Bot = function Bot() {
     self.loadCommands = function() {
         _.each(config.commands, function(command) {
             if (!self.controller.cmd[command.handler])
-                throw Error('Unknown handler: Cmd.' + command.handler);
+                throw Error(util.format('Unknown handler: Cmd.%s', command.handler));
             _.each(command.commands, function(alias) {
                 if (self.controller.cmd.findCommand(alias))
-                    throw Error('Command alias already in use: ' + alias);
+                    throw Error(util.format('Command alias already in use: %s', alias));
             });
             self.commands.push(command);
         });
@@ -91,7 +91,7 @@ var Bot = function Bot() {
      */
     self.persevere = function() {
         process.on('uncaughtException', function (err) {
-            self.log('Caught exception: ' + err);
+            self.log(util.format('Caught exception: %s', err));
             self.log(err.stack);
             client.say(self.channel, "WARNING: The bot has generated an unhandled error. Quirks may ensue.");
         });
@@ -111,7 +111,7 @@ var Bot = function Bot() {
      * Connect to server
      */
     self.connect = function() {
-        self.log('Connecting to ' + config.server + ' as ' + config.nick + '...');
+        self.log(util.format('Connecting to %s as %s...', config.server, config.nick));
         client.connect(function() {
             self.log('Connected.');
             if (typeof config.exitOnError !== "undefined" && config.exitOnError === false) {
@@ -142,7 +142,7 @@ var Bot = function Bot() {
      */
     self.checkServer = function() {
         if (_.now() - self.lastServerRawReceived > self.maxServerSilence * 1000) {
-            console.warn('Server has gone away since ' + self.lastServerRawReceived);
+            console.warn(util.format('Server has gone away since %s', self.lastServerRawReceived));
             clearInterval(self.timers.checkServer);
             self.reconnect();
         }
@@ -169,7 +169,7 @@ var Bot = function Bot() {
     self.channelJoinHandler = function(channel) {
         self.log('Joined ' + channel + ' as ' + client.nick);
         if (channel.toLowerCase() != self.channel) {
-            self.log('Joined unknown channel ' + channel + ', parting...'); // maybe forwarded
+            self.log(util.format('Joined unknown channel %s, parting...', channel)); // maybe forwarded
             client.part(channel, 'nope nope nope');
             return false;
         }
@@ -289,7 +289,7 @@ var Bot = function Bot() {
 
     // handle connection to server for logging
     client.addListener('registered', function (message) {
-        self.log('Connected to server ' + message.server);
+        self.log(util.format('Connected to server %s', message.server));
         // start server monitor
         self.timers.checkServer = setInterval(self.checkServer, self.maxServerSilence * 1000);
         // Send connect commands after joining a server
@@ -326,8 +326,8 @@ var Bot = function Bot() {
         if (  channel.toLowerCase() == self.channel &&
             ! _.includes(_.keys(client.chans, channel)) ) {
             client.send('JOIN', channel);
-            client.say(from, 'Attempting to join ' + channel);
-            self.log('Attempting to join ' + channel + ' : invited by ' + from);
+            client.say(from, util.format('Attempting to join %s', channel));
+            self.log(util.format('Attempting to join %s : invited by %s', channel, from));
         }
     });
 
