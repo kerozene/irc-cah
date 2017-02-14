@@ -335,6 +335,7 @@ var Game = function Game(bot, options) {
             return false;
 
         if (self.round === 0) {
+            self.players = _.shuffle(self.players);
             self.say(util.format('Starting in %s seconds. %s get ready!', config.timeBetweenRounds, self.getPlayerNicks().join(', ')));
             self.announceWinMode();
         }

@@ -447,9 +447,9 @@ describe('GameController', function() {
 
             game.nextRound();
 
-            stubs.say.should.have.been.calledWithExactly(
-                '#test',
-                'Starting in 10 seconds. Frederick, Napoleon, Vladimir, Julius get ready!');
+            stubs.say.should.have.been.calledWithMatch(
+                /^#test$/,
+                /^Starting in 10 seconds\. (\w+, ){3}\w+ get ready!$/);
         });
 
     });
@@ -2147,13 +2147,11 @@ describe('GameController', function() {
         it('should announce the final scores', function() {
             game.showPoints();
 
-            bot.client.say.should.have.been.calledWithExactly(
-                '#test',
-                'The most horrible people: ' +
-                '\u0002Frederick\u0002: \u00023\u0002, ' +
-                '\u0002Napoleon\u0002: \u00022\u0002, ' +
-                '\u0002Vladimir\u0002: \u00021\u0002, ' +
-                '\u0002Julius\u0002: \u00021\u0002'
+            bot.client.say.should.have.been.calledWithMatch(
+                /^#test$/,
+                new RegExp('^The most horrible people: ' +
+                    '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
+                     '\u0002\\w+\u0002: \u0002\\d\u0002$')
             );
         });
 
@@ -2173,12 +2171,11 @@ describe('GameController', function() {
             game.showPoints('round');
 
             bot.client.say.should.have.been.calledTwice;
-            bot.client.say.should.have.been.calledWithExactly(
-                '#test',
-                'Current scores: \u0002Frederick\u0002: \u00023\u0002, ' +
-                '\u0002Napoleon\u0002: \u00022\u0002, ' +
-                '\u0002Vladimir\u0002: \u00021\u0002, ' +
-                '\u0002Julius\u0002: \u00021\u0002'
+            bot.client.say.should.have.been.calledWithMatch(
+                /^#test$/,
+                new RegExp('^Current scores: ' +
+                    '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
+                     '\u0002\\w+\u0002: \u0002\\d\u0002$')
             );
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
