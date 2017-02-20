@@ -549,6 +549,8 @@ describe('GameController', function() {
         var stubStop, stubTopic;
 
         before(function() {
+            game.players = fixtures.players.slice(0, 3);
+
             bot.config.topic = {
                 messages: {
                     winner: 'foo'
@@ -1728,6 +1730,7 @@ describe('GameController', function() {
 
         before(function() {
             initGame();
+            bot.config.minPlayers = 3;
         });
 
         beforeEach(function() {
