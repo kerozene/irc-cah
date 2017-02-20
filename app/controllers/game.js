@@ -396,15 +396,18 @@ var Game = function Game(bot, options) {
      */
     self.needPlayers = function(silent) {
         // check that there's enough players in the game
-        if (self.players.length >= config.minPlayers)
+
+        minPlayers = (self.round === 0) ? config.minPlayers : 3;
+
+        if (self.players.length >= minPlayers)
             return 0;
 
-        var needed = config.minPlayers - self.players.length;
+        var needed = minPlayers - self.players.length;
 
-        // stop game if not enough players
         if (silent)
             return needed;
 
+        // stop game if not enough players
         self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
         if (self.round !== 0) {
             self.say(util.format('Need %s more player%s', needed, (needed == 1 ? '' : 's')));

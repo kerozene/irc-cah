@@ -697,6 +697,27 @@ describe('GameController', function() {
             stubPoints.restore();
         });
 
+        it('should use config.minPlayers for the first round only', function() {
+            sinon.spy(game, 'needPlayers');
+
+            bot.config.minPlayers = 5;
+            game.players= _.cloneDeep(fixtures.players);
+
+            game.round = 0;
+            game.needPlayers();
+
+            game.needPlayers.returned(1).should.be.true;
+
+            game.needPlayers.reset();
+
+            game.round = 1;
+            game.needPlayers();
+
+            game.needPlayers.returned(0).should.be.true;
+
+            game.needPlayers.restore();
+        });
+
         it('should announce how many extra players are needed', function() {
             var stubSay = sinon.stub(bot.client, 'say');
 
