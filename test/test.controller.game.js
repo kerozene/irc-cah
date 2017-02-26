@@ -460,7 +460,8 @@ describe('GameController', function() {
 
         before(function() {
             stubs = {
-                czar: sinon.stub(game, 'setCzar'),
+                need:   sinon.stub(game, 'needPlayers'),
+                czar:   sinon.stub(game, 'setCzar'),
                 deal:   sinon.stub(game, 'deal'),
                 play:   sinon.stub(game, 'playQuestion'),
                 cards:  sinon.stub(game, 'showCards'),
@@ -498,6 +499,25 @@ describe('GameController', function() {
             game.startNextRound();
 
             game.round.should.equal(1);
+        });
+
+        it('should abort if not enough players', function() {
+            sinon.spy(game, 'startNextRound');
+
+            game.startNextRound();
+
+            game.startNextRound.returned(false).should.not.be.true;
+
+            game.startNextRound.reset();
+            stubs.need.restore();
+            stubs.need = sinon.stub(game, 'needPlayers').returns(true);
+
+            game.startNextRound();
+
+            game.startNextRound.returned(false).should.be.true;
+
+            game.startNextRound.restore();
+            stubs.need.returns(false);
         });
 
         it('should set the czar for this round', function() {

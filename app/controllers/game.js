@@ -350,9 +350,15 @@ var Game = function Game(bot, options) {
     self.startNextRound = function () {
         if (!self.isPaused())
             return false;
+
         if (self.round === 0)
             self.startTime = new Date();
+
         self.round++;
+
+        if (self.needPlayers())
+            return false;
+
         var roundNotice = util.format('Round %s!', c.bold(self.round));
         if (!self.noCzar) {
             self.setCzar();
