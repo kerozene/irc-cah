@@ -269,7 +269,7 @@ var Cmd = function Cmd(bot) {
      */
     self.quit = function (message, cmdArgs) {
         if (self.noGame(self.getResponder(message))) return;
-        bot.game.removePlayer(bot.game.getPlayer({user: message.user, hostname: message.host}));
+        bot.game.removePlayers(bot.game.getPlayer({user: message.user, hostname: message.host}));
     };
 
     /**
@@ -286,7 +286,7 @@ var Cmd = function Cmd(bot) {
             self.reply(message, util.format('%s is not currently playing.', target));
         else {
             bot.game.removed.push(bot.utilities.getUhost(player));
-            bot.game.removePlayer(player);
+            bot.game.removePlayers(player);
         }
     };
 

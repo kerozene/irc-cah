@@ -1906,7 +1906,7 @@ describe('GameController', function() {
 
     });
 
-    describe('#removePlayer()', function() {
+    describe('#removePlayers()', function() {
 
         var player;
 
@@ -1930,7 +1930,7 @@ describe('GameController', function() {
         });
 
         it('should remove the player from the game', function() {
-            game.removePlayer(player);
+            game.removePlayers(player);
 
             game.players.should.deep.equal(_.without(game.players, player));
         });
@@ -1944,7 +1944,7 @@ describe('GameController', function() {
         it('should add the player\'s cards to the discard pile if manually removed');
 /*
         , function() {
-            game.removePlayer(player);
+            game.removePlayers(player);
 
             game.discards.answer.cards.should.deep.equal(_.cloneDeep(cards.cards.responses));
         });
@@ -1953,7 +1953,7 @@ describe('GameController', function() {
         it('should say nothing if silent option is passed', function() {
             sinon.spy(bot.client, 'say');
 
-            game.removePlayer(player, {silent: true});
+            game.removePlayers(player, {silent: true});
 
             bot.client.say.should.not.have.been.called;
 
@@ -1963,7 +1963,7 @@ describe('GameController', function() {
         it('should say the player left the game if not silent', function() {
             sinon.spy(bot.client, 'say');
 
-            game.removePlayer(player);
+            game.removePlayers(player);
 
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
@@ -1976,10 +1976,10 @@ describe('GameController', function() {
             sinon.spy(bot.client, 'setChanMode');
             bot.config.voicePlayers = true;
 
-            game.removePlayer(player);
+            game.removePlayers(player);
 
             bot.client.setChanMode.should.have.been.calledWithExactly(
-                '#test', '-v', 'Frederick');
+                '#test', '-v', ['Frederick']);
 
             bot.client.setChanMode.restore();
         });
@@ -1988,7 +1988,7 @@ describe('GameController', function() {
             sinon.spy(bot.client, 'setChanMode');
             bot.config.voicePlayers = true;
 
-            game.removePlayer(player, {left: true});
+            game.removePlayers(player, {left: true});
 
             bot.client.setChanMode.should.not.have.been.called;
 
@@ -2003,7 +2003,7 @@ describe('GameController', function() {
                 return player;
             });
 
-            game.removePlayer(player);
+            game.removePlayers(player);
 
             stub.should.have.been.called;
 
@@ -2017,7 +2017,7 @@ describe('GameController', function() {
             game.czar = player;
             game.table = { answer: 3 };
 
-            game.removePlayer(player);
+            game.removePlayers(player);
 
             stub.should.have.been.called;
             bot.client.say.should.have.been.calledWithExactly(
@@ -2033,7 +2033,7 @@ describe('GameController', function() {
             bot.config.stopOnLastPlayerLeave = true;
             game.players = [ player ];
 
-            game.removePlayer(player);
+            game.removePlayers(player);
 
             stub.should.have.been.called;
 
@@ -2151,15 +2151,15 @@ describe('GameController', function() {
 
         it('should call removePlayer with Player object', function() {
             initGame();
-            sinon.spy(game, 'removePlayer');
+            sinon.spy(game, 'removePlayers');
             var removed = _.head(game.players);
 
             game.playerLeaveHandler('Frederick');
 
-            game.removePlayer.should.have.been.calledOnce;
-            game.removePlayer.should.have.been.calledWithExactly(removed, {left: true});
+            game.removePlayers.should.have.been.calledOnce;
+            game.removePlayers.should.have.been.calledWithExactly(removed, {left: true});
 
-            game.removePlayer.restore();
+            game.removePlayers.restore();
         });
 
     });

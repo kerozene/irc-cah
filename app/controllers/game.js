@@ -491,7 +491,7 @@ var Game = function Game(bot, options) {
         self.table.answer = [];
 
         // reset players
-        var removedNicks = [];
+        var removed = [];
         _.each(self.players, function (player) {
             player.hasPlayed = false;
             player.voted = false;
@@ -499,12 +499,12 @@ var Game = function Game(bot, options) {
             delete player.picked;
             // check inactive count & remove after threshold
             if (player.inactiveRounds >= config.maxIdleRounds) {
-                self.removePlayer(player, {silent: true});
-                removedNicks.push(player.nick);
+                removed.push(player);
             }
         });
-        if (removedNicks.length > 0) {
-            self.say(util.format('Removed inactive players: %s', removedNicks.join(', ')));
+        if (removed.length > 0) {
+            self.say(util.format('Removed inactive players: %s', _.map(removed, 'nick').join(', ')));
+            self.removePlayers(removed, {silent: true});
         }
         if (self.players.length) {
             self.state = STATES.WAITING;
@@ -1048,38 +1048,42 @@ var Game = function Game(bot, options) {
      * @param options Extra options
      * @returns The removed player or false if invalid player
      */
-    self.removePlayer = function (player, options) {
+    self.removePlayers = function (players, options) {
         options = _.extend({}, options);
-        if (!player)
+        if (!players)
             return false;
+        if (!_.isArray(players))
+            players = [ players ];
 
-        // remove player
-        self.players = _.without(self.players, player);
+        // remove players
+        _.pullAll(self.players, players);
 
-        if ( _.includes(self.removed, utilities.getUhost(player)) && self.round > 0 ) {
-            // put player's cards to discard
-            var cards = player.cards.reset();
-            _.each(cards, function (card) {
-                self.discards.answer.addCard(card);
-            });
-        }
-        else { // store the player's cards in case they rejoin
-            player.roundLeft = self.round;
-            self.left.push(player);
-        }
+        _.each(players, function(player) {
+            if ( _.includes(self.removed, utilities.getUhost(player)) && self.round > 0 ) {
+                // player was manually kicked and can't rejoin - put player's cards to discard
+                var cards = player.cards.reset();
+                _.each(cards, function (card) {
+                    self.discards.answer.addCard(card);
+                });
+            } else { // store the player's cards in case they rejoin
+                player.roundLeft = self.round;
+                self.left.push(player);
+            }
 
-        if (!options.silent)
-            self.say(util.format('%s has left the game', player.nick));
+            if (!options.silent)
+                self.say(util.format('%s has left the game', player.nick));
+        });
+
 
         if (self.config.voicePlayers === true && !options.left)
-            self.client.setChanMode(channel, '-v', player.nick);
+            self.client.setChanMode(channel, '-v', _.map(players, 'nick'));
 
         // check if remaining players have all played
         if (self.state === STATES.PLAYABLE && self.checkAllPlayed())
             self.showEntries();
 
         // check czar
-        if (self.state === STATES.PLAYED && self.czar === player) {
+        if (self.state === STATES.PLAYED && _.includes(players, self.czar)) {
             self.say('The Card Czar has fled the scene. So I will pick the winner on this round.');
             self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
         }
@@ -1089,7 +1093,7 @@ var Game = function Game(bot, options) {
             self.stop();
         }
 
-        return player;
+        return players;
     };
 
     /**
@@ -1270,7 +1274,7 @@ var Game = function Game(bot, options) {
     self.playerLeaveHandler = function (nick) {
         var player = self.getPlayer({nick: nick});
         if (typeof player !== 'undefined')
-            self.removePlayer(player, {left: true});
+            self.removePlayers(player, {left: true});
     };
 
     /**
