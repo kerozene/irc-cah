@@ -855,13 +855,16 @@ describe('GameController', function() {
     describe('#clean()', function() {
 
         var stubCheck;
+        var stubNextRound;
 
         before(function() {
             stubCheck = sinon.stub(game, 'checkDecks');
+            stubNextRound = sinon.stub(game, 'nextRound');
         });
 
         after(function() {
             stubCheck.restore();
+            stubNextRound.restore();
         });
 
         beforeEach(function() {
@@ -935,7 +938,7 @@ describe('GameController', function() {
             game.players[2].nick.should.not.equal('Vladimir');
         });
 
-        it('should set the game state to WAITING', function() {
+        it('should set the game state to WAITING if there are still players', function() {
             game.state = game.STATES.ROUND_END;
 
             game.clean();
@@ -1273,7 +1276,7 @@ describe('GameController', function() {
             game.state.should.equal(game.STATES.PLAYED);
         });
 
-        it('should say if nobody has played and go straight to the next round', function() {
+        it('should say if nobody has played and go to clean', function() {
             var stub = sinon.stub(bot.client, 'say');
             game.table.answer = [];
 
@@ -1281,7 +1284,6 @@ describe('GameController', function() {
 
             stub.should.have.been.calledWith('#test', 'No one played on this round.');
             stubClean.should.have.been.called;
-            stubNextRound.should.have.been.called;
 
             stub.restore();
         });

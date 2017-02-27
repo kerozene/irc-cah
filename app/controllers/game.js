@@ -405,15 +405,15 @@ var Game = function Game(bot, options) {
 
         minPlayers = (self.round === 0) ? config.minPlayers : 3;
 
-        if (self.players.length >= minPlayers)
-            return 0;
-
         var needed = minPlayers - self.players.length;
+        if (needed <= 0)
+            return 0;
 
         if (silent)
             return needed;
 
         // stop game if not enough players
+        clearTimeout(self.timers.stop);
         self.timers.stop = setTimeout(self.stop, config.timeWaitForPlayers * 1000);
         if (self.round !== 0) {
             self.say(util.format('Need %s more player%s', needed, (needed == 1 ? '' : 's')));
@@ -506,8 +506,10 @@ var Game = function Game(bot, options) {
         if (removedNicks.length > 0) {
             self.say(util.format('Removed inactive players: %s', removedNicks.join(', ')));
         }
-        // reset state
-        self.state = STATES.WAITING;
+        if (self.players.length) {
+            self.state = STATES.WAITING;
+            self.nextRound();
+        }
     };
 
     /**
@@ -629,9 +631,7 @@ var Game = function Game(bot, options) {
         // Check if 2 or more entries...
         if (self.table.answer.length === 0) {
             self.say('No one played on this round.');
-            // skip directly to next round
             self.clean();
-            self.nextRound();
             return;
         }
         if (self.table.answer.length === 1) {
@@ -826,7 +826,6 @@ var Game = function Game(bot, options) {
         self.announceWinner(winner);
         self.updateLastWinner(winner.cards[0].owner);
         self.clean();
-        self.nextRound();
     };
 
     /**
@@ -849,7 +848,6 @@ var Game = function Game(bot, options) {
         self.state = STATES.ROUND_END;
 
         self.clean();
-        self.nextRound();
     };
 
     /**
@@ -1086,8 +1084,10 @@ var Game = function Game(bot, options) {
             self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
         }
 
-        if (self.players.length === 0 && config.stopOnLastPlayerLeave === true)
+        if (self.players.length === 0 && config.stopOnLastPlayerLeave === true) {
+            clearTimeout(self.timers.stop);
             self.stop();
+        }
 
         return player;
     };
