@@ -803,6 +803,19 @@ var Game = function Game(bot, options) {
             self.getFullEntry( self.table.question, winner.getCards() )
         );
         self.say(message);
+
+        if (config.revealEntryOwners) {
+            var entryOwners = [],
+                entryNick;
+
+            _.each(self.table.answer, function(entry, index) {
+                entryNick = entry.cards[0].owner.nick;
+                if (entryNick !== owner.nick)
+                    entryOwners.push(util.format('%s - %s', index, entryNick));
+            });
+            message = util.format('Who played what: %s', entryOwners.join(', '));
+            self.say(message);
+        }
      };
 
     /**
