@@ -547,10 +547,6 @@ var Cmd = function Cmd(bot) {
             'foamy steins':       'a foamy stein',
             'them':               'it'
         };
-        var listToString = function(list) {
-            var last = list.pop();
-            return (list.length) ? util.format('%s and %s', list.join(', '), last) : last;
-        };
 
         if (cmdArgs[0] == 'all' && bot.game)
             nicks = bot.game.getPlayerNicks();
@@ -586,8 +582,8 @@ var Cmd = function Cmd(bot) {
         }
         reply = _.template(action);
         client.action(channel, reply({
-            beer: listToString(_.sampleSize(config.beers, nicks.length)),
-            nick: listToString(nicks)
+            beer: utilities.arrayToSentence(_.sampleSize(config.beers, nicks.length)),
+            nick: utilities.arrayToSentence(nicks)
         }));
         if (beerToBot) // pour for self last
             self.beer(reply, [ client.nick ]);

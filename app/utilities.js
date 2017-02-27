@@ -95,3 +95,13 @@ exports.multipleMax = function multipleMax(list, field){
         return item[field] === max[field];
     });
 };
+
+/**
+ * Create a string from list written in natural english
+ * @param  {string[]} list - array of strings to join
+ * @return {string}
+ */
+exports.arrayToSentence = function(list) {
+    var last = list.pop();
+    return (list.length) ? util.format('%s and %s', list.join(', '), last) : last;
+};
