@@ -71,7 +71,10 @@ var Game = function Game(bot, options) {
     self.pauseState = []; // pause state storage
     self.points = [];
     self.pointLimit = options.points || 0; // point limit for the game, defaults to 0 (== no limit)
+    self.winner = {}; // store the winner of the current round
     self.lastWinner = {}; // store the streak count of the last winner
+    self.lastJoinRound = 0; // store the last round number in which a player joined
+    self.coolOff = false;
     p = config.commandPrefixChars[0]; // default prefix char
 
     self.init = function() {
@@ -357,6 +360,8 @@ var Game = function Game(bot, options) {
             self.setCzar();
             roundNotice += util.format (' %s is the Card Czar.', self.czar.nick);
         }
+
+        self.winner = {};
         self.say(roundNotice);
         self.deal();
         self.playQuestion();
@@ -606,10 +611,35 @@ var Game = function Game(bot, options) {
             self.getFullEntry(self.table.question, picked.cards.getCards())
         ));
         // show entries if all players have played
-        if (self.checkAllPlayed())
-            self.showEntries();
+        if (self.checkAllPlayed() && !self.coolOff)
+            self.coolOffPeriod(self.showEntries);
 
         return true;
+    };
+
+    self.coolOffPeriod = function(callback) {
+        self.stopRoundTimers();
+        self.timers.cooloff = setTimeout(function() {
+            self.coolOff = false;
+            callback();
+        }, config.coolOffPeriod * 1000);
+
+        if (config.coolOffPeriod > 0) {
+            self.coolOff = true;
+
+            if (self.state === self.STATES.PLAYED) {
+                if (self.noCzar)
+                    message = 'All the votes are in. But are you sure? You now have %s seconds to change your vote.';
+                else
+                    message = util.format('%s: You now have %s seconds to change your pick.', self.czar.nick);
+            } else {
+                message ='All the entries are in. But are you sure? You now have %s seconds to change your pick.';
+            }
+
+            var lastRound = (self.lastJoinRound === 0) ? 1 : self.lastJoinRound;
+            if (self.round <= self.lastJoinRound + 2)
+                self.say(util.format(message, config.coolOffPeriod));
+        }
     };
 
     /**
@@ -627,10 +657,18 @@ var Game = function Game(bot, options) {
 
         if (self.table.answer.length === 1) {
             self.say('Only one player played and is the winner by default.');
-            self.selectWinner(0);
+            self.selectWinner(0, null);
             return;
         }
-        self.say('Everyone has played. Here are the entries:');
+
+        if (self.table.answer.length === 2 && self.noCzar) {
+            self.say('There are only two entries. Both win by default.');
+            _.each(self.table.answer, function(answer) { answer.votes = 1; });
+            self.tallyVotes();
+            return;
+        }
+
+        self.say('OK! Here are the entries:');
         // shuffle the entries
         self.table.answer = _.shuffle(self.table.answer);
         _.each(self.table.answer, _.bind(function (cards, i) {
@@ -645,7 +683,7 @@ var Game = function Game(bot, options) {
             self.say(util.format('Vote for the winner (/msg %s %s<entry number>)', bot.client.nick, command));
         } else {
             // check that czar still exists
-            var currentCzar = _.find(this.players, {isCzar: true});
+            var currentCzar = _.find(self.players, {isCzar: true});
             if (typeof currentCzar === 'undefined') {
                 // no czar, random winner (TODO: Voting?)
                 self.say('The Card Czar has fled the scene. So I will pick the winner on this round.');
@@ -729,16 +767,20 @@ var Game = function Game(bot, options) {
             self.czar.inactiveRounds++;
 
         var index = Math.round(Math.random() * (self.table.answer.length - 1));
-        self.selectWinner(index);
+        self.selectWinner(index, null);
     };
 
      /**
       * Announce a winner of a round.
       * Called once if by czar, possibly repeated if by tied vote.
       * Also update the winner's owner's score.
-      * @param  {object} winner - Card object from table.answer, with a vote property and an owner
+      * @param  {object} [winner] - Card object from table.answer, with a vote property and an owner
       */
      self.announceWinner = function(winner) {
+        winner = winner || self.winner;
+
+        self.state = STATES.ROUND_END;
+
         var owner = winner.cards[0].owner;
         owner.points++;
         // update points object
@@ -795,11 +837,18 @@ var Game = function Game(bot, options) {
         if (!self.noCzar)
             self.stopRoundTimers();
 
-        self.state = STATES.ROUND_END;
+        self.winner = winner;
 
-        self.announceWinner(winner);
-        self.updateLastWinner(winner.cards[0].owner);
-        self.clean();
+        var finishRound = function() {
+            self.announceWinner();
+            self.updateLastWinner();
+            self.clean();
+        };
+
+        if (!player)
+            finishRound();
+        else if (!self.coolOff)
+            self.coolOffPeriod(finishRound);
     };
 
     /**
@@ -818,8 +867,6 @@ var Game = function Game(bot, options) {
             self.say('We have a tie!');
         }
         _.each(winners, self.announceWinner);
-
-        self.state = STATES.ROUND_END;
 
         self.clean();
     };
@@ -850,15 +897,18 @@ var Game = function Game(bot, options) {
             self.getFullEntry( self.table.question, winner.getCards() )
         ));
 
-        if (self.checkAllVoted())
-            self.tallyVotes();
+        if (self.checkAllVoted() && !self.coolOff)
+            self.coolOffPeriod(self.tallyVotes);
     };
 
     /**
      * Store streak info for last round winner.
-     * @param player
+     * @param {Object} [player]
      */
     self.updateLastWinner = function(player) {
+        if (!player && !_.isEmpty(self.winner))
+            player = self.winner.cards[0].owner;
+
         var message, uhost = utilities.getUhost(player);
         if ( _.isEmpty(self.lastWinner) || self.lastWinner.uhost !== uhost ) {
             self.lastWinner = {uhost: uhost, count: 1};
@@ -975,6 +1025,7 @@ var Game = function Game(bot, options) {
                 self.showCards(player);
         } else {
             // new player
+            self.lastJoinRound = self.round;
             player.roundJoined = self.round;
             self.points.push({
                 user:     player.user, // user and hostname are used for matching returning players
@@ -1055,8 +1106,8 @@ var Game = function Game(bot, options) {
             self.client.setChanMode(channel, '-v', _.map(players, 'nick'));
 
         // check if remaining players have all played
-        if (self.state === STATES.PLAYABLE && self.checkAllPlayed())
-            self.showEntries();
+        if (self.state === STATES.PLAYABLE && self.checkAllPlayed() && !self.coolOff)
+            self.coolOffPeriod(self.showEntries);
 
         // check czar
         if (self.state === STATES.PLAYED && _.includes(players, self.czar)) {

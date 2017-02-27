@@ -14,6 +14,7 @@
     "maxIdleRounds": 2, // - Number of inactive game rounds causing a player to be removed.
     "timeLimit": 120, // - Seconds to allow for playing cards or picking winners.
     "timeBetweenRounds": 10, // - Seconds to pause after a round finishes.
+    "coolOffPeriod": 10, // - Seconds allowed after play when players can change their minds (0 to disable)
     "timeWaitForPlayers": 180, // - Seconds to wait for enough players before stopping the game.
     "waitFromLastJoin": true, // - Restart the wait timer when a player joins.
     "commandThrottle": [

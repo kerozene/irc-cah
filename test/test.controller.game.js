@@ -42,7 +42,7 @@ describe('GameController', function() {
 
         it('should announce the game');
 
-        it('should call nextRound()');
+        it('should call #nextRound()');
 
     });
 
@@ -397,7 +397,7 @@ describe('GameController', function() {
             stubs.need.returns(false);
         });
 
-        it('should call showPoints()', function() {
+        it('should call #showPoints()', function() {
             game.nextRound();
 
             stubs.points.should.have.been.called;
@@ -520,7 +520,7 @@ describe('GameController', function() {
                 'Round \u00022\u0002! Napoleon is the Card Czar.');
         });
 
-        it('should call playQuestion()', function() {
+        it('should call #playQuestion()', function() {
             game.startNextRound();
 
             stubs.play.should.have.been.called;
@@ -673,7 +673,7 @@ describe('GameController', function() {
             game.state.should.equal(game.STATES.WAITING);
         });
 
-        it('should call showPoints() if rounds have been played', function() {
+        it('should call #showPoints() if rounds have been played', function() {
             var stubPoints = sinon.stub(game, 'showPoints');
 
             game.needPlayers();
@@ -989,7 +989,7 @@ describe('GameController', function() {
             game.decks = { question: new Cards([ cards.cards.calls[1] ], 'q') };
         });
 
-        it('should call checkDecks()', function() {
+        it('should call #checkDecks()', function() {
 
             game.playQuestion();
 
@@ -1187,8 +1187,8 @@ describe('GameController', function() {
                 'You played: I never truly understood \u0002switching to Geico®\u0002 until I encountered \u0002bling\u0002.');
         });
 
-        it('should call showEntries() if everyone has played', function() {
-            var stubShow = sinon.stub(game, 'showEntries');
+        it('should call #coolOffPeriod() if everyone has played', function() {
+            var stubCoolOffPeriod = sinon.stub(game, 'coolOffPeriod');
             game.players = _.map(game.players, function(player) {
                 player.hasPlayed = true;
                 return player;
@@ -1196,9 +1196,47 @@ describe('GameController', function() {
 
             game.playCard([ 0, 1], player);
 
-            stubShow.should.have.been.called;
+            stubCoolOffPeriod.should.have.been.called;
 
-            stubShow.restore();
+            stubCoolOffPeriod.restore();
+        });
+
+    });
+
+    describe.skip('#coolOffPeriod()', function() {
+
+        before(function() {
+            bot.config.coolOffPeriod = 0;
+        });
+
+        it('should call #announceWinner()', function() {
+            sinon.spy(game, 'announceWinner');
+
+            game.coolOffPeriod(game.announceWinner);
+
+            game.announceWinner.should.have.been.called;
+
+            game.announceWinner.restore();
+        });
+
+        it('should call #updateLastWinner()', function() {
+            sinon.spy(game, 'updateLastWinner');
+
+            game.coolOffPeriod(game.updateLastWinner);
+
+            game.updateLastWinner.should.have.been.called;
+
+            game.updateLastWinner.restore();
+        });
+
+        it('should call #clean()', function() {
+            sinon.spy(game, 'clean');
+
+            game.coolOffPeriod(game.clean);
+
+            game.clean.should.have.been.called;
+
+            game.clean.restore();
         });
 
     });
@@ -1249,7 +1287,7 @@ describe('GameController', function() {
             game.state.should.equal(game.STATES.PLAYED);
         });
 
-        it('should say if nobody has played and call clean()', function() {
+        it('should say if nobody has played and call #clean()', function() {
             var stub = sinon.stub(bot.client, 'say');
             game.table.answer = [];
 
@@ -1280,7 +1318,7 @@ describe('GameController', function() {
             game.showEntries();
 
             stub.getCall(0).should.have.been.calledWithExactly(
-                '#test', 'Everyone has played. Here are the entries:');
+                '#test', 'OK! Here are the entries:');
             stub.getCall(1).should.have.been.calledWithExactly(
                 '#test', '0: foo');
             stub.getCall(2).should.have.been.calledWithExactly(
@@ -1462,6 +1500,57 @@ describe('GameController', function() {
 
     });
 
+    describe('#announceWinner()', function() {
+        beforeEach(function() {
+            game.state = game.STATES.PLAYED;
+            game.table = {
+                question: cards.cards.calls[0],
+                answer:   [
+                    new Cards([ cards.cards.responses[0] ])
+                ]
+            };
+            game.decks = {
+                answer:   new Cards(cards.cards.responses),
+                question: new Cards(cards.cards.calls)
+            };
+            game.discards = {
+                answer: new Cards(),
+                question: new Cards()
+            };
+            winner = _.cloneDeep(_.head(fixtures.players));
+            game.points = [
+                {
+                    user:     winner.user,
+                    hostname: winner.hostname,
+                    player:   winner,
+                    points:   winner.points
+                }
+            ];
+            game.table.answer[0].cards[0].owner = winner;
+        });
+
+        it('should change the game state to ROUND_END', function() {
+            var stubClean     = sinon.stub(game, 'clean');
+
+            game.announceWinner(game.table.answer[0]);
+
+            game.state.should.equal(game.STATES.ROUND_END);
+
+            stubClean.restore();
+        });
+
+        it('should announce the winning entry', function() {
+            var saySpy = sinon.spy(bot.client, 'say');
+
+            game.announceWinner(game.table.answer[0]);
+
+            bot.client.say.should.have.been.calledWithMatch('#test', /^Winner: /);
+
+            bot.client.say.restore();
+        });
+
+    });
+
     describe('#selectWinner()', function() {
 
         var winner, czar, stubNextRound;
@@ -1505,56 +1594,20 @@ describe('GameController', function() {
             game.table.answer[0].cards[0].owner = winner;
         });
 
-        it('should update the winner\'s points count', function() {
+        it('should update game.winner', function() {
             game.selectWinner(0, czar);
 
-            game.points[0].points.should.equal(4);
+            game.winner.should.equal(game.table.answer[0]);
         });
 
-        it('should announce the winning entry', function() {
-            var saySpy = sinon.spy(bot.client, 'say');
+        it('should call #coolOffPeriod()', function() {
+            sinon.spy(game, 'coolOffPeriod');
 
             game.selectWinner(0, czar);
 
-            bot.client.say.should.have.been.calledWithMatch('#test', /^Winner: /);
+            game.coolOffPeriod.should.have.been.called;
 
-            bot.client.say.restore();
-        });
-
-        it('should change the game state to ROUND_END', function() {
-            var stubClean     = sinon.stub(game, 'clean');
-
-            game.selectWinner(0, czar);
-
-            game.state.should.equal(game.STATES.ROUND_END);
-
-            stubClean.restore();
-        });
-
-        it('should call #updateLastWinner()', function() {
-            sinon.spy(game, 'updateLastWinner');
-
-            game.selectWinner(0, czar);
-
-            game.updateLastWinner.should.have.been.called;
-
-            game.updateLastWinner.restore();
-        });
-
-        it('should call #clean()', function() {
-            sinon.spy(game, 'clean');
-
-            game.selectWinner(0, czar);
-
-            game.clean.should.have.been.called;
-
-            game.clean.restore();
-        });
-
-        it('should call #nextRound()', function() {
-            game.selectWinner(0, czar);
-
-            stubNextRound.should.have.been.called;
+            game.coolOffPeriod.restore();
         });
 
         it('should stop the round timers', function() {
@@ -1963,8 +2016,8 @@ describe('GameController', function() {
             bot.client.setChanMode.restore();
         });
 
-        it('should show entries if everyone else has played', function() {
-            var stub = sinon.stub(game, 'showEntries');
+        it('should call #coolOffPeriod() if everyone else has played', function() {
+            var stub = sinon.stub(game, 'coolOffPeriod');
             game.state = game.STATES.PLAYABLE;
             game.players = _.map(game.players, function(player) {
                 player.hasPlayed = true;
@@ -1978,7 +2031,7 @@ describe('GameController', function() {
             stub.restore();
         });
 
-        it('should notify if the player was czar and call selectWinner()', function() {
+        it('should notify if the player was czar and call #selectWinner()', function() {
             var stub = sinon.stub(game, 'selectWinner');
             sinon.spy(bot.client, 'say');
             game.state = game.STATES.PLAYED;
@@ -2117,7 +2170,7 @@ describe('GameController', function() {
 
     describe('#playerLeaveHandler()', function() {
 
-        it('should call removePlayer with Player object', function() {
+        it('should call #removePlayers() with Player object', function() {
             initGame();
             sinon.spy(game, 'removePlayers');
             var removed = _.head(game.players);
@@ -2509,7 +2562,7 @@ describe('GameController', function() {
 
     describe('#say()', function() {
 
-        it('should call client.say', function() {
+        it('should call client.say()', function() {
             sinon.spy(bot.client, 'say');
 
             game.say('foo');
@@ -2523,7 +2576,7 @@ describe('GameController', function() {
 
     describe('#notice()', function() {
 
-        it('should call client.notice', function() {
+        it('should call client.notice()', function() {
             sinon.spy(bot.client, 'notice');
 
             game.notice('testNick', 'foo');
