@@ -248,16 +248,14 @@ describe('GameController', function() {
             stubSay.restore();
         });
 
-        it('should clear the turn and winner timeouts', function() {
-            var clock = sinon.useFakeTimers();
-            var stubClear = sinon.stub(clock, 'clearTimeout');
+        it('should stop the round timers', function() {
+            var stubStopRoundTimers = sinon.stub(game, 'stopRoundTimers');
 
             game.pause();
 
-            stubClear.should.have.been.calledTwice;
+            stubStopRoundTimers.should.have.been.called;
 
-            stubClear.restore();
-            clock.restore();
+            stubStopRoundTimers.restore();
         });
 
     });
@@ -327,34 +325,14 @@ describe('GameController', function() {
             stubs.select.restore();
         });
 
-        it('should otherwise start the timeout for czar to pick a winner if all played', function() {
-            var clock = sinon.useFakeTimers();
-            var stubInterval = sinon.stub(clock, 'setInterval');
-            game.timers.winner = 'test';
-            game.pauseState.state = game.STATES.PLAYED;
+        it('should start the round timers', function() {
+            var stubStartRoundTimers = sinon.stub(game, 'startRoundTimers');
 
             game.resume();
 
-            stubInterval.should.have.been.called;
-            should.not.exist(game.timers.winner);
+            stubStartRoundTimers.should.have.been.called;
 
-            stubInterval.restore();
-            clock.restore();
-        });
-
-        it('should start the turn timeout if state is PLAYABLE', function() {
-            var clock = sinon.useFakeTimers();
-            var stubInterval = sinon.stub(clock, 'setInterval');
-            game.timers.turn = 'test';
-            game.pauseState.state = game.STATES.PLAYABLE;
-
-            game.resume();
-
-            stubInterval.should.have.been.called;
-            should.not.exist(game.timers.turn);
-
-            stubInterval.restore();
-            clock.restore();
+            stubStartRoundTimers.restore();
         });
 
     });
@@ -546,14 +524,6 @@ describe('GameController', function() {
             game.startNextRound();
 
             stubs.play.should.have.been.called;
-        });
-
-        it('should set the game state to PLAYABLE', function() {
-            game.state.should.equal(game.STATES.PAUSED);
-
-            game.startNextRound();
-
-            game.state.should.equal(game.STATES.PLAYABLE);
         });
 
         it('should show everyone their cards', function() {
@@ -1053,16 +1023,22 @@ describe('GameController', function() {
             stubDraw.should.have.been.called;
         });
 
-        it('should start the turn timer', function() {
-            var clock = sinon.useFakeTimers();
-            var stubInterval = sinon.stub(clock, 'setInterval');
+        it('should start the round timers', function() {
+            var stubStartRoundTimers = sinon.stub(game, 'startRoundTimers');
 
             game.playQuestion();
 
-            stubInterval.should.have.been.calledWithExactly(game.turnTimerCheck, 10 * 1000);
+            stubStartRoundTimers.should.have.been.called;
 
-            clock.setInterval.restore();
-            clock.restore();
+            stubStartRoundTimers.restore();
+        });
+
+        it('should set the game state to PLAYABLE', function() {
+            game.state = game.STATES.PAUSED;
+
+            game.playQuestion();
+
+            game.state.should.equal(game.STATES.PLAYABLE);
         });
 
     });
@@ -1255,17 +1231,14 @@ describe('GameController', function() {
             };
         });
 
-        it('should clear the round timer', function() {
-            var clock = sinon.useFakeTimers();
-            sinon.spy(clock, 'clearInterval');
-            game.timers.turn = function() { return 'bar'; };
+        it('should stop the round timers', function() {
+            var stubStopRoundTimers = sinon.stub(game, 'stopRoundTimers');
 
             game.showEntries();
 
-            clock.clearInterval.should.have.been.calledWith(game.timers.turn);
+            stubStopRoundTimers.should.have.been.called;
 
-            clock.clearInterval.restore();
-            clock.restore();
+            stubStopRoundTimers.restore();
         });
 
         it('should set the game state to PLAYED', function() {
@@ -1276,7 +1249,7 @@ describe('GameController', function() {
             game.state.should.equal(game.STATES.PLAYED);
         });
 
-        it('should say if nobody has played and go to clean', function() {
+        it('should say if nobody has played and call clean()', function() {
             var stub = sinon.stub(bot.client, 'say');
             game.table.answer = [];
 
@@ -1316,29 +1289,24 @@ describe('GameController', function() {
             stub.restore();
         });
 
-        it('should prompt the czar to pick a winner and start their timer', function() {
-            var stub = sinon.stub(bot.client, 'say');
-            var clock = sinon.useFakeTimers();
-            sinon.spy(clock, 'clearInterval');
-            sinon.spy(clock, 'setInterval');
-            game.timers.winner = function() { return 'bar'; };
+        it('should prompt the czar to pick a winner and start the round timer', function() {
+            var stubSay = sinon.stub(bot.client, 'say');
+            var stubStartRoundTimers = sinon.stub(game, 'startRoundTimers');
 
             game.showEntries();
 
-            clock.clearInterval.should.have.been.called;
-            clock.setInterval.should.have.been.calledWithExactly(game.winnerTimerCheck, 10 * 1000);
-            stub.should.have.been.calledWithExactly(
+            stubStartRoundTimers.should.have.been.called;
+            stubSay.should.have.been.calledWithExactly(
                 '#test', 'Napoleon: Select the winner (.winner <entry number>)');
 
-            clock.clearInterval.restore();
-            clock.setInterval.restore();
-            clock.restore();
-            stub.restore();
+            stubStartRoundTimers.restore();
+            stubSay.restore();
         });
 
     });
 
-    describe('#roundTimerCheck()', function() {
+    describe.skip('#roundTimerCheck()', function() {
+        // This test was written for the old funky round timer system
 
         var now, timeLeft, stubSelect, stubLog;
         bot.config.timeLimit = 120;
@@ -1417,7 +1385,8 @@ describe('GameController', function() {
 
     });
 
-    describe('#winnerTimerCheck()', function() {
+    describe.skip('#winnerTimerCheck()', function() {
+        // This test was written for the old funky round timer system
 
         var now, timeLeft, stubSelect, stubLog;
         bot.config.timeLimit = 120;
@@ -1588,15 +1557,14 @@ describe('GameController', function() {
             stubNextRound.should.have.been.called;
         });
 
-        it('should clear the winner selection timeout', function() {
-            var clock = sinon.useFakeTimers();
-            sinon.spy(clock, 'clearInterval');
+        it('should stop the round timers', function() {
+            var stubStopRoundTimers = sinon.stub(game, 'stopRoundTimers');
 
             game.selectWinner(0, czar);
 
-            clock.clearInterval.should.have.been.called;
+            stubStopRoundTimers.should.have.been.called;
 
-            clock.restore();
+            stubStopRoundTimers.restore();
         });
 
         it('should fail and warn if the card number picked is not in the list', function() {

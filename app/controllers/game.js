@@ -219,6 +219,9 @@ var Game = function Game(bot, options) {
      * Stop game
      */
     self.stop = function (player, pointLimitReached) {
+        _.each(self.timers.round, function(timer) {
+            clearTimeout(timer);
+        });
         _.each(self.timers, function(timer) {
             clearTimeout(timer);
         });
@@ -285,9 +288,7 @@ var Game = function Game(bot, options) {
 
         self.say(util.format('Game is now paused. Type %sresume to begin playing again.', p));
 
-        // clear turn timers
-        clearTimeout(self.timers.turn);
-        clearTimeout(self.timers.winner);
+        self.stopRoundTimers();
 
         return '';
     };
@@ -309,20 +310,12 @@ var Game = function Game(bot, options) {
 
         self.say('Game has been resumed.');
 
-        // resume timers
-        if (self.state === STATES.PLAYED) {
-            // check if czar quit during pause
-            if (_.includes(self.players, self.czar))
-                self.timers.winner = setInterval(self.winnerTimerCheck, 10 * 1000);
-            else if (!self.noCzar) {
-                // no czar
-                self.say('The Card Czar quit the game during pause. I will pick the winner on this round.');
-                // select winner
-                self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
-            }
-        } else if (self.state === STATES.PLAYABLE) {
-            self.timers.turn = setInterval(self.turnTimerCheck, 10 * 1000);
+        if (self.state === STATES.PLAYED && !self.noCzar && !_.includes(self.players, self.czar)) {
+            self.say('The Card Czar quit the game during pause. I will pick the winner on this round.');
+            self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
         }
+        else
+            self.startRoundTimers(self.pauseState.elapsed);
     };
 
     /**
@@ -367,7 +360,6 @@ var Game = function Game(bot, options) {
         self.say(roundNotice);
         self.deal();
         self.playQuestion();
-        self.state = STATES.PLAYABLE;
         // show cards for all players (except czar)
         _.each(self.players, function (player) {
             if (player.isCzar !== true)
@@ -532,6 +524,8 @@ var Game = function Game(bot, options) {
      */
     self.playQuestion = function () {
         self.checkDecks();
+        self.state = STATES.PLAYABLE;
+
         var card = self.decks.question.pickCards();
         // replace all instance of %s with underscores for prettier output
         var value = card.displayText;
@@ -547,10 +541,8 @@ var Game = function Game(bot, options) {
         self.table.question = card;
         self.drawCards();
 
-        // start turn timer, check every 10 secs
-        clearInterval(self.timers.turn);
         self.roundStarted = new Date();
-        self.timers.turn = setInterval(self.turnTimerCheck, 10 * 1000);
+        self.startRoundTimers();
     };
 
     /**
@@ -624,16 +616,15 @@ var Game = function Game(bot, options) {
      * Show the entries
      */
     self.showEntries = function () {
-        // clear round timer
-        clearInterval(self.timers.turn);
-
+        self.stopRoundTimers();
         self.state = STATES.PLAYED;
-        // Check if 2 or more entries...
+
         if (self.table.answer.length === 0) {
             self.say('No one played on this round.');
             self.clean();
             return;
         }
+
         if (self.table.answer.length === 1) {
             self.say('Only one player played and is the winner by default.');
             self.selectWinner(0);
@@ -663,93 +654,76 @@ var Game = function Game(bot, options) {
             }
             self.say(util.format('%s: Select the winner (%s<entry number>)', self.czar.nick, command));
         }
-        // start turn timer, check every 10 secs
-        clearInterval(self.timers.winner);
         self.roundStarted = new Date();
-        if (self.noCzar)
-            self.timers.voting = setInterval(self.votingTimerCheck, 10 * 1000);
-        else
-            self.timers.winner = setInterval(self.winnerTimerCheck, 10 * 1000);
-    };
-
-    self.timerCheck = function(callback, warnCallback, prefixNick, now) { // pass now for testing
-        now = now || new Date();
-        prefix = (prefixNick) ? prefixNick + ': ' : '';
-        var timeLimit = config.timeLimit * 1000;
-        var started = self.roundStarted.getTime();
-        var elapsed = (now.getTime() - started);
-        if (elapsed >= timeLimit) {
-            bot.log(util.format('Timeout: %ss since %s', (elapsed/1000), started));
-            callback();
-        } else if (elapsed >= timeLimit - (10 * 1000) && elapsed < timeLimit) {
-            // 10s ... 0s left
-            self.say(util.format('%s10 seconds left!', prefix));
-        } else if (elapsed >= timeLimit - (30 * 1000) && elapsed < timeLimit - (20 * 1000)) {
-            // 30s ... 20s left
-            self.say(util.format('%s30 seconds left!', prefix));
-        } else if (elapsed >= timeLimit - (60 * 1000) && elapsed < timeLimit - (50 * 1000)) {
-            // 60s ... 50s left
-            self.say(util.format('%sHurry up, 1 minute left!', prefix));
-            warnCallback();
-        }
+        self.startRoundTimers();
     };
 
     /**
-     * Check the time that has elapsed since the beinning of the turn.
-     * End the turn is time limit is up
+     * Start countdown timers for end of round when PLAYABLE or PLAYED
+     * @param {number} elapsed     - time to subtract due to pausing
+     * @param {Object} [callbacks]
      */
-    self.turnTimerCheck = function (now) { // pass now for testing
-        // check the time
-        now = now || new Date();
-        self.timerCheck(
-            function() {
-                self.say('Time is up!');
-                self.markInactivePlayers();
-                self.showEntries();
+    self.startRoundTimers = function(elapsed, callbacks) {
+        elapsed = elapsed || 0;
+
+        // callbacks can be specified for any of the four stages
+        callbacks = callbacks || {
+            Playable: {
+                warn1: function() { self.showStatus(); },
+                final: function() {
+                    self.markInactivePlayers();
+                    self.showEntries();
+                }
             },
-            function() { self.showStatus(); },
-            '', now
-        );
+            Played: {
+                warn1: function() { if (self.noCzar) self.showStatus(); },
+                final: function() {
+                    if (self.noCzar) self.tallyVotes();
+                    else             self.pickRandomWinner();
+                }
+            }
+        };
+
+        var timeLimit = (config.timeLimit * 1000) - elapsed;
+        var offsets = { warn1: 60, warn2: 30, warn3: 10, final: 0 };
+
+        // prefix warning messages with czar's nick if waiting for winner
+        var prefix = (self.state === self.STATES.PLAYED && !self.noCzar) ? util.format('%s: ', self.czar.nick) : '';
+
+        self.stopRoundTimers();
+        self.timers.round = {};
+
+        _.each(['warn1', 'warn2', 'warn3', 'final'], function(stage) {
+
+            var warning = (stage === 'final') ? util.format('%sTime is up!', prefix)
+                                              : util.format('%s%s seconds left!', prefix, offsets[stage]);
+
+            if (0 < timeLimit - (offsets[stage] * 1000)) { // omit timer if it would trigger immediately
+                self.timers.round[stage] = setTimeout(function() {
+                    self.say(warning);
+                    if (callbacks[self.state][stage])
+                        callbacks[self.state][stage]();
+                }, timeLimit - (offsets[stage] * 1000));
+            }
+
+        });
     };
 
     /**
-     * Check the time that has elapsed since the beginning of voting.
-     * End the turn if the time limit is up
+     * Stop countdown timers
      */
-    self.votingTimerCheck = function(now) {
-        now = now || new Date();
-        self.timerCheck(
-            function() {
-                self.say('Time is up!');
-                self.tallyVotes();
-            },
-            function() { self.showStatus(); },
-            null, now
-        );
+    self.stopRoundTimers = function() {
+        _.each(self.timers.round, function(timer) {
+            clearTimeout(timer);
+        });
+        self.timers.round = {};
     };
-
-    /**
-     * Check the time that has elapsed since the beinning of the winner select.
-     * End the turn is time limit is up
-     */
-     self.winnerTimerCheck = function (now) { // pass now for testing
-        now = now || new Date();
-        self.timerCheck(
-            self.pickRandomWinner,
-            function() {},
-            (self.noCzar) ? null : self.czar.nick,
-            now
-        );
-     };
 
      /**
       * Pick a random winner
       */
     self.pickRandomWinner = function() {
-        var message = 'I will pick the winner this round.';
-        if (!self.noCzar)
-            message = util.format('Time is up! %s', message);
-        self.say(message);
+        self.say('I will pick the winner this round.');
 
         if (!self.noCzar)
             self.czar.inactiveRounds++;
@@ -819,7 +793,7 @@ var Game = function Game(bot, options) {
         }
 
         if (!self.noCzar)
-            clearInterval(self.timers.winner);
+            self.stopRoundTimers();
 
         self.state = STATES.ROUND_END;
 
@@ -832,7 +806,7 @@ var Game = function Game(bot, options) {
      * Select winners from voting
      */
     self.tallyVotes = function() {
-        clearInterval(self.timers.voting);
+        self.stopRoundTimers();
 
         var winners = utilities.multipleMax(self.table.answer, 'votes');
         if (winners.length > 1) {
@@ -1014,13 +988,15 @@ var Game = function Game(bot, options) {
 
         self.say(util.format('%s has %sjoined the game.', player.nick, (returningPlayer) ? 're' : ''));
 
-        var needed = (config.minPlayers - self.players.length);
+        var minPlayers = (self.round === 0) ? config.minPlayers : 3;
+        var needed = (minPlayers - self.players.length);
         if ( needed > 0 &&
              ( self.round > 0 ||  _.now() > self.startTime.getTime() + 30 * 1000 )
-        )
+        ) {
             self.say(util.format('Need %s more player%s', needed, (needed == 1 ? '' : 's')));
+        }
         // check if waiting for players
-        if (self.state === STATES.WAITING && self.players.length >= 3) {
+        if (self.state === STATES.WAITING && needed <= 0) {
             // enough players, start the game
             self.nextRound();
         } else if (config.waitFromLastJoin) {
