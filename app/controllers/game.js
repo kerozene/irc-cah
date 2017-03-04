@@ -627,18 +627,13 @@ var Game = function Game(bot, options) {
         if (config.coolOffPeriod > 0) {
             self.coolOff = true;
 
-            if (self.state === self.STATES.PLAYED) {
-                if (self.noCzar)
-                    message = 'All the votes are in. But are you sure? You now have %s seconds to change your vote.';
-                else
-                    message = util.format('%s: You now have %s seconds to change your pick.', self.czar.nick);
-            } else {
-                message ='All the entries are in. But are you sure? You now have %s seconds to change your pick.';
-            }
+            var message = '%sYou now have %s seconds to change your %s.',
+                prefix  = (self.state === self.STATES.PLAYED) ? util.format('%s: ', self.czar.nick) : '',
+                pick    = (self.noCzar) ? 'vote' : 'pick';
 
             var lastRound = (self.lastJoinRound === 0) ? 1 : self.lastJoinRound;
-            if (self.round <= self.lastJoinRound + 2)
-                self.say(util.format(message, config.coolOffPeriod));
+            if (self.round <= self.lastJoinRound + 1)
+                self.say(util.format(message, prefix, config.coolOffPeriod, pick));
         }
     };
 
@@ -729,20 +724,21 @@ var Game = function Game(bot, options) {
         var prefix = (self.state === self.STATES.PLAYED && !self.noCzar) ? util.format('%s: ', self.czar.nick) : '';
 
         self.stopRoundTimers();
-        self.timers.round = {};
 
         _.each(['warn1', 'warn2', 'warn3', 'final'], function(stage) {
 
             var warning = (stage === 'final') ? util.format('%sTime is up!', prefix)
                                               : util.format('%s%s seconds left!', prefix, offsets[stage]);
 
-            if (0 < timeLimit - (offsets[stage] * 1000)) { // omit timer if it would trigger immediately
-                self.timers.round[stage] = setTimeout(function() {
-                    self.say(warning);
-                    if (callbacks[self.state][stage])
-                        callbacks[self.state][stage]();
-                }, timeLimit - (offsets[stage] * 1000));
-            }
+            // omit timer if it would trigger (almost) immediately
+            if (3000 >= timeLimit - (offsets[stage] * 1000))
+                return;
+
+            self.timers.round[stage] = setTimeout(function() {
+                self.say(warning);
+                if (callbacks[self.state][stage])
+                    callbacks[self.state][stage]();
+            }, timeLimit - (offsets[stage] * 1000));
 
         });
     };
