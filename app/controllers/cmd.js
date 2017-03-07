@@ -54,6 +54,10 @@ var Cmd = function Cmd(bot) {
         var responder, prefix = false;
         options = options || {};
 
+        if (!inbound)
+            // sent from REPL
+            return function(message) { bot.log(util.format('RESPONSE: %s', message)); };
+
         if (!options.withPrefix)
             options.withPrefix = 'public';
 
