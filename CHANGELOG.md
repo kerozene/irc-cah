@@ -1,3 +1,7 @@
+#1.0.0
+* Added Cardcast support
+* Too many other changes to list
+
 #0.6.0
 * Added !pick command
 * Added point limit option to games
