@@ -1305,7 +1305,7 @@ describe('GameController', function() {
 
             game.showEntries();
 
-            stubSelect.should.have.been.calledWithExactly(0);
+            stubSelect.should.have.been.calledWithExactly(0, null);
             bot.client.say.should.have.been.calledWithExactly(
                 '#test', 'Only one player played and is the winner by default.');
 
@@ -2043,7 +2043,7 @@ describe('GameController', function() {
             stub.should.have.been.called;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                'The Card Czar has fled the scene. So I will pick the winner on this round.');
+                'The Card Czar has fled the scene.');
 
             stub.restore();
             bot.client.say.restore();

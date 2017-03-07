@@ -812,7 +812,13 @@ var Game = function Game(bot, options) {
             message = util.format('Who played what: %s', entryOwners.join(', '));
             self.say(message);
         }
-     };
+    };
+
+    self.finishRound = function() {
+        self.announceWinner();
+        self.updateLastWinner();
+        self.clean();
+    };
 
     /**
      * Pick an entry that wins the round
@@ -848,16 +854,10 @@ var Game = function Game(bot, options) {
 
         self.winner = winner;
 
-        var finishRound = function() {
-            self.announceWinner();
-            self.updateLastWinner();
-            self.clean();
-        };
-
         if (!player)
-            finishRound();
+            self.finishRound();
         else if (!self.coolOff)
-            self.coolOffPeriod(finishRound);
+            self.coolOffPeriod(self.finishRound);
     };
 
     /**
@@ -1120,8 +1120,13 @@ var Game = function Game(bot, options) {
 
         // check czar
         if (self.state === STATES.PLAYED && _.includes(players, self.czar)) {
-            self.say('The Card Czar has fled the scene. So I will pick the winner on this round.');
-            self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
+            if (self.timers.cooloff) {
+                clearTimeout(self.timers.cooloff);
+                self.finishRound();
+            } else {
+                self.say('The Card Czar has fled the scene.');
+                self.pickRandomWinner();
+            }
         }
 
         if (self.players.length === 0 && config.stopOnLastPlayerLeave === true) {
