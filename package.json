@@ -6,6 +6,7 @@
   "author": "Teemu Lahti <teemu.lahti@gmail.com>",
   "license": "Creative Commons BY-NC-SA 2.0",
   "scripts": {
+    "start": "node app.js",
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "dependencies": {
