@@ -285,7 +285,7 @@ var Cmd = function Cmd(bot) {
         if (typeof(player) === 'undefined')
             self.reply(message, util.format('%s is not currently playing.', target));
         else {
-            bot.game.removed.push(bot.utilities.getUhost(player));
+            bot.game.removed.push(utilities.getUhost(player));
             bot.game.removePlayers(player);
         }
     };
