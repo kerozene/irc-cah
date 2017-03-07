@@ -22,10 +22,12 @@ module.exports = function(repl, bot) {
         help: "Start a game. [points] [deck, ...]",
         action: function(cmdArgs) {
             var points = bot.config.pointLimit;
-            cmdArgs = cmdArgs.split(' ');
-            if (cmdArgs[0] && !isNaN(cmdArgs[0])) {
-                points = parseInt(cmdArgs[0]);
-                cmdArgs = _.tail(cmdArgs);
+            if (cmdArgs.length) {
+                cmdArgs = cmdArgs.split(' ');
+                if (cmdArgs[0] && !isNaN(cmdArgs[0])) {
+                    points = parseInt(cmdArgs[0]);
+                    cmdArgs = _.tail(cmdArgs);
+                }
             }
             bot.game = new Game(bot, {points: points, decks: cmdArgs, init: true});
         }
