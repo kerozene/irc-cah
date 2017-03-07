@@ -154,8 +154,8 @@
 		"public":   true
 	},
 	{
-		"commands": ["winner", "w"],
-		"info":     "(czar) Pick the winning entry",
+		"commands": ["winner", "w", "vote", "v"],
+		"info":     "Pick the winning entry",
 		"handler":  "winner",
 		"params":   [
 			{
