@@ -1,4 +1,5 @@
-var _ = require('lodash');
+var    _ = require('lodash'),
+    util = require('util');
 
 /**
  * Get all the matches for a RegExp capturing group
