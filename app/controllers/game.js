@@ -1120,7 +1120,7 @@ var Game = function Game(bot, options) {
 
         // check czar
         if (self.state === STATES.PLAYED && _.includes(players, self.czar)) {
-            if (self.timers.cooloff) {
+            if (self.timers.cooloff && !_.isEmpty(self.winner)) {
                 clearTimeout(self.timers.cooloff);
                 self.finishRound();
             } else {
