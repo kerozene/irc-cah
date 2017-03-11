@@ -2232,14 +2232,26 @@ describe('GameController', function() {
             );
         });
 
-        it('should not show the point limit in infinity games');
-
         it('should show the current scores and pointLimit after a round', function() {
             game.showPoints('round');
 
             bot.client.say.should.have.been.calledWithMatch(
                 /^#test$/,
                 new RegExp('^Current scores \\(out of \u00021\u0002\\): ' +
+                    '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
+                     '\u0002\\w+\u0002: \u0002\\d\u0002$')
+            );
+        });
+
+        it('should not show the point limit in infinity games', function() {
+            game.pointLimit = 0;
+
+            game.showPoints('round');
+
+            bot.client.say.should.have.been.calledOnce;
+            bot.client.say.should.have.been.calledWithMatch(
+                /^#test$/,
+                new RegExp('^Current scores: ' +
                     '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
                      '\u0002\\w+\u0002: \u0002\\d\u0002$')
             );
