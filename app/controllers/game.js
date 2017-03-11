@@ -292,6 +292,7 @@ var Game = function Game(bot, options) {
         self.say(util.format('Game is now paused. Type %sresume to begin playing again.', p));
 
         self.stopRoundTimers();
+        self.endCoolOffPeriod();
 
         return '';
     };
@@ -316,6 +317,9 @@ var Game = function Game(bot, options) {
         if (self.state === STATES.PLAYED && !self.noCzar && !_.includes(self.players, self.czar)) {
             self.say('The Card Czar quit the game during pause. I will pick the winner on this round.');
             self.selectWinner(Math.round(Math.random() * (self.table.answer.length - 1)));
+        } else if (self.coolOff) {
+            self.coolOff = false;
+            self.startCoolOffPeriod(self.showEntries);
         }
         else
             self.startRoundTimers(self.pauseState.elapsed);
@@ -612,29 +616,45 @@ var Game = function Game(bot, options) {
         ));
         // show entries if all players have played
         if (self.checkAllPlayed() && !self.coolOff)
-            self.coolOffPeriod(self.showEntries);
+            self.startCoolOffPeriod(self.showEntries);
 
         return true;
     };
 
-    self.coolOffPeriod = function(callback) {
+    self.startCoolOffPeriod = function(callback) {
         self.stopRoundTimers();
-        self.timers.cooloff = setTimeout(function() {
+
+        self.timers.coolOff = setTimeout(function() {
             self.coolOff = false;
             callback();
         }, config.coolOffPeriod * 1000);
 
-        if (config.coolOffPeriod > 0) {
-            self.coolOff = true;
+        if (config.coolOffPeriod <= 0)
+            return;
 
-            var message = '%sYou now have %s seconds to change your %s.',
-                prefix  = (self.state === self.STATES.PLAYED) ? util.format('%s: ', self.czar.nick) : '',
-                pick    = (self.noCzar) ? 'vote' : 'pick';
+       self.coolOff = true;
 
-            var lastRound = (self.lastJoinRound === 0) ? 1 : self.lastJoinRound;
-            if (self.round <= self.lastJoinRound + 1)
-                self.say(util.format(message, prefix, config.coolOffPeriod, pick));
-        }
+        var message = '%sYou now have %s seconds to change your %s.',
+            prefix  = (self.state === self.STATES.PLAYED) ? util.format('%s: ', self.czar.nick) : '',
+            pick    = (self.noCzar) ? 'vote' : 'pick';
+
+        var lastRound = (self.lastJoinRound === 0) ? 1 : self.lastJoinRound;
+
+        if (self.round <= self.lastJoinRound + 1)
+            self.say(util.format(message, prefix, config.coolOffPeriod, pick));
+    };
+
+    self.endCoolOffPeriod = function(callback) {
+        if (self.timers.coolOff)
+            clearTimeout(self.timers.coolOff);
+
+        delete self.timers.coolOff;
+
+        if (self.state != self.STATES.PAUSED)
+            self.coolOff = false;
+
+        if (callback)
+            callback();
     };
 
     /**
@@ -723,7 +743,8 @@ var Game = function Game(bot, options) {
         // prefix warning messages with czar's nick if waiting for winner
         var prefix = (self.state === self.STATES.PLAYED && !self.noCzar) ? util.format('%s: ', self.czar.nick) : '';
 
-        self.stopRoundTimers();
+        if (!self.stopRoundTimers())
+            self.timers.round = {};
 
         _.each(['warn1', 'warn2', 'warn3', 'final'], function(stage) {
 
@@ -747,6 +768,8 @@ var Game = function Game(bot, options) {
      * Stop countdown timers
      */
     self.stopRoundTimers = function() {
+
+        if (!self.timers.round) return false;
         _.each(self.timers.round, function(timer) {
             clearTimeout(timer);
         });
@@ -815,6 +838,7 @@ var Game = function Game(bot, options) {
     };
 
     self.finishRound = function() {
+        self.stopRoundTimers();
         self.announceWinner();
         self.updateLastWinner();
         self.clean();
@@ -849,15 +873,12 @@ var Game = function Game(bot, options) {
             return 'You are not the Card Czar. Only the Card Czar can select the winner.';
         }
 
-        if (!self.noCzar)
-            self.stopRoundTimers();
-
         self.winner = winner;
 
         if (!player)
             self.finishRound();
         else if (!self.coolOff)
-            self.coolOffPeriod(self.finishRound);
+            self.startCoolOffPeriod(self.finishRound);
     };
 
     /**
@@ -907,7 +928,7 @@ var Game = function Game(bot, options) {
         ));
 
         if (self.checkAllVoted() && !self.coolOff)
-            self.coolOffPeriod(self.tallyVotes);
+            self.startCoolOffPeriod(self.tallyVotes);
     };
 
     /**
@@ -1110,12 +1131,12 @@ var Game = function Game(bot, options) {
 
         // check if remaining players have all played
         if (self.state === STATES.PLAYABLE && self.checkAllPlayed() && !self.coolOff)
-            self.coolOffPeriod(self.showEntries);
+            self.startCoolOffPeriod(self.showEntries);
 
         // check czar
         if (self.state === STATES.PLAYED && _.includes(players, self.czar)) {
-            if (self.timers.cooloff && !_.isEmpty(self.winner)) {
-                clearTimeout(self.timers.cooloff);
+            if (self.timers.coolOff && !_.isEmpty(self.winner)) {
+                self.endCoolOffPeriod(false);
                 self.finishRound();
             } else {
                 self.say('The Card Czar has fled the scene.');

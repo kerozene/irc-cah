@@ -1187,8 +1187,8 @@ describe('GameController', function() {
                 'You played: I never truly understood \u0002switching to Geico®\u0002 until I encountered \u0002bling\u0002.');
         });
 
-        it('should call #coolOffPeriod() if everyone has played', function() {
-            var stubCoolOffPeriod = sinon.stub(game, 'coolOffPeriod');
+        it('should call #startCoolOffPeriod() if everyone has played', function() {
+            var stubStartCoolOffPeriod = sinon.stub(game, 'startCoolOffPeriod');
             game.players = _.map(game.players, function(player) {
                 player.hasPlayed = true;
                 return player;
@@ -1196,23 +1196,23 @@ describe('GameController', function() {
 
             game.playCard([ 0, 1], player);
 
-            stubCoolOffPeriod.should.have.been.called;
+            stubStartCoolOffPeriod.should.have.been.called;
 
-            stubCoolOffPeriod.restore();
+            stubStartCoolOffPeriod.restore();
         });
 
     });
 
-    describe.skip('#coolOffPeriod()', function() {
+    describe.skip('#startCoolOffPeriod()', function() {
 
         before(function() {
-            bot.config.coolOffPeriod = 0;
+            bot.config.startCoolOffPeriod = 0;
         });
 
         it('should call #announceWinner()', function() {
             sinon.spy(game, 'announceWinner');
 
-            game.coolOffPeriod(game.announceWinner);
+            game.startCoolOffPeriod(game.announceWinner);
 
             game.announceWinner.should.have.been.called;
 
@@ -1222,7 +1222,7 @@ describe('GameController', function() {
         it('should call #updateLastWinner()', function() {
             sinon.spy(game, 'updateLastWinner');
 
-            game.coolOffPeriod(game.updateLastWinner);
+            game.startCoolOffPeriod(game.updateLastWinner);
 
             game.updateLastWinner.should.have.been.called;
 
@@ -1232,7 +1232,7 @@ describe('GameController', function() {
         it('should call #clean()', function() {
             sinon.spy(game, 'clean');
 
-            game.coolOffPeriod(game.clean);
+            game.startCoolOffPeriod(game.clean);
 
             game.clean.should.have.been.called;
 
@@ -1600,24 +1600,15 @@ describe('GameController', function() {
             game.winner.should.equal(game.table.answer[0]);
         });
 
-        it('should call #coolOffPeriod()', function() {
-            sinon.spy(game, 'coolOffPeriod');
+        it('should call #startCoolOffPeriod()', function() {
+            game.coolOff = false;
+            sinon.spy(game, 'startCoolOffPeriod');
 
             game.selectWinner(0, czar);
 
-            game.coolOffPeriod.should.have.been.called;
+            game.startCoolOffPeriod.should.have.been.called;
 
-            game.coolOffPeriod.restore();
-        });
-
-        it('should stop the round timers', function() {
-            var stubStopRoundTimers = sinon.stub(game, 'stopRoundTimers');
-
-            game.selectWinner(0, czar);
-
-            stubStopRoundTimers.should.have.been.called;
-
-            stubStopRoundTimers.restore();
+            game.startCoolOffPeriod.restore();
         });
 
         it('should fail and warn if the card number picked is not in the list', function() {
@@ -2016,8 +2007,8 @@ describe('GameController', function() {
             bot.client.setChanMode.restore();
         });
 
-        it('should call #coolOffPeriod() if everyone else has played', function() {
-            var stub = sinon.stub(game, 'coolOffPeriod');
+        it('should call #startCoolOffPeriod() if everyone else has played', function() {
+            var stub = sinon.stub(game, 'startCoolOffPeriod');
             game.state = game.STATES.PLAYABLE;
             game.players = _.map(game.players, function(player) {
                 player.hasPlayed = true;
