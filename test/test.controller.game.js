@@ -2228,7 +2228,7 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledOnce;
             bot.client.say.should.have.been.calledWithExactly(
                 '#test',
-                'Needed to win: \u00021\u0002'
+                'Points needed to win: \u00021\u0002'
             );
         });
 
@@ -2237,16 +2237,11 @@ describe('GameController', function() {
         it('should show the current scores and pointLimit after a round', function() {
             game.showPoints('round');
 
-            bot.client.say.should.have.been.calledTwice;
             bot.client.say.should.have.been.calledWithMatch(
                 /^#test$/,
-                new RegExp('^Current scores: ' +
+                new RegExp('^Current scores \\(out of \u00021\u0002\\): ' +
                     '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
                      '\u0002\\w+\u0002: \u0002\\d\u0002$')
-            );
-            bot.client.say.should.have.been.calledWithExactly(
-                '#test',
-                'Needed to win: \u00021\u0002'
             );
         });
 
@@ -2261,6 +2256,7 @@ describe('GameController', function() {
         });
 
         beforeEach(function() {
+            bot.config.minPlayers = 3;
             saySpy = sinon.spy(bot.client, 'say');
         });
 

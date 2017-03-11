@@ -918,28 +918,22 @@ var Game = function Game(bot, options) {
         if (!player && !_.isEmpty(self.winner))
             player = self.winner.cards[0].owner;
 
-        var message, uhost = utilities.getUhost(player);
+        var uhost = utilities.getUhost(player);
+        var message = {
+            2: "Two in a row! Go %s",
+            3: "That's three! %s's on a roll.",
+            4: "Four in a row??? Who can stop this mad person?",
+            5: "%s, I'm speaking as a friend. It's not healthy to be this good at CAH."
+        };
+
         if ( _.isEmpty(self.lastWinner) || self.lastWinner.uhost !== uhost ) {
             self.lastWinner = {uhost: uhost, count: 1};
             return;
         }
         self.lastWinner.count++;
-        switch (self.lastWinner.count) {
-            case 2:
-                message = _.template('Two in a row! Go <%= nick %>');
-                break;
-            case 3:
-                message = _.template('That\'s three! <%= nick %>\'s on a roll.');
-                break;
-            case 4:
-                message = _.template('Four in a row??? Who can stop this mad person?');
-                break;
-            case 5:
-                message = _.template('<%= nick %>, I\'m speaking as a friend. It\'s not healthy to be this good at CAH.');
-                break;
-        }
-        if (message)
-            self.say(c.bold(message({nick: player.nick})));
+
+        if (message[self.lastWinner.count])
+            self.say(c.bold( util.format(message[self.lastWinner.count], player.nick) ));
     };
 
     /**
@@ -1204,6 +1198,8 @@ var Game = function Game(bot, options) {
      * Show points for all players
      */
     self.showPoints = function (stage) {
+        stage = stage || 'end';
+
         var sortedPlayers = _.sortBy(self.points, function (point) {
             return -point.player.points;
         });
@@ -1214,60 +1210,37 @@ var Game = function Game(bot, options) {
         });
         output = output.slice(0, -2);
 
-        switch (stage) {
+        var pointsToWin = (self.pointLimit <= 0) ? '' : util.format(' (out of %s)', c.bold(self.pointLimit));
+        var message = {
+            start: (self.pointLimit <= 0) ? '' : util.format('Points needed to win: %s', c.bold(self.pointLimit)),
+            end:   (!self.players.length) ? '' : util.format('The most horrible people: %s', output),
+            round: (!self.players.length) ? '' : util.format('Current scores%s: %s', pointsToWin, output)
+        };
 
-            case 'round':
-                if (self.players.length)
-                    self.say(util.format('Current scores: %s', output));
-
-                if (self.pointLimit > 0)
-                    self.say(util.format('Needed to win: %s', c.bold(self.pointLimit)));
-                break;
-
-            case 'start':
-                if (self.pointLimit > 0)
-                    self.say(util.format('Needed to win: %s', c.bold(self.pointLimit)));
-                break;
-
-            default:
-                if (self.players.length)
-                    self.say(util.format('The most horrible people: %s', output));
-        }
+        if (message[stage])
+            self.say(message[stage]);
     };
 
     /**
      * Show status
      */
     self.showStatus = function () {
-        var message,
-            playersNeeded = Math.max(0, config.minPlayers - self.players.length),
+        var playersNeeded = Math.max(0, config.minPlayers - self.players.length),
             notPlayed = self.getNotPlayed(),
             notVoted  = self.getNotVoted();
 
-        switch (self.state) {
-            case STATES.PLAYABLE:
-                message = util.format('Waiting for players to play: %s', _.map(notPlayed, 'nick').join(', '));
-                if (!self.noCzar)
-                    message = util.format('%s is the Card Czar. ', self.czar.nick) + message;
-                break;
-            case STATES.PLAYED:
-                message = (self.noCzar) ? util.format('Waiting for players to vote: %s', _.map(notVoted, 'nick').join(', '))
-                                        : util.format('Waiting for %s to select the winner.', self.czar.nick);
-                break;
-            case STATES.ROUND_END:
-                message = 'Round has ended and next one is starting.';
-                break;
-            case STATES.STOPPED:
-                message = 'Game has been stopped.';
-                break;
-            case STATES.WAITING:
-                message = util.format('Waiting for %s players to join.', playersNeeded);
-                break;
-            case STATES.PAUSED:
-                message = 'Game is paused.';
-                break;
-        }
-        self.say(util.format('%s %s', c.bold('Status:'), message));
+        var isTheCzar = (self.noCzar) ? '' : util.format('%s is the Card Czar. ', self.czar.nick);
+        var message = {
+            Stopped:    'Game has been stopped.',
+            Playable:   util.format('%sWaiting for players to play: %s', isTheCzar, _.map(notPlayed, 'nick').join(', ')),
+            Played:     (self.noCzar) ? util.format('Waiting for players to vote: %s', _.map(notVoted, 'nick').join(', '))
+                                      : util.format('Waiting for %s to select the winner.', self.czar.nick),
+            RoundEnd:   'Round has ended and next one is starting.',
+            Waiting:    util.format('Waiting for %s players to join.', playersNeeded),
+            Paused:     'Game is paused.'
+        };
+
+        self.say(util.format('%s %s', c.bold('Status:'), message[self.state]));
     };
 
     /**
