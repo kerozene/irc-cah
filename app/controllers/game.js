@@ -58,6 +58,7 @@ var Game = function Game(bot, options) {
     self.decks = {};
     self.deckCodes = [];
     self.round = 0; // round number
+    self.czar = {};
     self.players = []; // list of players
     self.removed = []; // people who are not allowed to join
     self.left = []; // people who left the game and might rejoin
