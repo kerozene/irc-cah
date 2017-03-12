@@ -86,7 +86,7 @@ var Game = function Game(bot, options) {
             ['joinsync' + channel, self.channelRejoinHandler   ],
             ['selfpart' + channel, self.channelLeaveHandler    ],
             ['selfkick' + channel, self.channelLeaveHandler    ],
-            [    'quit' + channel, self.playerQuitHandler      ],
+            ['realquit' + channel, self.playerQuitHandler      ],
             [    'kill' + channel, self.playerQuitHandler      ],
             [    'part' + channel, self.playerPartHandler      ],
             [    'kick' + channel, self.playerKickHandler      ],
