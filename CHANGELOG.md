@@ -1,3 +1,6 @@
+#1.0.1
+* Bugfixes
+
 #1.0.0
 * Added Cardcast support
 * Too many other changes to list

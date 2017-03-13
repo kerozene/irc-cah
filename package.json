@@ -1,6 +1,6 @@
 {
   "name": "cahbot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cards Against Humanity IRC bot",
   "main": "app.js",
   "author": "kerozene <keroschene@gmail.com>",
