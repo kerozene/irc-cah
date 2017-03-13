@@ -2144,6 +2144,21 @@ describe('GameController', function() {
                 '\u0002 [1] \u0002Bling');
         });
 
+        it('should tell players to wait for cards if they don\'t have any yet', function() {
+            var stubGetCards = sinon.stub(player.cards, 'getCards', function() {
+                return [];
+            });
+
+            game.showCards(player);
+
+            bot.client.notice.should.have.been.calledOnce;
+            bot.client.notice.should.have.been.calledWithExactly(
+                'Frederick',
+                "You have no cards. You will get some in the next round (*if* you\'re good)");
+
+            stubGetCards.restore();
+        });
+
     });
 
     describe('#playerNickChangeHandler()', function() {

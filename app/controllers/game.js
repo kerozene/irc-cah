@@ -1199,9 +1199,14 @@ var Game = function Game(bot, options) {
             currentCard,
             message = 'Your cards are:',
             newMessage;
+
+        if (!cards.length)
+            message = "You have no cards. You will get some in the next round (*if* you\'re good)";
+
         _.each(cards, _.bind(function (card, index) {
              remainingCards.push(c.bold(util.format(' [%s] ', index)) + card.displayText);
         }, this));
+
         // split output if longer than allowed message length
         while (remainingCards.length) {
             currentCard = remainingCards.shift();
