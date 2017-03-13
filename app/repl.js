@@ -121,6 +121,13 @@ module.exports = function(repl, bot) {
         }
     });
 
+    repl.defineCommand('reload', {
+        help: "Reload settings",
+        action: function(cmdArgs) {
+            bot.controller.cmd.reload(null, cmdArgs.split(' '));
+        }
+    });
+
 /*
     repl.defineCommand('', {
         help: "",

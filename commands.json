@@ -288,6 +288,26 @@
 		]
 	},
 	{
+		"commands": ["reload"],
+		"info":     "Reload settings",
+		"flag":     "o",
+		"handler":  "reload",
+		"params":   [
+			{
+				"name":     "\"deck\"",
+				"type":     "string",
+				"required": true,
+				"multiple": false
+			},
+			{
+				"name":     "identifier",
+				"type":     "string",
+				"required": false,
+				"multiple": false
+			}
+		]
+	},
+	{
 		"commands": ["ping"],
 		"info":     "Highlight people who might want to play. Use /away or %%away to remove yourself from this list.",
 		"handler":  "ping",

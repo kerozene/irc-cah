@@ -21,6 +21,27 @@ var Decks = function(bot) {
     self._findCardState = {};
 
     /**
+     * Check inputted code and get a proper deckCode
+     *   - always use this in a try-catch
+     * @param  {string} deckCode
+     * @return {string}
+     */
+    self.getValidDeckCode = function(deckCode) {
+        if (!deckCode)
+            throw 'You must specify a deck code.';
+
+        if (!deckCode.match(/^\w{5}$/))
+            throw util.format('Invalid deck code format: %s', deckCode);
+
+        deckCode = deckCode.toUpperCase();
+
+        if (!_.includes(config.decks, deckCode))
+            throw util.format('Deck %s is not enabled. If you really want it, yell about it.', deckCode);
+
+        return deckCode;
+    };
+
+    /**
      * @return {Promise}
      */
     self.init = function() {
@@ -64,11 +85,12 @@ var Decks = function(bot) {
     };
 
     /**
-     * @param  {string[]} decksList - list of deck codes
+     * @param  {string[]} [decksList] - list of deck codes
      * @return {Promise}
      */
     self.loadDecks = function(decksList) {
-        Promise.map(config.decks, function(deck) {
+        decksList = decksList || config.decks;
+        return Promise.map(decksList, function(deck) {
             self.fetchDeck(deck)
             .then(function(data) {
                 bot.decks.push(data);
@@ -81,6 +103,22 @@ var Decks = function(bot) {
                 bot.log(error.name + ': ' + error.message);
             });
         });
+    };
+
+    /**
+     * @param  {string}  deckCode
+     * @return {boolean}
+     */
+    self.reloadDeck = function(deckCode) {
+        var key = 'deck-' + deckCode;
+
+        if (!_.includes(self.storage.keys(), key))
+            return false;
+
+        if (!self.storage.removeItemSync(key))
+            return false;
+
+        return self.loadDecks([ deckCode ]);
     };
 
     self._getSearchPredicate = function(search, searchType, noCase) {

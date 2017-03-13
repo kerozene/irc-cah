@@ -620,18 +620,14 @@ var Cmd = function Cmd(bot) {
      * @param cmdArgs
      */
     self.deckinfo = function(message, cmdArgs) {
-        var data, deckCode = cmdArgs[0];
+        var data, deckCode;
 
-        if (!deckCode || !deckCode.match(/^\w{5}$/)) {
-            self.reply(message, util.format('Invalid deck code format: %s', cmdArgs[0]));
-            return false;
+        try {
+            deckCode = bot.controller.decks.getValidDeckCode(cmdArgs[0]);
         }
-        else {
-            deckCode = deckCode.toUpperCase();
-            if (!_.includes(config.decks, deckCode)) {
-                self.reply(message, util.format('Deck %s is not enabled. If you really want it, yell about it.', deckCode));
-                return false;
-            }
+        catch (e) {
+            self.reply(message, e);
+            return false;
         }
 
         bot.controller.decks.fetchDeck(deckCode).then(function(data) {
@@ -700,6 +696,47 @@ var Cmd = function Cmd(bot) {
             return false;
         }
         self.reply(message, tagInfo);
+    };
+
+    /**
+     * Reload the data for a deck
+     * @param  message
+     * @param  cmdArgs
+     */
+    self.reloadDeck = function(message, cmdArgs) {
+        try {
+            deckCode = bot.controller.decks.getValidDeckCode(cmdArgs[0]);
+        }
+        catch (e) {
+            self.reply(message, e);
+            return false;
+        }
+
+        bot.controller.decks.reloadDeck(deckCode)
+        .then(function() {  self.reply(message, util.format('Reloaded deck: %s', deckCode)); })
+        .catch(function() { self.reply(message, util.format('Deck could not be reloaded: %s', deckCode)); });
+    };
+
+    /**
+     * Reload something
+     * @param  message
+     * @param  cmdArgs
+     */
+    self.reload = function(message, cmdArgs) {
+        var action = cmdArgs.shift();
+        var validActions = {
+            deck: function(args) { self.reloadDeck(message, args); }
+        };
+
+        if (!validActions[action]) {
+            var actionParam = _.keys(validActions)
+                               .map(function(k) { return util.format('"%s"', k); })
+                               .join('|');
+            self.reply(message, util.format('Reload what? (%s)', actionParam));
+            return false;
+        }
+
+        validActions[action](cmdArgs);
     };
 
     /**
