@@ -270,7 +270,7 @@
 				"name":     "deck",
 				"type":     "string",
 				"required": false,
-				"multiple": true
+				"multiple": false
 			}
 		]
 	},
