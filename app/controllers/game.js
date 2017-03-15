@@ -73,6 +73,7 @@ var Game = function Game(bot, options) {
     self.points = [];
     self.pointLimit = options.points || 0; // point limit for the game, defaults to 0 (== no limit)
     self.winner = {}; // store the winner of the current round
+    self.entryOwners = {}; // store who played what
     self.lastWinner = {}; // store the streak count of the last winner
     self.lastJoinRound = 0; // store the last round number in which a player joined
     self.coolOff = false;
@@ -687,8 +688,13 @@ var Game = function Game(bot, options) {
         self.say('OK! Here are the entries:');
         // shuffle the entries
         self.table.answer = _.shuffle(self.table.answer);
+        self.entryOwners = {};
+
         _.each(self.table.answer, _.bind(function (cards, i) {
-            self.say(util.format('%s: %s',
+            if (config.revealEntryOwners)
+                self.entryOwners[cards.cards[0].owner.nick] = i;
+
+            self.say(util.format('[%s] %s',
                 i, self.getFullEntry(self.table.question, cards.getCards())
             ));
         }, this));
@@ -823,19 +829,6 @@ var Game = function Game(bot, options) {
             self.getFullEntry( self.table.question, winner.getCards() )
         );
         self.say(message);
-
-        if (config.revealEntryOwners) {
-            var entryOwners = [],
-                entryNick;
-
-            _.each(self.table.answer, function(entry, index) {
-                entryNick = entry.cards[0].owner.nick;
-                if (entryNick !== owner.nick)
-                    entryOwners.push(util.format('%s - %s', index, entryNick));
-            });
-            message = util.format('Who played what: %s', entryOwners.join(', '));
-            self.say(message);
-        }
     };
 
     self.finishRound = function() {
@@ -949,7 +942,7 @@ var Game = function Game(bot, options) {
         };
 
         if ( _.isEmpty(self.lastWinner) || self.lastWinner.uhost !== uhost ) {
-            self.lastWinner = {uhost: uhost, count: 1};
+            self.lastWinner = {nick: player.nick, uhost: uhost, count: 1};
             return;
         }
         self.lastWinner.count++;
@@ -1250,17 +1243,49 @@ var Game = function Game(bot, options) {
     self.showPoints = function (stage) {
         stage = stage || 'end';
 
+        var output = "", nick;
+        var revealEntryOwners = true;
         var sortedPlayers = _.sortBy(self.points, function (point) {
-            return -point.player.points;
+            var order = -point.player.points;
+            point.player.reveal = true;
+
+            if (!config.revealEntryOwners)
+                return order;
+
+            var user = bot.controller.users.updateUserFromNick(point.player.nick);
+            if (!user)
+                return order;
+
+            point.player.reveal = (user.data.revealEntryOwner !== false);
+
+            if (!point.player.reveal)
+                revealEntryOwners = false;
+
+            return order;
         });
-        var output = "";
+
         _.each(sortedPlayers, function (point) {
+            nick = point.player.nick;
+
+            if (!_.isEmpty(self.lastWinner) && nick === self.lastWinner.nick)
+                nick = c.bold(nick);
+
+            var displayNick = nick;
+
+            if (revealEntryOwners && _.has(self.entryOwners, point.player.nick))
+                displayNick = util.format('[%s]-%s', self.entryOwners[point.player.nick], displayNick);
+            else if (!point.player.reveal)
+                displayNick = util.format('(%s)', displayNick);
+
             if (self.getPlayer({nick: point.player.nick}))
-                output += util.format('%s: %s, ', c.bold(point.player.nick), c.bold(point.points));
+                output += util.format('%s: %s, ', displayNick, c.bold(point.points));
+
         });
         output = output.slice(0, -2);
+        self.entryOwners = {};
 
         var pointsToWin = (self.pointLimit <= 0) ? '' : util.format(' (out of %s)', c.bold(self.pointLimit));
+
         var message = {
             start: (self.pointLimit <= 0) ? '' : util.format('Points needed to win: %s', c.bold(self.pointLimit)),
             end:   (!self.players.length) ? '' : util.format('The most horrible people: %s', output),

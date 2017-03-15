@@ -1320,9 +1320,9 @@ describe('GameController', function() {
             stub.getCall(0).should.have.been.calledWithExactly(
                 '#test', 'OK! Here are the entries:');
             stub.getCall(1).should.have.been.calledWithExactly(
-                '#test', '0: foo');
+                '#test', '[0] foo');
             stub.getCall(2).should.have.been.calledWithExactly(
-                '#test', '1: foo');
+                '#test', '[1] foo');
 
             stub.restore();
         });
@@ -2254,8 +2254,8 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledWithMatch(
                 /^#test$/,
                 new RegExp('^The most horrible people: ' +
-                    '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
-                     '\u0002\\w+\u0002: \u0002\\d\u0002$')
+                    '(\\w+: \u0002\\d\u0002, ){3}' +
+                     '\\w+: \u0002\\d\u0002$')
             );
         });
 
@@ -2275,8 +2275,8 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledWithMatch(
                 /^#test$/,
                 new RegExp('^Current scores \\(out of \u00021\u0002\\): ' +
-                    '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
-                     '\u0002\\w+\u0002: \u0002\\d\u0002$')
+                    '(\\w+: \u0002\\d\u0002, ){3}' +
+                     '\\w+: \u0002\\d\u0002$')
             );
         });
 
@@ -2289,8 +2289,8 @@ describe('GameController', function() {
             bot.client.say.should.have.been.calledWithMatch(
                 /^#test$/,
                 new RegExp('^Current scores: ' +
-                    '(\u0002\\w+\u0002: \u0002\\d\u0002, ){3}' +
-                     '\u0002\\w+\u0002: \u0002\\d\u0002$')
+                    '(\\w+: \u0002\\d\u0002, ){3}' +
+                     '\\w+: \u0002\\d\u0002$')
             );
         });
 

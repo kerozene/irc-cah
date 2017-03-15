@@ -332,6 +332,19 @@
 		"handler":  "back"
 	},
 	{
+		"commands": ["hide"],
+		"info":     "Hide entry owners (who played what cards) for games that you're in",
+		"handler":  "hide",
+		"params":   [
+			{
+				"name":     "\"on\"|\"off\"",
+				"type":     "string",
+				"required": false,
+				"multiple": false
+			}
+		]
+	},
+	{
 		"commands":   ["gg"],
 		"hidden":     true,
 		"handler":    "gg",

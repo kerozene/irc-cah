@@ -824,6 +824,37 @@ var Cmd = function Cmd(bot) {
     };
 
     /**
+     * Show/hide entry owners when you are playing
+     * @param  message
+     * @param  cmdArgs
+     */
+    self.hide = function(message, cmdArgs) {
+        var user = self.mustBeUser(self.getResponder(message), message.nick);
+        if (!user)
+            return;
+
+        var validSettings = {on: false, off: true};
+        var setting = (cmdArgs[0]) ? cmdArgs[0].toLowerCase() : 'on';
+
+        if (!_.has(validSettings, setting)) {
+            self.notice(message.nick, "You must specify either 'on' or 'off'");
+            return;
+        }
+
+        var reveal = validSettings[setting];
+        user.data.revealEntryOwner = reveal;
+
+        var output = util.format('From now on your entries %s be anonymous unless you win the point. ' +
+                                 '(\'%shide off\' to turn this off)', c.bold('will'), p);
+        if (reveal) {
+            output = util.format('From now on your entries will %s be anonymous. ' +
+                                 '(\'%shide on\' to turn this on)', c.bold('not'), p);
+        }
+
+        self.notice(message.nick, output);
+    };
+
+    /**
      * Interpret 'gg'
      * @param  message
      * @param  cmdArgs
