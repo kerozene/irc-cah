@@ -72,16 +72,22 @@ var Decks = function(bot) {
             if (deckData)
                 return deckData;
 
+            bot.log(util.format("Fetching deck '%s' from Cardcast API", deckCode));
+
             return self.api.deck(deckCode)
             .then(function(deck) { return deck.populatedPromise; })
             .then(function(populated) {
                 var fields = ['name', 'code', 'description', 'category', 'created', 'updated',
                               'rating', 'author', 'baseURL', 'calls', 'responses'];
                 deckData = _.pick(populated, fields);
-                self.storage.setItemSync(key, deckData);
-                return deckData;
+                return self.storage.setItem(key, deckData)
+                .then(function() {
+                    bot.log(util.format("Storing deck: %s", deckCode));
+                    return deckData;
+                });
             });
-        });
+        })
+        .catch(function(e) { bot.log('Fetch error: ', deckCode, ' :: ', e); });
     };
 
     /**
@@ -90,14 +96,24 @@ var Decks = function(bot) {
      */
     self.loadDecks = function(decksList) {
         decksList = decksList || config.decks;
+
         return Promise.map(decksList, function(deck) {
+
             self.fetchDeck(deck)
             .then(function(data) {
+
                 bot.decks.push(data);
-                bot.log(util.format.apply(null, [ 'Enabled deck %s: %s questions %s answers', data.code ].concat(
-                    _.map([ data.calls.length, data.responses.length ], function(el) { return _.padStart(el, 4, ' '); })
-                )));
-            }, {concurrency: 2}, function(error) {
+                var message = [ 'Enabled deck: %s (%s black %s white) -- "%s" by %s', data.code ]
+                .concat(
+                    _.map([ data.calls.length, data.responses.length ], function(el) {
+                        return _.padStart(el, 4, ' ');
+                    })
+                )
+                .concat([ data.name, data.author ]);
+                bot.log(util.format.apply(null, message));
+
+            }, {concurrency: 2})
+            .catch(function(error) {
                 if (error.name === 'NotFoundError')
                     error.message = error.message.split('/').reverse()[0];
                 bot.log(error.name + ': ' + error.message);
@@ -107,7 +123,7 @@ var Decks = function(bot) {
 
     /**
      * @param  {string}  deckCode
-     * @return {boolean}
+     * @return {Promise}
      */
     self.reloadDeck = function(deckCode) {
         var key = 'deck-' + deckCode;
