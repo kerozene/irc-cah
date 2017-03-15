@@ -978,7 +978,30 @@ var Game = function Game(bot, options) {
             args.push(c.bold(text));
 
         }, this));
-        return util.format.apply(null, [ question.text.join('%s') ].concat(args));
+
+        var entry = util.format.apply(null, [ question.text.join('%s') ].concat(args))
+
+            //   a _b???_?       ->       a _b???_
+            //   a _b?_.         ->       a _b?_
+            //   a _"b?"_?       ->       a _"b?"_
+            //   a "_b???_"?     ->       a "_b???_"
+            //   a _b?_...       ->       a _b?_...
+            .replace(/(\?+"?\u0002)(")?[?.](?![?.])/g, '$1$2')
+
+            //   a _b!!!_!       ->       a _b!!!_
+            //   a _b!_.         ->       a _b!_
+            //   a _"b!"_!       ->       a _"b!"_
+            //   a "_b!!!_"!     ->       a "_b!!!_"
+            //   a _b!_...       ->       a _b!_...
+            .replace(/(\!+"?\u0002)(")?[!.](?![!.])/g, '$1$2')
+
+            //   a _b!_?         ->       a _b?_
+            //   a _b!!!_?       ->       a _b!!?_
+            //   a _"b!"_?       ->       a _"b?"_
+            //   a "_b!!!_"?     ->       a "_b!!?_"
+            .replace(/(!)(")?(\u0002)(")?(\?)(?!\?)/g, '$5$2$3$4');
+
+        return entry;
     };
 
     /**

@@ -1725,6 +1725,37 @@ describe('GameController', function() {
             entry.should.equal('What ended my last relationship... \u0002switching to Geico®\u0002.');
         });
 
+        it('should repair certain punctuation combinations', function() {
+            var question = _.defaults({}, cards.cards.calls[0]),
+                answers  = [ _.defaults({}, cards.cards.responses[0]) ],
+                entry;
+
+            var entryTests = [
+                { q: ['a ', '? c'],       a: 'b???',     expected: 'a \u0002b???\u0002 c' },
+                { q: ['a ', '. c'],       a: 'b?',       expected: 'a \u0002b?\u0002 c' },
+                { q: ['a ', '? c'],       a: '"b?"',     expected: 'a \u0002"b?"\u0002 c' },
+                { q: ['a "', '"? c'],     a: 'b???',     expected: 'a "\u0002b???\u0002" c' },
+                { q: ['a ', '... c'],     a: 'b?',       expected: 'a \u0002b?\u0002... c' },
+                { q: ['a ', '! c'],       a: 'b!!!',     expected: 'a \u0002b!!!\u0002 c' },
+                { q: ['a ', '. c'],       a: 'b!',       expected: 'a \u0002b!\u0002 c' },
+                { q: ['a ', '! c'],       a: '"b!"',     expected: 'a \u0002"b!"\u0002 c' },
+                { q: ['a "', '"! c'],     a: 'b!!!',     expected: 'a "\u0002b!!!\u0002" c' },
+                { q: ['a ', '... c'],     a: 'b!',       expected: 'a \u0002b!\u0002... c' },
+                { q: ['a ', '? c'],       a: 'b!',       expected: 'a \u0002b?\u0002 c' },
+                { q: ['a ', '? c'],       a: 'b!!!',     expected: 'a \u0002b!!?\u0002 c' },
+                { q: ['a ', '? c'],       a: '"b!"',     expected: 'a \u0002"b?"\u0002 c' },
+                { q: ['a "', '"? c'],     a: 'b!!!',     expected: 'a "\u0002b!!?\u0002" c' }
+            ];
+
+            _.forEach(entryTests, function(entryTest, index) {
+                question.text = entryTest.q;
+                question.text[0] = util.format('%s: %s', index, question.text[0]);
+                answers[0].text = entryTest.a;
+                entry = game.getFullEntry(question, answers);
+                entry.should.equal(util.format('%s: %s', index, entryTest.expected));
+            });
+        });
+
     });
 
     describe('#checkDecks()', function() {
