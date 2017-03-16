@@ -84,18 +84,26 @@ var Users = function Users(bot) {
     };
 
     self.updateUserFromNick = function(nick) {
-        if (self.isNonUser(nick))
-            return undefined;
+        var user, ircUser;
 
-        var ircUser = self.getIrcUserFromNick(nick);
-        var user = self.getUserFromNick(nick);
-        if (user) {
-            user.data = _.extend(user.data, ircUser);
-            bot.users[user.key] = user;
-            user.store(self.storage);
+        try {
+            if (self.isNonUser(nick))
+                return user;
+
+            ircUser = self.getIrcUserFromNick(nick);
+            user    = self.getUserFromNick(nick);
+        } catch(error) {
             return user;
         }
-        user = User.createFromIrcUser(bot, self.storage, nick, ircUser);
+
+        if (!user) {
+            user = User.createFromIrcUser(bot, self.storage, nick, ircUser);
+            return user;
+        }
+
+        user.data = _.extend(user.data, ircUser);
+        bot.users[user.key] = user;
+        user.store(self.storage);
         return user;
     };
 
