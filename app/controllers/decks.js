@@ -82,12 +82,11 @@ var Decks = function(bot) {
                 deckData = _.pick(populated, fields);
                 return self.storage.setItem(key, deckData)
                 .then(function() {
-                    bot.log(util.format("Storing deck: %s", deckCode));
+                    bot.log(util.format("Stored deck: %s", deckCode));
                     return deckData;
                 });
             });
-        })
-        .catch(function(e) { bot.log('Fetch error: ', deckCode, ' :: ', e); });
+        });
     };
 
     /**
@@ -116,7 +115,8 @@ var Decks = function(bot) {
             .catch(function(error) {
                 if (error.name === 'NotFoundError')
                     error.message = error.message.split('/').reverse()[0];
-                bot.log(error.name + ': ' + error.message);
+                bot.log(util.format('%s: %s', error.name, error.message));
+                bot.log(error.stack);
             });
         });
     };
@@ -126,15 +126,18 @@ var Decks = function(bot) {
      * @return {Promise}
      */
     self.reloadDeck = function(deckCode) {
+        deckCode = deckCode.toUpperCase();
         var key = 'deck-' + deckCode;
 
-        if (!_.includes(self.storage.keys(), key))
-            return false;
+        return Promise.try(function() {
+            if (!_.includes(self.storage.keys(), key))
+                throw new Error(util.format('Deck code not found in storage: %s', deckCode));
 
-        if (!self.storage.removeItemSync(key))
-            return false;
+            if (!self.storage.removeItemSync(key))
+                throw new Error(util.format('Could not delete key for %s', deckCode));
 
-        return self.loadDecks([ deckCode ]);
+            return self.loadDecks([ deckCode ]);
+        });
     };
 
     self._getSearchPredicate = function(search, searchType, noCase) {
