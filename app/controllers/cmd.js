@@ -590,7 +590,7 @@ var Cmd = function Cmd(bot) {
             nick: utilities.arrayToSentence(nicks)
         }));
         if (beerToBot) // pour for self last
-            self.beer(reply, [ client.nick ]);
+            self.beer(message, [ client.nick ]);
     };
 
     /**
