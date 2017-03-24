@@ -3,7 +3,6 @@ var      util = require('util'),
             _ = require('lodash'),
        moment = require('moment'),
     utilities = require('../utilities'),
-        Decks = require('../controllers/decks'),
         Cards = require('../controllers/cards'),
          Card = require('../models/card');
 
@@ -43,7 +42,7 @@ var HAIKU = new Card({
  */
 var Game = function Game(bot, options) {
     var    self = this,
-      decksTool = new Decks(bot),
+      decksTool = bot.controller.decks,
         channel = bot.channel,
          client = bot.client,
          config = bot.config;
