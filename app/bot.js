@@ -1,5 +1,6 @@
 var  util = require('util'),
         _ = require('lodash'),
+  Promise = require('bluebird'),
       irc = require('irc'),
 utilities = require('./utilities.js'),
    Config = require('./controllers/config'),
@@ -46,28 +47,53 @@ var Bot = function Bot() {
         console.error(message);
     };
 
-    self.controller.decks = new Decks(self);
-    self.controller.decks.init()
-    .then(function(message) {
-        self.log(message);
-        self.controller.decks.loadDecks(config.decks);
-    });
+    self.init = function() {
+        return self.initDecks()
+        .then(self.initUsers)
+        .then(self.initClient)
+        .then(self.initCmd)
+        .then(self.initListeners);
+    };
 
-    self.controller.users = new Users(self);
-    self.controller.users.init();
-    setTimeout(function() {
-        self.timers.storeUsers = setInterval(self.controller.users.storeAll, 5 * 60 * 1000);
-    }, 10 * 1000); // 10 seconds after chanData refresh
+    self.initDecks = function() {
+        self.log('Initializing decks...');
+        self.controller.decks = new Decks(self);
+        return self.controller.decks.init()
+        .then(function(message) {
+            self.log(message);
+            return self.controller.decks.loadDecks(config.decks);
+        });
+    };
 
-    self.channel = config.channel.toLowerCase();
-    config.clientOptions.channels = [ self.channel ];
-    config.clientOptions.autoConnect = false;
+    self.initUsers = function() {
+        self.log('Initializing users...');
+        self.controller.users = new Users(self);
+        return self.controller.users.init()
+        .then(function() {
+            setTimeout(function() {
+                self.timers.storeUsers = setInterval(self.controller.users.storeAll, 5 * 60 * 1000);
+            }, 10 * 1000); // 10 seconds after chanData refresh
+        });
+    };
 
-    self.log('Configuration loaded.');
+    self.initClient = function() {
+        self.log('Initializing IRC client...');
+        return Promise.try(function() {
+            self.channel = config.channel.toLowerCase();
+            config.clientOptions.channels = [ self.channel ];
+            config.clientOptions.autoConnect = false;
 
-    self.client = client = new irc.Client(config.server, config.nick, config.clientOptions);
+            self.log('Configuration loaded.');
 
-    self.controller.cmd = new Cmd(self);
+            self.client = client = new irc.Client(config.server, config.nick, config.clientOptions);
+        });
+    };
+
+    self.initCmd = function() {
+        self.log('Initializing commands...');
+        self.controller.cmd = new Cmd(self);
+        return self.loadCommands();
+    };
 
     var p = config.commandPrefixChars[0];
 
@@ -75,14 +101,17 @@ var Bot = function Bot() {
      * Load game commands from config
      */
     self.loadCommands = function() {
-        _.each(config.commands, function(command) {
-            if (!self.controller.cmd[command.handler])
-                throw Error(util.format('Unknown handler: Cmd.%s', command.handler));
-            _.each(command.commands, function(alias) {
-                if (self.controller.cmd.findCommand(alias))
-                    throw Error(util.format('Command alias already in use: %s', alias));
+        return Promise.try(function() {
+            self.commands = [];
+            _.each(config.commands, function(command) {
+                if (!self.controller.cmd[command.handler])
+                    throw Error(util.format('Unknown handler: Cmd.%s', command.handler));
+                _.each(command.commands, function(alias) {
+                    if (self.controller.cmd.findCommand(alias))
+                        throw Error(util.format('Command alias already in use: %s', alias));
+                });
+                self.commands.push(command);
             });
-            self.commands.push(command);
         });
     };
 
@@ -285,74 +314,79 @@ var Bot = function Bot() {
         callback.call();
     };
 
-    self.loadCommands();
+    self.initListeners = function() {
+        self.log('Initializing client listeners...');
+        return Promise.try(function() {
 
-    // handle connection to server for logging
-    client.addListener('registered', function (message) {
-        self.log(util.format('Connected to server %s', message.server));
-        // start server monitor
-        self.timers.checkServer = setInterval(self.checkServer, self.maxServerSilence * 1000);
-        // Send connect commands after joining a server
-        if (typeof config.connectCommands !== 'undefined' && config.connectCommands.length > 0) {
-            _.each(config.connectCommands, function (cmd) {
-                if(cmd.target && cmd.message) {
-                    client.say(cmd.target, cmd.message);
+            // handle connection to server for logging
+            client.addListener('registered', function (message) {
+                self.log(util.format('Connected to server %s', message.server));
+                // start server monitor
+                self.timers.checkServer = setInterval(self.checkServer, self.maxServerSilence * 1000);
+                // Send connect commands after joining a server
+                if (typeof config.connectCommands !== 'undefined' && config.connectCommands.length > 0) {
+                    _.each(config.connectCommands, function (cmd) {
+                        if(cmd.target && cmd.message) {
+                            client.say(cmd.target, cmd.message);
+                        }
+                    });
                 }
             });
-        }
-    });
 
-    // handle user joins to channel
-    client.addListener('join', function (channel, nick, message) {
-        if (client.nick == nick || nick == 'ChanServ')
-            return false;
+            // handle user joins to channel
+            client.addListener('join', function (channel, nick, message) {
+                if (client.nick == nick || nick == 'ChanServ')
+                    return false;
 
-        var user = self.controller.users.updateUserFromNick(nick);
-        if (user && user.data.doNotPing === true)
-            self.controller.cmd.back(message, [ 'ONJOIN' ]);
+                var user = self.controller.users.updateUserFromNick(nick);
+                if (user && user.data.doNotPing === true)
+                    self.controller.cmd.back(message, [ 'ONJOIN' ]);
 
-        if (config.userJoinCommands) {
-            _.each(config.userJoinCommands, function (cmd) {
-                if(cmd.target && cmd.message) {
-                    message = _.template(cmd.message)({nick: nick, channel: channel}).split('%%').join(p);
-                    client.say(cmd.target, message);
+                if (config.userJoinCommands) {
+                    _.each(config.userJoinCommands, function (cmd) {
+                        if(cmd.target && cmd.message) {
+                            message = _.template(cmd.message)({nick: nick, channel: channel}).split('%%').join(p);
+                            client.say(cmd.target, message);
+                        }
+                    });
                 }
             });
-        }
-    });
 
-    // accept invites to configured channel
-    client.addListener('invite', function(channel, from, message) {
-        if (  channel.toLowerCase() == self.channel &&
-            ! _.includes(_.keys(client.chans, channel)) ) {
-            client.send('JOIN', channel);
-            client.say(from, util.format('Attempting to join %s', channel));
-            self.log(util.format('Attempting to join %s : invited by %s', channel, from));
-        }
-    });
+            // accept invites to configured channel
+            client.addListener('invite', function(channel, from, message) {
+                if (  channel.toLowerCase() == self.channel &&
+                    ! _.includes(_.keys(client.chans, channel)) ) {
+                    client.send('JOIN', channel);
+                    client.say(from, util.format('Attempting to join %s', channel));
+                    self.log(util.format('Attempting to join %s : invited by %s', channel, from));
+                }
+            });
 
-    // output errors
-    client.addListener('error', function (message) {
-        console.warn('IRC client error: ', message);
-    });
+            // output errors
+            client.addListener('error', function (message) {
+                console.warn('IRC client error: ', message);
+            });
 
-    // try to reconnect on network errors
-    client.addListener('netError', function(message) {
-        console.warn('IRC network error: ', message);
-        clearInterval(self.timers.checkServer);
-        self.reconnect();
-    });
+            // try to reconnect on network errors
+            client.addListener('netError', function(message) {
+                console.warn('IRC network error: ', message);
+                clearInterval(self.timers.checkServer);
+                self.reconnect();
+            });
 
-    // update server monitor for checkServer()
-    client.addListener('raw', function(message) {
-        self.lastServerRawReceived = _.now();
-    });
+            // update server monitor for checkServer()
+            client.addListener('raw', function(message) {
+                self.lastServerRawReceived = _.now();
+            });
 
-    client.addListener('joinsync', self.channelJoinHandler);
-    client.addListener('message',  self.messageHandler);
+            client.addListener('joinsync', self.channelJoinHandler);
+            client.addListener('message',  self.messageHandler);
 
-    client.addListener('who' + self.channel, self.refreshUsers);
-    self.timers.refreshChannel = setInterval(self.refreshChanData, 5 * 60 * 1000);
+            client.addListener('who' + self.channel, self.refreshUsers);
+            self.timers.refreshChannel = setInterval(self.refreshChanData, 5 * 60 * 1000);
+
+        });
+    };
 
 };
 

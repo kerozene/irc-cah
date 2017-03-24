@@ -16,13 +16,14 @@ var Users = function Users(bot) {
      * @return {Promise}
      */
     self.init = function() {
-        self.storage.init().then(function() {
+        return self.storage.init()
+        .then(function() {
             setTimeout(function() {
                 self.loadAll();
                 self.deleteNonUsers();
                 bot.log(util.format('User storage: %s keys loaded', self.storage.length()));
             }, 100);
-        }).catch(function(error) { throw error; });
+        });
     };
 
     self.storeAll = function() {
