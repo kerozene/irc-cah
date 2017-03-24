@@ -714,7 +714,10 @@ var Cmd = function Cmd(bot) {
 
         bot.controller.decks.reloadDeck(deckCode)
         .then(function() {  self.reply(message, util.format('Reloaded deck: %s', deckCode)); })
-        .catch(function() { self.reply(message, util.format('Deck could not be reloaded: %s', deckCode)); });
+        .catch(function(e) {
+            self.reply(message, util.format('Deck could not be reloaded: %s', deckCode));
+            bot.log('Error:', e.message);
+        });
     };
 
     /**

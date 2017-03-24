@@ -65,6 +65,8 @@ var Decks = function(bot) {
      * @return {Promise}
      */
     self.fetchDeck = function(deckCode) {
+        deckCode = self.getValidDeckCode(deckCode);
+
         var deckData, key = 'deck-' + deckCode;
 
         return self.storage.getItem(key)
@@ -96,9 +98,9 @@ var Decks = function(bot) {
     self.loadDecks = function(decksList) {
         decksList = decksList || config.decks;
 
-        return Promise.map(decksList, function(deck) {
+        return Promise.map(decksList, function(deckCode) {
 
-            self.fetchDeck(deck)
+            self.fetchDeck(deckCode)
             .then(function(data) {
 
                 bot.decks.push(data);
@@ -122,20 +124,37 @@ var Decks = function(bot) {
     };
 
     /**
+     * @param  {string} deckCode
+     * @return {boolean}         - whether a deck was removed or not
+     */
+    self.unloadDeck = function(deckCode) {
+        deckCode = self.getValidDeckCode(deckCode);
+
+        var key = 'deck-' + deckCode;
+
+        _.remove(bot.decks, function(deck) {
+            return (deck.code === deckCode);
+        });
+
+        if (!_.includes(self.storage.keys(), key))
+            throw new Error(util.format('Deck code not found in storage: %s', deckCode));
+
+        if (!self.storage.removeItemSync(key))
+            // removeItemSync will throw its own exception if data file could not be deleted, otherwise returns undefined
+            throw new Error(util.format('Could not delete stored data for %s', deckCode));
+
+        return true;
+    };
+
+    /**
      * @param  {string}  deckCode
      * @return {Promise}
      */
     self.reloadDeck = function(deckCode) {
-        deckCode = deckCode.toUpperCase();
-        var key = 'deck-' + deckCode;
+        deckCode = self.getValidDeckCode(deckCode);
 
         return Promise.try(function() {
-            if (!_.includes(self.storage.keys(), key))
-                throw new Error(util.format('Deck code not found in storage: %s', deckCode));
-
-            if (!self.storage.removeItemSync(key))
-                throw new Error(util.format('Could not delete key for %s', deckCode));
-
+            self.unloadDeck(deckCode);
             return self.loadDecks([ deckCode ]);
         });
     };
